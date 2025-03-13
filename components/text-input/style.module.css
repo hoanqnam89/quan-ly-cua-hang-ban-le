@@ -1,0 +1,15 @@
+.text-input {
+  padding: .5em;
+
+  &:hover {
+    filter: brightness(.9);
+  }
+
+  &:active {
+    filter: brightness(.8);
+  }
+
+  &:disabled {
+    filter: grayscale(1);
+  }
+}

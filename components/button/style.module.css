@@ -1,0 +1,60 @@
+.button {
+  padding: .5em;
+  border-radius: .5em;
+  position: relative;
+}
+
+.info {
+  background: #0000ff;
+}
+
+.success {
+  background: #00ee00;
+}
+
+.danger {
+  background: #ff0000;
+}
+
+.button:not(.loading) {
+  &:hover {
+    filter: brightness(.9);
+  }
+
+  &:active {
+    filter: brightness(.8);
+  }
+
+  &:disabled {
+    filter: grayscale(1);
+  }
+}
+
+.loading > * {
+  visibility: hidden;
+}
+
+.loading::after {
+  content: '';
+  position: absolute;
+  width: 2em;
+  aspect-ratio: 1 / 1;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: auto;
+  border: .25em solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: button-loading-spinner 1s linear infinite;
+}
+
+@keyframes button-loading-spinner {
+  from {
+    transform: rotate(0turn);
+  }
+  to {
+    transform: rotate(1turn);
+  }
+}
