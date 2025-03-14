@@ -87,14 +87,15 @@ export default function Modal({
       toggleModal();
   }
 
+  const titleStyle: CSSProperties = {
+    fontWeight: 600, 
+  }
+
   return (
     <>
       <div
         style={overlayStyle}
-        className={`
-          w-screen h-screen z-0 top-1/2 left-1/2 
-          -translate-x-1/2 -translate-y-1/2 absolute
-        `}
+        className={`w-screen h-screen z-0 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 absolute`}
         onClick={toggleModal}
       >
       </div>
@@ -107,17 +108,10 @@ export default function Modal({
           style={modalHeaderStyle}
           className={`z-10 rounded-lg flex items-center justify-between`}
         >
-          <Text style={{
-            fontWeight: 600
-          }}>{title}</Text>
+          <Text style={titleStyle}>{title}</Text>
 
           <div>
-            <Button 
-              style={{
-                background: `transparent`
-              }} 
-              onClick={toggleModal}
-            >
+            <Button onClick={toggleModal}>
               <IconContainer iconLink={xIcon}></IconContainer>
             </Button>
           </div>

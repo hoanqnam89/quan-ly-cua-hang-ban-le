@@ -14,6 +14,10 @@
   background: light-dark(#ff0000ff, #770000ff);
 }
 
+.danger {
+  background: transparent;
+}
+
 .button:not(.loading) {
   &:hover {
     filter: brightness(.9);

@@ -5,6 +5,7 @@ export enum EButtonType {
   WARNING = `warning`, 
   SUCCESS = `success`, 
   INFO = `info`, 
+  TRANSPARENT = `transparent`
 }
 
 interface IButtonProps {
@@ -21,7 +22,7 @@ interface IButtonProps {
 export default function Button({
   children, 
   onClick = () => {}, 
-  type = EButtonType.INFO, 
+  type = EButtonType.TRANSPARENT, 
   className = ``, 
   isDisable = false, 
   isLoading = false, 

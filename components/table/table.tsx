@@ -4,14 +4,15 @@ import { IColumnProps } from './interfaces/column-props.interface';
 import { arrowDownWideNarrowIcon, arrowUpNarrowWideIcon, columns4Icon, emptyIcon, listRestartIcon, plusIcon, trashIcon } from '@/public';
 import { ESortStatus } from '@/enums/sort-status.enum';
 import { enumToArray } from '@/utils/enum-to-array';
-import { TRANSPARENT_BUTTON } from '@/constants';
 import { countVisibleElements } from '@/utils/count-visible-elements';
-import { TColorMode } from '../interfaces/color-mode.interface';
 import Checkboxes, { ICheckbox } from '../checkboxes/checkboxes';
+import Text from '../text/text';
+import IconContainer from '../icon-container/icon-container';
+import Button from '../button/button';
+import TextInput from '../text-input/text-input';
 
 interface IHeaderButtons {
   className: string
-  background: TColorMode
   onClick: () => void
   iconLink: string
   size: number
@@ -210,6 +211,10 @@ export default function Table<T extends {_id: string, index?: number}>({
     setIsVisibles([...newDatas]);
   }
 
+  const textStyle: CSSProperties = {
+    fontWeight: 600, 
+  }
+
   const headerElements: ReactElement[] = columns.map(
     (column: IColumnProps<T>, columnIndex: number): ReactElement => {
       return visibleColumns[columnIndex].isChecked ?
@@ -219,11 +224,11 @@ export default function Table<T extends {_id: string, index?: number}>({
           className={`h-full flex items-center gap-0 select-none relative`}
         >
           <Text 
-            isEllipsis={true} 
-            weight={600}
+            // isEllipsis={true} 
+            style={textStyle}
             onClick={(): void => sortHeader(columnIndex, column.key)} 
-            tooltip={`Click to sort ${column.title}`}
-            className={`${column.key && `cursor-pointer`}`}
+            title={`Click to sort ${column.title}`}
+            // className={`${column.key && `cursor-pointer`}`}
           >
             {column.title}
           </Text>
@@ -254,7 +259,9 @@ export default function Table<T extends {_id: string, index?: number}>({
 
   const rowElements: ReactElement = datas.length === 0 ? (
     <div className={`flex justify-center items-center p-1`}>
-      <Text isItalic={true}>No Data</Text>
+      <Text 
+        // isItalic={true}
+      >No Data</Text>
     </div>
   ) : isAllTableColumnInvisible() ? 
     <></> : (
@@ -284,9 +291,9 @@ export default function Table<T extends {_id: string, index?: number}>({
               
               return <Text 
                 key={key} 
-                isCopyable={true} 
-                isEllipsis={true} 
-                tooltip={rowData}
+                // isCopyable={true} 
+                // isEllipsis={true} 
+                title={rowData}
               >
                 {rowData}
               </Text>
@@ -301,7 +308,6 @@ export default function Table<T extends {_id: string, index?: number}>({
   const headerButtons: IHeaderButtons[] = [
     {
       className: ``, 
-      background: TRANSPARENT_BUTTON, 
       onClick: handleResetColumns, 
       iconLink: listRestartIcon, 
       size: 32, 
@@ -309,7 +315,6 @@ export default function Table<T extends {_id: string, index?: number}>({
     }, 
     ...canDeleteCollection ? [{
       className: ``, 
-      background: TRANSPARENT_BUTTON, 
       onClick: onClickDelete, 
       iconLink: trashIcon, 
       size: 32, 
@@ -317,7 +322,6 @@ export default function Table<T extends {_id: string, index?: number}>({
     }] : [], 
     ...canCreateCollection ? [{
       className: ``, 
-      background: TRANSPARENT_BUTTON, 
       onClick: onClickAdd, 
       iconLink: plusIcon, 
       size: 32, 
@@ -328,10 +332,7 @@ export default function Table<T extends {_id: string, index?: number}>({
   const headerButtonElements: ReactElement[] = headerButtons.map(
     (headerButton: IHeaderButtons, headerButtonIndex: number): ReactElement =>
       <div key={`${headerButtonIndex}`}>
-        <Button 
-          background={headerButton.background} 
-          onClick={headerButton.onClick}
-        >
+        <Button onClick={headerButton.onClick}>
           <IconContainer 
             iconLink={headerButton.iconLink} 
             size={headerButton.size} 
@@ -342,10 +343,15 @@ export default function Table<T extends {_id: string, index?: number}>({
       </div>
   );
 
+  const titleStyle: CSSProperties = {
+    fontSize: 24, 
+    fontWeight: 600, 
+  }
+
   return (
     <div className={`h-full flex flex-col gap-4 p-1`}>
       <div className={`flex gap-2 items-center`}>
-        <Text size={24} weight={600}>
+        <Text style={titleStyle}>
           List of {name}s ({countVisibleElements(isVisibles)} entries)
         </Text>
 
@@ -353,7 +359,7 @@ export default function Table<T extends {_id: string, index?: number}>({
           <TextInput
             value={searchValue} 
             placeholder={`Search ${name}...`}
-            onInputChange={(e: ChangeEvent<HTMLInputElement>): void => 
+            onChange={(e: ChangeEvent<HTMLInputElement>): void => 
               handleSearch(e.target.value)
             }
           >
@@ -372,10 +378,7 @@ export default function Table<T extends {_id: string, index?: number}>({
         </Checkboxes>
 
         <div>
-          <Button 
-            background={TRANSPARENT_BUTTON} 
-            onClick={(): void => handleShowAllTableColumns()}
-          >
+          <Button onClick={(): void => handleShowAllTableColumns()}>
             <IconContainer 
               iconLink={columns4Icon} 
               size={24} 
@@ -394,10 +397,11 @@ export default function Table<T extends {_id: string, index?: number}>({
       </div>
 
       <div className={`flex flex-col overflow-y-scroll`}>
-        {isGetDatasDone 
+        {/* {isGetDatasDone 
           ? <LoadingIcon></LoadingIcon>
           : rowElements
-        }
+        } */}
+        {rowElements}
       </div>
     </div>
   )

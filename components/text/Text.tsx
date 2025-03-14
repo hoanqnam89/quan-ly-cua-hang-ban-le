@@ -5,7 +5,7 @@ interface ITextProps {
   children: ReactNode
   style?: CSSProperties
   title?: string
-  labelFor?: string
+  onClick?: () => void
 }
 
 export default function Text({
@@ -15,6 +15,7 @@ export default function Text({
     fontWeight: 400, 
   }, 
   title = ``, 
+  onClick = () => {}, 
 }: Readonly<ITextProps>): ReactElement {
   const textStyle: CSSProperties = {
     ...style
@@ -25,6 +26,7 @@ export default function Text({
       style={textStyle}
       className={`${styles.text}`}
       title={title}
+      onClick={onClick}
     >
       {children}
     </p>
