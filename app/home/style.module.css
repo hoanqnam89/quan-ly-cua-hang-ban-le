@@ -1,0 +1,10 @@
+.nav {
+  background: var(--secondary-background);
+}
+
+.main {
+  background: light-dark(
+    linear-gradient(315deg, #ffffff 0%, #aaaaaa 100%), 
+    linear-gradient(315deg, #2b4162 0%, #12100e 74%)
+  ), 
+}

@@ -2,6 +2,7 @@
   padding: .5em;
   border-radius: .5em;
   position: relative;
+  color: var(--foreground);
 }
 
 .info {

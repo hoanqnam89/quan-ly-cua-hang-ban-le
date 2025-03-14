@@ -1,14 +1,14 @@
 'use client'
 
-import Button, { EButtonType } from '@/components/button/Button';
-import TextInput from '@/components/text-input/TextInput'
-import Text from '@/components/text/Text'
+import Button, { EButtonType } from '@/components/button/button';
+import TextInput from '@/components/text-input/text-input';
+import Text from '@/components/text/text'
+import { redirect } from 'next/navigation';
 import React, { ChangeEvent, CSSProperties, useState } from 'react'
 
 export default function Login() {
   const [username, setUsername] = useState<string>(``);
   const [password, setPassword] = useState<string>(``);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const handleChangeUsername = (e: ChangeEvent<HTMLInputElement>): void => {
     setUsername(e.target.value);
@@ -24,7 +24,6 @@ export default function Login() {
 
   const textStyle = {
     fontWeight: 600, 
-    color: `#fff`, 
   }
 
   const titleStyle: CSSProperties = {
@@ -32,7 +31,7 @@ export default function Login() {
   }
 
   const handleLogin = async () => {
-
+    redirect(`/home`);
   }
 
   return (
@@ -43,7 +42,7 @@ export default function Login() {
       >
         <Text style={{ ...titleStyle, ...textStyle }}>
           Đăng nhập vào hệ thống quản lý bán lẻ
-          </Text>
+        </Text>
 
         <Text style={textStyle}>Tên tài khoản:</Text>
 

@@ -1,0 +1,1 @@
+export const MAX_HEX_COLOR_TO_DECIMAL = 255;

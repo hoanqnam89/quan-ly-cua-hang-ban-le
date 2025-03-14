@@ -1,5 +1,6 @@
 {
   "name": "quan-ly-cua-hang-ban-le",
+  "type": "module",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,6 +16,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@svgr/webpack": "^8.1.0",
     "@types/node": "20.17.24",
     "@types/react": "19.0.10",
     "@types/react-dom": "^19",

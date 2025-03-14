@@ -1,6 +1,8 @@
 .text-input {
   padding: .5em;
   border-radius: .5em;
+  color: var(--foreground);
+  background: var(--background);
 
   &:hover {
     filter: brightness(.9);
@@ -11,6 +13,6 @@
   }
 
   &:disabled {
-    filter: grayscale(1);
+    filter: brightness(.7);
   }
 }

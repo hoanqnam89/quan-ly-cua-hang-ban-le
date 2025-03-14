@@ -1,0 +1,13 @@
+.unchecked {
+  background: var(--secondary-background);
+  color: var(--foreground) 
+}
+
+.checked {
+  background: #0000ff;
+  color: #ffffff;
+}
+
+.image {
+  filter: invert(1);
+}

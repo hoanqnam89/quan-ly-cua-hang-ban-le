@@ -22,7 +22,7 @@ export default function Button({
   children, 
   onClick = () => {}, 
   type = EButtonType.INFO, 
-  // className = ``, 
+  className = ``, 
   isDisable = false, 
   isLoading = false, 
   style = {}, 
@@ -34,11 +34,11 @@ export default function Button({
 
   return (
     <button
-      style={buttonStyle}
-      className={`${styles.button} ${styles[type]} ${isLoading ? styles.loading : ``}`}
-      title={title}
+      className={`${styles.button} ${styles[type]} ${className} ${isLoading ? styles.loading : ``}`}
       disabled={isDisable}
       onClick={!isLoading ? onClick : () => {}}
+      style={buttonStyle}
+      title={title}
     >
       {children}
     </button>
