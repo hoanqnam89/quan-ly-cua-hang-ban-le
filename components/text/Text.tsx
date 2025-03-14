@@ -3,7 +3,6 @@ import styles from './style.module.css';
 
 interface ITextProps {
   children: ReactNode
-  className?: string
   style?: CSSProperties
   title?: string
   labelFor?: string
@@ -11,7 +10,6 @@ interface ITextProps {
 
 export default function Text({
   children, 
-  className = ``, 
   style = {
     fontSize: `1rem`, 
     fontWeight: 400, 
@@ -24,8 +22,8 @@ export default function Text({
 
   return (
     <p
-      className={`${styles.text} ${className}`}
       style={textStyle}
+      className={`${styles.text}`}
       title={title}
     >
       {children}

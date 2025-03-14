@@ -5,6 +5,7 @@ import TextInput from '@/components/text-input/text-input';
 import Text from '@/components/text/text'
 import { redirect } from 'next/navigation';
 import React, { ChangeEvent, CSSProperties, useState } from 'react'
+import styles from './style.module.css';
 
 export default function Login() {
   const [username, setUsername] = useState<string>(``);
@@ -18,31 +19,25 @@ export default function Login() {
     setPassword(e.target.value);
   }
           
-  const loginSectionStyle: CSSProperties = {
-    background: `linear-gradient(to right, #2d7ad9, #5833d4)`,
-  }
-
-  const textStyle = {
-    fontWeight: 600, 
+  const handleLogin = async () => {
+    redirect(`/home`);
   }
 
   const titleStyle: CSSProperties = {
     fontSize: `1.5rem`, 
+    fontWeight: 600, 
   }
 
-  const handleLogin = async () => {
-    redirect(`/home`);
+  const textStyle: CSSProperties = {
+    fontWeight: 600, 
   }
 
   return (
     <div className={`h-lvh flex items-center justify-center`}>
       <div 
-        className={`p-10 flex flex-col gap-2 rounded-xl`} 
-        style={loginSectionStyle}
+        className={`p-10 flex flex-col gap-2 rounded-xl ${styles[`login-section`]}`} 
       >
-        <Text style={{ ...titleStyle, ...textStyle }}>
-          Đăng nhập vào hệ thống quản lý bán lẻ
-        </Text>
+        <Text style={titleStyle}>Đăng nhập vào hệ thống quản lý bán lẻ</Text>
 
         <Text style={textStyle}>Tên tài khoản:</Text>
 
