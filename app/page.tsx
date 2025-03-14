@@ -45,6 +45,7 @@ export default function Login() {
           name={`username`}
           value={username} 
           onChange={handleChangeUsername}
+          placeholder={`Nhập tên tài khoản`}
         >
         </TextInput>
 
@@ -55,6 +56,7 @@ export default function Login() {
           name={`password`}
           value={password} 
           onChange={handleChangePassword}
+          placeholder={`Nhập mật khẩu`}
         >
         </TextInput>
 

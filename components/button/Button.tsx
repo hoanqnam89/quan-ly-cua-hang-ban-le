@@ -34,7 +34,7 @@ export default function Button({
 
   return (
     <button
-      className={`${styles.button} ${styles[type]} ${className} ${isLoading ? styles.loading : ``}`}
+      className={`p-2 rounded-lg relative ${styles.button} ${styles[type]} ${className} ${isLoading ? styles.loading : ``}`}
       disabled={isDisable}
       onClick={!isLoading ? onClick : () => {}}
       style={buttonStyle}
