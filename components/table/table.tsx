@@ -1,5 +1,4 @@
 import React, { ChangeEvent, CSSProperties, Fragment, MouseEvent, ReactElement, useCallback, useEffect, useState } from 'react';
-import "./style.css";
 import { IColumnProps } from './interfaces/column-props.interface';
 import { arrowDownWideNarrowIcon, arrowUpNarrowWideIcon, columns4Icon, emptyIcon, listRestartIcon, plusIcon, trashIcon } from '@/public';
 import { ESortStatus } from '@/enums/sort-status.enum';
@@ -10,6 +9,7 @@ import Text from '../text/text';
 import IconContainer from '../icon-container/icon-container';
 import Button from '../button/button';
 import TextInput from '../text-input/text-input';
+import styles from './style.module.css';
 
 interface IHeaderButtons {
   className: string
@@ -33,7 +33,7 @@ interface ITableProps<T> {
 
 export default function Table<T extends {_id: string, index?: number}>({
   name = ``, 
-  isGetDatasDone = true, 
+  // isGetDatasDone = true, 
   onClickAdd = () => {}, 
   onClickDelete = () => {}, 
   columns = [], 
@@ -243,8 +243,8 @@ export default function Table<T extends {_id: string, index?: number}>({
           <div
             onMouseDown={(): void => handleMouseDown(columnIndex)}
             className={`${ 
-              activeIndex === columnIndex && 'active' 
-            } h-full resize-handle block ml-auto cursor-col-resize border-white`}
+              activeIndex === columnIndex && styles.active
+            } ${styles[`resize-handle`]} h-full block ml-auto cursor-col-resize border-white`}
             title={`Click and drag to resize '${column.title}' column\nDouble click to reset this '${column.title}' column size`}
             onClick={
               (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>): void => 
@@ -352,13 +352,13 @@ export default function Table<T extends {_id: string, index?: number}>({
     <div className={`h-full flex flex-col gap-4 p-1`}>
       <div className={`flex gap-2 items-center`}>
         <Text style={titleStyle}>
-          List of {name}s ({countVisibleElements(isVisibles)} entries)
+          Danh sách {name} ({countVisibleElements(isVisibles)})
         </Text>
 
         <div className={`flex-1`}>
           <TextInput
             value={searchValue} 
-            placeholder={`Search ${name}...`}
+            placeholder={`Tìm kiếm ${name}...`}
             onChange={(e: ChangeEvent<HTMLInputElement>): void => 
               handleSearch(e.target.value)
             }
@@ -371,7 +371,7 @@ export default function Table<T extends {_id: string, index?: number}>({
 
       <div className={`flex gap-2 items-center`}>
         <Checkboxes 
-          title={`Show Columns:`}
+          title={`Hiện các cột:`}
           options={visibleColumns}
           setOptions={setVisibleColumns}
         >

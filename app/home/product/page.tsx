@@ -33,7 +33,7 @@ export default function RubikColorSet() {
     isClicked: false
   });
 
-  const handleChangeName = (e: ChangeEvent<HTMLInputElement>): void => {
+  const handleChangeProduct = (e: ChangeEvent<HTMLInputElement>): void => {
     setProduct({
       ...product, 
       [e.target.name]: e.target.value, 
@@ -164,7 +164,7 @@ export default function RubikColorSet() {
               name={`name`}
               isDisable={isModalReadOnly}
               value={product.name}
-              onChange={handleChangeName}
+              onChange={handleChangeProduct}
             >
             </TextInput>
           </InputSection>
@@ -174,7 +174,7 @@ export default function RubikColorSet() {
               name={`description`}
               isDisable={isModalReadOnly}
               value={product.description}
-              onChange={handleChangeName}
+              onChange={handleChangeProduct}
             >
             </TextInput>
           </InputSection>
@@ -184,7 +184,7 @@ export default function RubikColorSet() {
               name={`price`}
               isDisable={isModalReadOnly}
               value={product.price}
-              onChange={handleChangeName}
+              onChange={handleChangeProduct}
             >
             </NumberInput>
           </InputSection>
