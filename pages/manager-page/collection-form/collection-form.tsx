@@ -24,10 +24,10 @@ export default function CollectionForm<T>({
   isUpdateCollection = false,
 }: Readonly<ICollectionFormProps<T>>): ReactElement {
   const getActionName: string = isReadOnly 
-    ? `View` 
+    ? `Xem` 
     : isUpdateCollection 
-      ? `Update` 
-      : `Save`;
+      ? `Cập nhật` 
+      : `Lưu`;
 
   return (
     <Modal 

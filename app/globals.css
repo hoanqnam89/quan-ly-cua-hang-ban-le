@@ -4,21 +4,23 @@
 
 :root {
   color-scheme: light dark;
-  --background: #ffffffff;
-  --secondary-background: #eeeeeeff;
-  --gradient-background: linear-gradient(to right, #ffffffff, #eeeeeeff);
+  --background: #eeeeeeff;
   --foreground: #121212ff;
-  --secondary-foreground: #232323ff;
   --is-dark: 0;
+
+  --brightness-different: 50;
+  --brightness-different-scale: 1 / 10;
+  --gradient-background: linear-gradient(
+    to right, 
+    lch(from var(--background) calc(l - var(--brightness-different) * var(--brightness-different-scale)) c h), 
+    lch(from var(--background) calc(l + var(--brightness-different) * var(--brightness-different-scale)) c h)
+  );
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #121212ff;
-    --secondary-background: #232323ff;
-    --gradient-background: linear-gradient(to right, #000000ff, #121212ff);
-    --foreground: #ffffffff;
-    --secondary-foreground: #eeeeeeff;
+    --foreground: #eeeeeeff;
     --is-dark: 1;
   }
 }

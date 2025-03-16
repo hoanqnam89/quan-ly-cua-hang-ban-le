@@ -1,21 +1,27 @@
 .button {
-  color: var(--foreground);
+  background: var(--button-color);
 }
 
 .info {
-  background: light-dark(#0000ffff, #000077ff);
+  --button-color: #0000ffff;
 }
 
 .success {
-  background: light-dark(#00ee00ff, #007700ff);
+  --button-color: #00ff00ff;
 }
 
 .danger {
-  background: light-dark(#ff0000ff, #770000ff);
+  --button-color: #ff0000ff;
 }
 
-.danger {
-  background: transparent;
+.transparent {
+  --button-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  .info, .success, .danger {
+    background: lch(from var(--button-color) calc(l - var(--brightness-different)) c h);
+  }
 }
 
 .button:not(.loading) {

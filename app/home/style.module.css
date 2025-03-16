@@ -1,10 +1,7 @@
 .nav {
-  background: var(--secondary-background);
+  background: lch(from var(--background) calc(l + var(--brightness-different) * var(--brightness-different-scale)) c h);
 }
 
 .main {
-  background: light-dark(
-    linear-gradient(315deg, #ffffff 0%, #aaaaaa 100%), 
-    linear-gradient(315deg, #2b4162 0%, #12100e 74%)
-  ), 
+  background: var(--background);
 }

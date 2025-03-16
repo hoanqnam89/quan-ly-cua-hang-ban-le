@@ -67,8 +67,7 @@ export default function RootLayout({
 
   return (
     <div className={`h-lvh grid ${styles.screen}`} style={pageStyle}>
-      <nav 
-        className={`h-lvh overflow-y-scroll flex flex-col gap-4 no-scrollbar p-4 ${styles.nav}`}
+      <nav className={`h-lvh overflow-y-scroll flex flex-col gap-4 no-scrollbar p-4 ${styles.nav}`}
       >
         {navbarItems.map((navbarItem: INavbarItem, index: number) =>
           <NavbarItem 

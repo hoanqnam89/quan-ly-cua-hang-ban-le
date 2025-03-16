@@ -2,7 +2,7 @@ import React, { CSSProperties, ReactElement, ReactNode } from 'react'
 import styles from './style.module.css';
 
 export enum EButtonType {
-  WARNING = `warning`, 
+  DANGER = `danger`, 
   SUCCESS = `success`, 
   INFO = `info`, 
   TRANSPARENT = `transparent`

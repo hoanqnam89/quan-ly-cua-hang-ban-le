@@ -70,6 +70,8 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
   const toggleAddCollectionModal = useCallback(
     (isReadOnly: boolean = false): void => {
+      console.log(isModalReadonly, isUpdateCollection);
+
       if ( !isReadOnly ) 
         setCollection(defaultCollection);
 
@@ -80,6 +82,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   );
 
   const handleAddCollection = async (): Promise<void> => {
+    console.log(2);
     setIsLoading(true);
 
     const addCollectionApiResponse: Response = 
@@ -133,11 +136,14 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   }
 
   const handleClickUpdateCollection = (): void => {
+    console.log(0);
+
     setIsUpdateCollection(true);
     setIsModalReadonly(false);
   }
 
   const handleUpdateCollection = async (): Promise<void> => {
+    console.log(1);
     setIsLoading(true);
 
     const updateCollectionApiResponse: Response = 

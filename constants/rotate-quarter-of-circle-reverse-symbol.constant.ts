@@ -1,1 +1,0 @@
-export const ROTATE_QUARTER_OF_CIRCLE_REVERSE_SYMBOL = `'`;

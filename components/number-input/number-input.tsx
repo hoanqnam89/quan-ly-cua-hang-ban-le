@@ -1,10 +1,10 @@
 import React, { ChangeEvent, CSSProperties, ReactElement } from 'react'
 import styles from './style.module.css';
 
-interface ITextInputProps {
+interface INumberInputProps {
   name?: string
   isPassword?: boolean
-  value?: string
+  value?: number 
   isDisable?: boolean
   isRequire?: boolean
   pattern?: string
@@ -14,10 +14,9 @@ interface ITextInputProps {
   onChange?: (e: ChangeEvent<HTMLInputElement>) => void
 }
 
-export default function TextInput({
+export default function NumberInput({
   name = ``, 
-  isPassword = false, 
-  value = ``, 
+  value = 0, 
   isDisable = false, 
   isRequire = false, 
   pattern = `.{1,}`, 
@@ -25,7 +24,7 @@ export default function TextInput({
   style = {}, 
   placeholder = ``, 
   onChange = () => {}
-}: Readonly<ITextInputProps>): ReactElement {
+}: Readonly<INumberInputProps>): ReactElement {
   return (
     <input
       className={`p-2 rounded-lg ${styles[`text-input`]} ${className}`}
@@ -34,7 +33,7 @@ export default function TextInput({
       onChange={onChange}
       placeholder={placeholder}
       style={style}
-      type={`${isPassword ? `password` : `text`}`}
+      type={`number`}
       value={value}
       required={isRequire}
       pattern={pattern}

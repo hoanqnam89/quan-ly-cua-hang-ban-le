@@ -5,6 +5,7 @@ import Button, { EButtonType } from '../button/button';
 import Text from '../text/text';
 import IconContainer from '../icon-container/icon-container';
 import { xIcon } from '@/public';
+import styles from './style.module.css';
 
 interface IModalProps {
   width?: string
@@ -13,9 +14,6 @@ interface IModalProps {
   isOpen: boolean
   setIsOpen: Dispatch<SetStateAction<boolean>>
   padding?: number
-  overlayColor?: string
-  modalColor?: string
-  blur?: string
   title?: string 
   showButtons?: boolean
   isOkDisable?: boolean
@@ -35,14 +33,11 @@ export default function Modal({
   isOpen,
   setIsOpen,
   padding = 16,
-  overlayColor = `#ffffff22`, 
-  modalColor = `#ffffffff`, 
-  blur = `4px`,
   title = `New Modal`, 
   showButtons = true, 
   isOkDisable = false, 
-  okText = `Save`,
-  cancelText = `Cancel`,
+  okText = `Lưu`,
+  cancelText = `Hủy`,
   okAction,
   cancelAction,
 }: Readonly<IModalProps>): ReactElement {
@@ -52,17 +47,13 @@ export default function Modal({
 
   const overlayStyle: CSSProperties = {
     display: isOpen ? `initial` : `none`,
-    background: `${overlayColor}`,
-    backdropFilter: `blur(${blur})`,
   }
 
   const modalStyle: CSSProperties = {
-    background: `${modalColor}`,
     width: width,
     maxHeight: height,
     padding: padding,
     display: isOpen ? `flex` : `none`,
-    backdropFilter: `blur(${blur})`,
   }
 
   const modalHeaderStyle: CSSProperties = {
@@ -95,14 +86,14 @@ export default function Modal({
     <>
       <div
         style={overlayStyle}
-        className={`w-screen h-screen z-0 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 absolute`}
+        className={`w-screen h-screen z-0 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 absolute ${styles.overlay}`}
         onClick={toggleModal}
       >
       </div>
 
       <div
         style={modalStyle}
-        className={`fixed top-1/2 left-1/2 rounded-lg flex-col -translate-x-1/2 -translate-y-1/2`}
+        className={`fixed top-1/2 left-1/2 rounded-lg flex-col -translate-x-1/2 -translate-y-1/2 ${styles.modal}`}
       >
         <div
           style={modalHeaderStyle}
@@ -130,7 +121,7 @@ export default function Modal({
         >
           <div>
             <Button 
-              type={EButtonType.WARNING}
+              type={EButtonType.DANGER}
               // padding={buttonsPadding} 
               onClick={handleCancel}
             >

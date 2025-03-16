@@ -1,11 +1,11 @@
 .unchecked {
-  background: var(--secondary-background);
-  color: var(--foreground) 
+  background: lch(from var(--background) calc(l + var(--brightness-different) * var(--brightness-different-scale)) c h);
+  color: var(--foreground);
 }
 
 .checked {
-  background: #0000ff;
-  color: #ffffff;
+  background: #0000ffff;
+  color: #ffffffff;
 }
 
 .image {

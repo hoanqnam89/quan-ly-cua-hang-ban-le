@@ -1,4 +1,4 @@
-import { IAPIStatus } from "@/app/api/enums/api-status.enum";
+import { IAPIStatus } from "@/enums/api-status.enum";
 
 export const createErrorMessage = (
   message: string = ``, 

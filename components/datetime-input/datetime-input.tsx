@@ -1,10 +1,10 @@
 import React, { ChangeEvent, CSSProperties, ReactElement } from 'react'
 import styles from './style.module.css';
+import { pad } from '@/utils/pad';
 
-interface ITextInputProps {
+interface IDatetimeInputProps {
   name?: string
-  isPassword?: boolean
-  value?: string
+  value?: Date
   isDisable?: boolean
   isRequire?: boolean
   pattern?: string
@@ -16,8 +16,7 @@ interface ITextInputProps {
 
 export default function TextInput({
   name = ``, 
-  isPassword = false, 
-  value = ``, 
+  value = new Date(), 
   isDisable = false, 
   isRequire = false, 
   pattern = `.{1,}`, 
@@ -25,7 +24,23 @@ export default function TextInput({
   style = {}, 
   placeholder = ``, 
   onChange = () => {}
-}: Readonly<ITextInputProps>): ReactElement {
+}: Readonly<IDatetimeInputProps>): ReactElement {
+  const getDate = (): string => {
+    const date: Date = new Date(value);
+    
+    return `${date.getFullYear()}-${
+      pad(date.getMonth() + 1 + ``, 2)
+    }-${
+      pad(date.getDate() + ``, 2)
+    }T${
+      pad(date.getHours() + ``, 2)
+    }:${
+      pad(date.getMinutes() + ``, 2)
+    }:${
+      pad(date.getSeconds() + ``, 2)
+    }`;
+  }
+
   return (
     <input
       className={`p-2 rounded-lg ${styles[`text-input`]} ${className}`}
@@ -34,8 +49,8 @@ export default function TextInput({
       onChange={onChange}
       placeholder={placeholder}
       style={style}
-      type={`${isPassword ? `password` : `text`}`}
-      value={value}
+      type={`datetime-local`}
+      value={getDate()}
       required={isRequire}
       pattern={pattern}
     >
