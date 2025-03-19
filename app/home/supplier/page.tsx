@@ -157,7 +157,7 @@ export default function Product() {
     {
       key: `_id`,
       ref: useRef(null), 
-      title: `ID`,
+      title: `Mã`,
       size: `6fr`,
       isVisible: false, 
     },
