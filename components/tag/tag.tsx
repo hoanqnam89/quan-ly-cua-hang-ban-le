@@ -3,7 +3,6 @@ import Button from '../button/button';
 import IconContainer from '../icon-container/icon-container';
 import x from '@/public/x.svg?url';
 import { TColorMode } from '@/components/interfaces/color-mode.interface';
-import { TRANSPARENT_BUTTON } from '@/constants';
 
 interface ITagProps {
   isDisable?: boolean
@@ -59,7 +58,7 @@ function Tag({
 
       {!isDisable &&
         <div>
-          <Button background={TRANSPARENT_BUTTON} onClick={handleClose}>
+          <Button onClick={handleClose}>
             <IconContainer iconLink={x}>
             </IconContainer>
           </Button>

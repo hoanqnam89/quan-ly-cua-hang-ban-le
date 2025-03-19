@@ -30,6 +30,7 @@ import textIcon from '@/public/text.svg?url';
 import toyBrickIcon from '@/public/toy-brick.svg?url';
 import trashIcon from '@/public/trash.svg?url';
 import userIcon from '@/public/user.svg?url';
+import warehouseIcon from '@/public/warehouse.svg?url';
 import xIcon from '@/public/x.svg?url';
 
 export { 
@@ -65,5 +66,6 @@ export {
   toyBrickIcon, 
   trashIcon, 
   userIcon, 
+  warehouseIcon, 
   xIcon, 
 }

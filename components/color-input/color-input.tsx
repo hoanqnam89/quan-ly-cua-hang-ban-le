@@ -7,8 +7,8 @@ function ColorInput({
   value = `#000000`,
   isDisable = false, 
   className = `w-full`, 
-  style = {
-  }, 
+  style = {}, 
+  pattern = `#[a-fA-F0-9]{6}`,
   placeholder = ``, 
   onInputChange = () => {},
   onInputBlur = () => {},
@@ -24,6 +24,7 @@ function ColorInput({
       style={style}
       onInputBlur={onInputBlur}
       onInputChange={onInputChange}
+      pattern={pattern}
     >
     </Input>
   )

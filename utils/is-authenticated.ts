@@ -1,10 +1,7 @@
 import { IAccountPayload } from "@/app/api/interfaces/account-payload.interface";
 import { connectToDatabase } from "./database";
-import { ERoleAction, IRole } from "@/interfaces/role.interface";
+import { ERoleAction } from "@/interfaces/role.interface";
 import { ECollectionNames } from "@/enums";
-import { IRoleGroup } from "@/interfaces";
-import { RoleGroupModel, RoleModel } from "@/models";
-import { convertToMongoCollectionName } from "./convert-to-mongo-collection-name";
 
 export const isAuthenticated = async (
   account: IAccountPayload, 

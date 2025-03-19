@@ -5,14 +5,11 @@ import { IColumnProps } from './interfaces/column-props.interface';
 import { arrowDownWideNarrowIcon, arrowUpNarrowWideIcon, columns4Icon, emptyIcon, listRestartIcon, plusIcon, trashIcon } from '@/public';
 import { ESortStatus } from '@/enums/sort-status.enum';
 import { enumToArray } from '@/utils/enum-to-array';
-import { TRANSPARENT_BUTTON } from '@/constants';
 import { countVisibleElements } from '@/utils/count-visible-elements';
-import { TColorMode } from '../interfaces/color-mode.interface';
 import Checkboxes, { ICheckbox } from '../checkboxes/checkboxes';
 
 interface IHeaderButtons {
   className: string
-  background: TColorMode
   onClick: () => void
   iconLink: string
   size: number
@@ -302,7 +299,6 @@ export default function Table<T extends {_id: string, index?: number}>({
   const headerButtons: IHeaderButtons[] = [
     {
       className: ``, 
-      background: TRANSPARENT_BUTTON, 
       onClick: handleResetColumns, 
       iconLink: listRestartIcon, 
       size: 32, 
@@ -310,7 +306,6 @@ export default function Table<T extends {_id: string, index?: number}>({
     }, 
     ...canDeleteCollection ? [{
       className: ``, 
-      background: TRANSPARENT_BUTTON, 
       onClick: onClickDelete, 
       iconLink: trashIcon, 
       size: 32, 
@@ -318,7 +313,6 @@ export default function Table<T extends {_id: string, index?: number}>({
     }] : [], 
     ...canCreateCollection ? [{
       className: ``, 
-      background: TRANSPARENT_BUTTON, 
       onClick: onClickAdd, 
       iconLink: plusIcon, 
       size: 32, 
@@ -329,10 +323,7 @@ export default function Table<T extends {_id: string, index?: number}>({
   const headerButtonElements: ReactElement[] = headerButtons.map(
     (headerButton: IHeaderButtons, headerButtonIndex: number): ReactElement =>
       <div key={`${headerButtonIndex}`}>
-        <Button 
-          background={headerButton.background} 
-          onClick={headerButton.onClick}
-        >
+        <Button onClick={headerButton.onClick}>
           <IconContainer 
             iconLink={headerButton.iconLink} 
             size={headerButton.size} 
@@ -347,13 +338,13 @@ export default function Table<T extends {_id: string, index?: number}>({
     <div className={`h-full flex flex-col gap-4 p-1`}>
       <div className={`flex gap-2 items-center`}>
         <Text size={24} weight={600}>
-          List of {name}s ({countVisibleElements(isVisibles)} entries)
+          Danh sách {name} ({countVisibleElements(isVisibles)})
         </Text>
 
         <div className={`flex-1`}>
           <TextInput
             value={searchValue} 
-            placeholder={`Search ${name}...`}
+            placeholder={`Tìm kiếm ${name}...`}
             onInputChange={(e: ChangeEvent<HTMLInputElement>): void => 
               handleSearch(e.target.value)
             }
@@ -366,17 +357,14 @@ export default function Table<T extends {_id: string, index?: number}>({
 
       <div className={`flex gap-2 items-center`}>
         <Checkboxes 
-          title={`Show Columns:`}
+          title={`Hiện các cột:`}
           options={visibleColumns}
           setOptions={setVisibleColumns}
         >
         </Checkboxes>
 
         <div>
-          <Button 
-            background={TRANSPARENT_BUTTON} 
-            onClick={(): void => handleShowAllTableColumns()}
-          >
+          <Button onClick={(): void => handleShowAllTableColumns()}>
             <IconContainer 
               iconLink={columns4Icon} 
               size={24} 
@@ -394,7 +382,7 @@ export default function Table<T extends {_id: string, index?: number}>({
         {headerElements}
       </div>
 
-      <div className={`flex flex-col overflow-y-scroll`}>
+      <div className={`flex flex-col overflow-y-scroll no-scrollbar`}>
         {isGetDatasDone 
           ? <LoadingIcon></LoadingIcon>
           : rowElements

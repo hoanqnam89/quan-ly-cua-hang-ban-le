@@ -82,8 +82,6 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
       defaultCollection, 
       setIsModalReadonly, 
       setCollection, 
-      isModalReadonly, 
-      isUpdateCollection
     ],
   );
 
@@ -327,7 +325,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
     ? <LoadingScreen></LoadingScreen>
     : <>
       {/* {contextHolder} */}
-      <title>{`${collectionName} Manager`}</title>
+      <title>{`Quản lý ${collectionName}`}</title>
 
       <Table<T>
         name={collectionName}

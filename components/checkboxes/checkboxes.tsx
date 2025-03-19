@@ -1,4 +1,4 @@
-import React, { ChangeEvent, CSSProperties, Dispatch, ReactElement, SetStateAction } from 'react'
+import React, { ChangeEvent, Dispatch, ReactElement, SetStateAction } from 'react'
 import { LoadingIcon, Text } from '@/components';
 import styles from './style.module.css';
 

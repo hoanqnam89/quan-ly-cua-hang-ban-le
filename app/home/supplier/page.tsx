@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, IconContainer, NumberInput, Text, TextInput } from '@/components'
+import { Button, IconContainer, Text, TextInput } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
@@ -14,18 +14,17 @@ import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item
 import { ERoleAction } from '@/interfaces/role.interface';
 import { auth } from '@/services/Auth';
 import { IAccountAuthentication } from '@/interfaces/account-authentication.interface';
-import { IProduct } from '@/interfaces/product.interface';
-import { DEFAULT_PROCDUCT } from '@/constants/product.constant';
 import Image from 'next/image';
 import styles from './style.module.css';
-import { MAX_PRICE } from '@/constants/max-price.constant';
+import { ISupplier } from '@/interfaces/supplier.interface';
+import { DEFAULT_SUPPLIER } from '@/constants/supplier.constant';
 
-type collectionType = IProduct;
-const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
+type collectionType = ISupplier;
+const collectionName: ECollectionNames = ECollectionNames.SUPPLIER;
 
 export default function Product() {
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [product, setProduct] = useState<collectionType>(DEFAULT_PROCDUCT);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [supplier, setSupplier] = useState<collectionType>(DEFAULT_SUPPLIER);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
     id: ``, 
@@ -113,57 +112,40 @@ export default function Product() {
   }, [setCanDeleteCollection])
 
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
-    const { files } = e.target;
-    const validImageFiles: File[] = [];
-    if (!files)
+    if (!e.target.files)
       return;
 
-    for (let i = 0; i < files.length; i++) {
-      const file: File = files[i];
-      if (file) {
-        validImageFiles.push(file);
-      }
-    }
+    const file: File = e.target.files[0];
+    if (!file)
+      return;
 
-    setImageFiles([...validImageFiles]);
+    setImageFile(file);
   }
 
   useEffect(() => {
-    const images: string[] = [];
-    const fileReaders: FileReader[] = [];
     let isCancel = false;
+    const fileReader: FileReader = new FileReader();
 
-    if (imageFiles.length) {
-      imageFiles.forEach((file: File) => {
-        const fileReader: FileReader = new FileReader();
-        fileReaders.push(fileReader);
-        fileReader.onload = (e: ProgressEvent<FileReader>) => {
-          // console.log(e.target);
-          const result = e.target?.result;
-          if (result) {
-            images.push(result.toString());
-          }
-
-          if ( images.length === imageFiles.length && !isCancel ) {
-            setProduct({
-              ...product, 
-              image_links: images, 
-            });
-          }
+    if (imageFile) {
+      fileReader.onload = (e: ProgressEvent<FileReader>) => {
+        const result = e.target?.result;
+        if (result && !isCancel) {
+          setSupplier({
+            ...supplier, 
+            logo: result.toString(), 
+          });
         }
-        fileReader.readAsDataURL(file);
-      });
+      }
+      fileReader.readAsDataURL(imageFile);
     }
 
     return () => {
       isCancel = true;
-      fileReaders.forEach((fileReader: FileReader) => {
-        if (fileReader.readyState === 1) {
-          fileReader.abort();
-        }
-      });
+      if (fileReader.readyState === 1) {
+        fileReader.abort();
+      }
     }
-  }, [imageFiles, product]);
+  }, [imageFile, supplier]);
 
   const columns: Array<IColumnProps<collectionType>> = [
     {
@@ -182,47 +164,27 @@ export default function Product() {
     {
       key: `name`,
       ref: useRef(null), 
-      title: `Tên sản phẩm`,
+      title: `Tên nhà cung cấp`,
       size: `3fr`, 
     },
     {
-      key: `description`,
-      ref: useRef(null), 
-      title: `Mô tả`,
-      size: `5fr`, 
-    },
-    {
-      key: `price`,
-      ref: useRef(null), 
-      title: `Giá (VNĐ)`,
-      size: `3fr`, 
-    },
-    {
-      key: `image_links`,
+      key: `logo`,
       ref: useRef(null), 
       title: `Hình ảnh`,
       size: `3fr`, 
-      render: (product: collectionType): ReactElement => 
-        <div className={`flex flex-wrap gap-2`}>
-          {
-            product.image_links.map((image: string, index: number) => 
-              <div 
-                key={index} 
-                className={`relative ${styles[`image-container`]}`}
-              >
-                <Image 
-                  className={`w-full max-w-full max-h-full`}
-                  src={image} 
-                  alt={``}
-                  width={0}
-                  height={0}
-                  quality={10}
-                >
-                </Image>
-              </div>
-            )
-          }
-        </div>
+      render: (product: collectionType): ReactElement => product.logo ? <div 
+        className={`relative ${styles[`image-container`]}`}
+      >
+        <Image 
+          className={`w-full max-w-full max-h-full`}
+          src={product.logo} 
+          alt={``}
+          width={0}
+          height={0}
+          quality={10}
+        >
+        </Image>
+      </div> : <></>
     }, 
     {
       key: `created_at`,
@@ -287,25 +249,19 @@ export default function Product() {
     },
   ];
 
-  const handleChangeProduct = (e: ChangeEvent<HTMLInputElement>): void => {
-    setProduct({
-      ...product, 
+  const handleChangeSupplier = (e: ChangeEvent<HTMLInputElement>): void => {
+    setSupplier({
+      ...supplier, 
       [e.target.name]: e.target.value, 
     });
   }
 
-  const handleDeleteImage = (index: number): void => {
-    const newImages: string[] = product.image_links.filter(
-      (_image: string, imageIndex: number) => imageIndex !== index
-    );
-    const newImageFiles: File[] = imageFiles.filter(
-      (_imageFile: File, imageFileIndex: number) => imageFileIndex !== index
-    );
-    setProduct({
-      ...product, 
-      image_links: newImages, 
+  const handleDeleteImage = (): void => {
+    setSupplier({
+      ...supplier, 
+      logo: undefined, 
     });
-    setImageFiles([...newImageFiles]);
+    setImageFile(null);
   }
 
   const gridColumns: string = `80px 1fr`;
@@ -314,9 +270,9 @@ export default function Product() {
     <ManagerPage<collectionType>
       columns={columns}
       collectionName={collectionName}
-      defaultCollection={DEFAULT_PROCDUCT}
-      collection={product}
-      setCollection={setProduct}
+      defaultCollection={DEFAULT_SUPPLIER}
+      collection={supplier}
+      setCollection={setSupplier}
       isModalReadonly={isModalReadOnly} 
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
@@ -329,38 +285,17 @@ export default function Product() {
       <Tabs>
 
         <TabItem label={`${collectionName}`}>
-          <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>
+          <InputSection label={`Tên nhà cung cấp`} gridColumns={gridColumns}>
             <TextInput
               name={`name`}
               isDisable={isModalReadOnly}
-              value={product.name}
-              onInputChange={handleChangeProduct}
+              value={supplier.name}
+              onInputChange={handleChangeSupplier}
             >
             </TextInput>
           </InputSection>
 
-          <InputSection label={`Mô tả`} gridColumns={gridColumns}>
-            <TextInput
-              name={`description`}
-              isDisable={isModalReadOnly}
-              value={product.description}
-              onInputChange={handleChangeProduct}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Giá`} gridColumns={gridColumns}>
-            <NumberInput
-              name={`price`}
-              isDisable={isModalReadOnly}
-              value={product.price + ``}
-              onInputChange={handleChangeProduct}
-              max={MAX_PRICE}
-            >
-            </NumberInput>
-          </InputSection>
-
-          <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>
+          <InputSection label={`Hình ảnh`} gridColumns={gridColumns}>
             <div>
               <input
                 type={`file`}
@@ -372,32 +307,29 @@ export default function Product() {
 
               <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
                 {
-                  product.image_links.map((image: string, index: number) => 
-                    <div 
-                      key={index} 
-                      className={`relative ${styles[`image-container`]}`}
+                  supplier.logo ? <div 
+                    className={`relative ${styles[`image-container`]}`}
+                  >
+                    <Image 
+                      className={`w-full max-w-full max-h-full`}
+                      src={supplier.logo} 
+                      alt={``}
+                      width={0}
+                      height={0}
+                      quality={10}
                     >
-                      <Image 
-                        className={`w-full max-w-full max-h-full`}
-                        src={image} 
-                        alt={``}
-                        width={0}
-                        height={0}
-                        quality={10}
-                      >
-                      </Image>
+                    </Image>
 
-                      <div className={`absolute top-0 right-0`}>
-                        <Button 
-                          className={`absolute top-0 right-0`} 
-                          onClick={() => handleDeleteImage(index)}
-                        >
-                          <IconContainer iconLink={trashIcon}>
-                          </IconContainer>
-                        </Button>
-                      </div>
+                    <div className={`absolute top-0 right-0`}>
+                      <Button 
+                        className={`absolute top-0 right-0`} 
+                        onClick={() => handleDeleteImage()}
+                      >
+                        <IconContainer iconLink={trashIcon}>
+                        </IconContainer>
+                      </Button>
                     </div>
-                  )
+                  </div> : <></>
                 }
               </div> 
             </div>
@@ -405,7 +337,7 @@ export default function Product() {
         </TabItem>
 
         <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
-          <TimestampTabItem<collectionType> collection={product}>
+          <TimestampTabItem<collectionType> collection={supplier}>
           </TimestampTabItem>
         </TabItem>
 

@@ -24,14 +24,14 @@ export default function CollectionForm<T>({
   isUpdateCollection = false,
 }: Readonly<ICollectionFormProps<T>>): ReactElement {
   const getActionName: string = isReadOnly 
-    ? `View` 
+    ? `Xem` 
     : isUpdateCollection 
-      ? `Update` 
-      : `Save`;
+      ? `Cập nhật` 
+      : `Lưu`;
 
   return (
     <Modal 
-      okText={`${getActionName} collection`}
+      okText={`${getActionName} dữ liệu`}
       okAction={(): void => okAction(collection)}
       title={`${getActionName} ${collectionName}`}
       isOpen={isModalOpen} 
