@@ -2,8 +2,8 @@
 
 import React, { Children, isValidElement, ReactElement, useEffect, useState } from 'react'
 import TabItem, { ITabProps } from './components/tab-item/tab-item';
-import Button from '../button/button';
-import Text from '../text/text';
+import { Button, Text } from '..';
+import { TRANSPARENT_BUTTON } from '@/constants';
 
 interface ITabsProps {
   activeTabIndex?: number
@@ -34,7 +34,7 @@ export default function Tabs({
 
   return (
     <div className={`flex flex-col gap-2`}>
-      <ul className={`tab-list flex overflow-x-scroll border-b-2 border-solid border-b-gray no-scrollbar`}>
+      <ul className={`tab-list flex overflow-x-scroll border-b-2 border-solid border-b-gray`}>
         {tabs.map((
           tab: ReactElement<ITabProps>, index: number
         ): ReactElement => (
@@ -42,10 +42,17 @@ export default function Tabs({
             activeTab === index ? `border-b-blue-700` : `border-none`
           }`}>
             <Button
+              background={TRANSPARENT_BUTTON}
               onClick={(): void => handleTabClick(tab, index)}
               className={`whitespace-nowrap`}
             >
-              <Text>
+              <Text color={tab.props.isDisable ? {
+                light: `#777`, 
+                dark: `#777`
+              } : {
+                light: `#000`, 
+                dark: `#fff`, 
+              }}>
                 {tab.props.label}
               </Text>
             </Button>

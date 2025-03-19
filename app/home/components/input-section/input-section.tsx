@@ -1,5 +1,5 @@
 import React, { CSSProperties, ReactElement, ReactNode, memo } from 'react';
-import Text from '@/components/text/text';
+import { Text } from '@/components';
 
 interface IInputSectionProps {
   children: ReactNode, 

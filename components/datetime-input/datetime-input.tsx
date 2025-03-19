@@ -1,30 +1,23 @@
-import React, { ChangeEvent, CSSProperties, ReactElement } from 'react'
-import styles from './style.module.css';
+import React, { memo, ReactElement } from 'react';
+import { IInputProps } from '../interfaces/input-props.interface';
+import Input from '../input/input';
 import { pad } from '@/utils/pad';
 
-interface IDatetimeInputProps {
-  name?: string
-  value?: Date
-  isDisable?: boolean
-  isRequire?: boolean
-  pattern?: string
-  className?: string
-  style?: CSSProperties
-  placeholder?: string
-  onChange?: (e: ChangeEvent<HTMLInputElement>) => void
-}
-
-export default function TextInput({
+function DatetimeInput({
   name = ``, 
-  value = new Date(), 
+  minWidth = 100,
+  background = {
+    light: `#ffffff`,
+    dark: `#000000`
+  },
+  value = new Date(),
   isDisable = false, 
-  isRequire = false, 
-  pattern = `.{1,}`, 
-  className = ``, 
-  style = {}, 
-  placeholder = ``, 
-  onChange = () => {}
-}: Readonly<IDatetimeInputProps>): ReactElement {
+  className = `w-full`, 
+  style = {
+  }, 
+  onInputChange = () => {},
+  onInputBlur = () => {},
+}: Readonly<IInputProps<Date>>): ReactElement {
   const getDate = (): string => {
     const date: Date = new Date(value);
     
@@ -42,18 +35,20 @@ export default function TextInput({
   }
 
   return (
-    <input
-      className={`p-2 rounded-lg ${styles[`text-input`]} ${className}`}
-      disabled={isDisable}
-      name={name}
-      onChange={onChange}
-      placeholder={placeholder}
-      style={style}
+    <Input 
       type={`datetime-local`}
+      name={name}
+      minWidth={minWidth}
+      background={background}
       value={getDate()}
-      required={isRequire}
-      pattern={pattern}
+      isDisable={isDisable}
+      className={className}
+      style={style}
+      onInputBlur={onInputBlur}
+      onInputChange={onInputChange}
     >
-    </input>
+    </Input>
   )
 }
+
+export default memo( DatetimeInput );

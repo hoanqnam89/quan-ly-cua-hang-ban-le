@@ -1,34 +1,77 @@
-'use client'
-
-import React, { CSSProperties, ReactElement, ReactNode } from 'react'
-import styles from './style.module.css';
+import React, { CSSProperties, MouseEvent, ReactElement, ReactNode } from 'react';
+import { TColorMode } from '@/components/interfaces/color-mode.interface';
 
 interface ITextProps {
+  onClick?: (e: MouseEvent<HTMLParagraphElement, globalThis.MouseEvent>) => void
+  isCopyable?: boolean
   children: ReactNode
+  fontFamily?: string
+  size?: number
+  weight?: number
+  lineHeight?: number
+  color?: TColorMode
+  isEllipsis?: boolean
+  isCenter?: boolean
+  isOutlined?: boolean
+  outlineWidth?: string
+  isItalic?: boolean
+  tooltip?: string
   style?: CSSProperties
-  title?: string
-  onClick?: () => void
+  className?: string
 }
 
-export default function Text({
+export default function Text({ 
+  onClick = () => {},
   children, 
-  style = {
-    fontSize: `1rem`, 
-    fontWeight: 400, 
+  fontFamily, 
+  size = 16, 
+  weight = 400, 
+  color = {
+    light: `#000000`,
+    dark: `#ffffff`
   }, 
-  title = ``, 
-  onClick = () => {}, 
+  isEllipsis = false, 
+  isCenter = false, 
+  isOutlined = false, 
+  outlineWidth = `1px`, 
+  isItalic = false, 
+  tooltip = ``, 
+  style = {}, 
+  className = ``, 
 }: Readonly<ITextProps>): ReactElement {
+  const outlineColor: string = `light-dark(${color.dark}, ${color.light})`;
+
   const textStyle: CSSProperties = {
-    ...style
+    fontFamily: fontFamily ? fontFamily : ``, 
+    fontSize: size,
+    fontWeight: weight,
+    fontStyle: isItalic ? `italic` : `none`, 
+    color: `light-dark(${color.light}, ${color.dark})`,
+    textAlign: isCenter ? `center` : `initial`, 
+    textShadow: isOutlined 
+      ? `-${outlineWidth} -${outlineWidth} 0 ${outlineColor}, ${outlineWidth} -${outlineWidth} 0 ${outlineColor}, -${outlineWidth} ${outlineWidth} 0 ${outlineColor}, ${outlineWidth} ${outlineWidth} 0 ${outlineColor}` 
+      : `none`, 
+    ...style, 
+  }
+
+  const getEllipsisStyles = (): string => 
+    isEllipsis ? `whitespace-nowrap overflow-hidden text-ellipsis` : ``;
+
+  const handleOnClick = (
+    e: MouseEvent<HTMLParagraphElement, globalThis.MouseEvent>
+  ): void => {
+    onClick(e);
   }
 
   return (
-    <p
+    <p 
+      title={tooltip}
+      className={`${getEllipsisStyles()} ${className}`} 
       style={textStyle}
-      className={`${styles.text}`}
-      title={title}
-      onClick={onClick}
+      onClick={
+        (e: MouseEvent<HTMLParagraphElement, globalThis.MouseEvent>): void => 
+          handleOnClick(e)
+      }
     >
       {children}
     </p>

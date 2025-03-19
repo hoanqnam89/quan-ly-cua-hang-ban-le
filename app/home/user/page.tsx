@@ -1,0 +1,446 @@
+'use client';
+
+import { Button, IconContainer, SelectDropdown, Text, TextInput } from '@/components'
+import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
+import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
+import { TRANSPARENT_BUTTON } from '@/constants'
+import { DEFAULT_USER } from '@/constants/user.constant'
+import { ECollectionNames } from '@/enums'
+import { IAccount, IUser } from '@/interfaces'
+import { infoIcon, trashIcon } from '@/public'
+import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip'
+import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
+import InputSection from '../components/input-section/input-section';
+import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
+import { enumToKeyValueArray } from '@/utils/enum-to-array';
+import { EUserGender } from '@/enums/user-gender.enum';
+import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
+import { fetchGetCollections } from '@/utils/fetch-get-collections';
+import Tabs from '@/components/tabs/tabs';
+import TabItem from '@/components/tabs/components/tab-item/tab-item';
+import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
+import DateInput from '@/components/date-input/date-input';
+
+type collectionType = IUser;
+const collectionName: ECollectionNames = ECollectionNames.USER;
+
+export default function User() {
+  const [user, setUser] = useState<IUser>(DEFAULT_USER);
+  const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
+  const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
+    id: ``, 
+    isClicked: false, 
+  });
+  const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({
+    id: ``, 
+    isClicked: false, 
+  });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [accountOptions, setAccountOptions] = useState<ISelectOption[]>([]);
+
+  const getAccounts: () => Promise<void> = useCallback(
+    async (): Promise<void> => {
+      const newAccounts: IAccount[] = await fetchGetCollections<IAccount>(
+        ECollectionNames.ACCOUNT, 
+      );
+
+      // setUser({
+      //   ...user, 
+      //   account_id: newAccounts[0]._id, 
+      // });
+      setAccountOptions([
+        ...newAccounts.map((account: IAccount): ISelectOption => ({
+          label: `${account.username}`,
+          value: account._id,
+        }))
+      ]);
+      setIsLoading(false);
+    }, 
+    [],
+  );
+
+  useEffect((): void => {
+    getAccounts();
+  }, [getAccounts]);
+  
+  const columns: Array<IColumnProps<collectionType>> = [
+    {
+      key: `index`,
+      ref: useRef(null), 
+      title: `#`,
+      size: `1fr`,
+    },
+    {
+      key: `_id`,
+      ref: useRef(null), 
+      title: `ID`,
+      size: `6fr`,
+      isVisible: false, 
+    },
+    {
+      key: `account_id`,
+      ref: useRef(null), 
+      title: `Account`,
+      size: `3fr`, 
+    },
+    {
+      key: `name`,
+      ref: useRef(null), 
+      title: `Full Name`,
+      size: `3fr`, 
+      render: (user: collectionType): ReactElement => {
+        const name: string = `${user.name.first} ${user.name.middle + ` `}${user.name.last}`;
+        return <Text isEllipsis={true} tooltip={name}>{name}</Text>
+      }
+    },
+    {
+      key: `address`,
+      ref: useRef(null), 
+      title: `Address`,
+      size: `3fr`, 
+      isVisible: false, 
+      render: (user: collectionType): ReactElement => {
+        const address: string = `${user.address.number} ${user.address.street} ${user.address.ward} ${user.address.district} ${user.address.city} ${user.address.country}`;
+        return <Text isEllipsis={true} tooltip={address}>{address}</Text>
+      }
+    },
+    {
+      key: `email`,
+      ref: useRef(null), 
+      title: `Email`,
+      size: `3fr`, 
+      isVisible: false, 
+    },
+    {
+      key: `birthday`,
+      ref: useRef(null), 
+      title: `Birthday`,
+      size: `3fr`, 
+      isVisible: false, 
+      render: (user: collectionType): ReactElement => {
+        if ( !user.birthday )
+          return <Text isEllipsis={true}>NaN</Text>
+
+        const date: string = new Date(user.birthday).toLocaleString();
+        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+      }
+    },
+    {
+      key: `gender`,
+      ref: useRef(null), 
+      title: `Gender`,
+      size: `3fr`, 
+      isVisible: false, 
+    },
+    {
+      key: `avatar`,
+      ref: useRef(null), 
+      title: `Avatar`,
+      size: `3fr`, 
+      isVisible: false, 
+    },
+    {
+      key: `created_at`,
+      ref: useRef(null), 
+      title: `Created At`,
+      size: `4fr`, 
+      isVisible: false, 
+      render: (user: collectionType): ReactElement => {
+        const date: string = new Date(user.created_at).toLocaleString();
+        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+      }
+    },
+    {
+      key: `updated_at`,
+      ref: useRef(null), 
+      title: `Updated At`,
+      size: `4fr`, 
+      render: (user: collectionType): ReactElement => {
+        const date: string = new Date(user.updated_at).toLocaleString();
+        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+      }
+    },
+    {
+      title: `More`,
+      ref: useRef(null), 
+      size: `2fr`, 
+      render: (user: collectionType): ReactElement => <Button 
+        title={createMoreInfoTooltip(collectionName)}
+        background={TRANSPARENT_BUTTON} 
+        onClick={(): void => {
+          setIsClickShowMore({
+            id: user._id, 
+            isClicked: !isClickShowMore.isClicked, 
+          });
+        }}
+      >
+        <IconContainer 
+          tooltip={createMoreInfoTooltip(collectionName)}
+          iconLink={infoIcon}
+        >
+        </IconContainer>
+      </Button>
+    },
+    {
+      title: `Delete`,
+      ref: useRef(null), 
+      size: `2fr`, 
+      render: (user: collectionType): ReactElement => <Button 
+        title={createDeleteTooltip(collectionName)}
+        background={TRANSPARENT_BUTTON} 
+        onClick={(): void => {
+          setIsClickDelete({
+            id: user._id, 
+            isClicked: !isClickDelete.isClicked, 
+          });
+        }}
+      >
+        <IconContainer 
+          tooltip={createDeleteTooltip(collectionName)}
+          iconLink={trashIcon}
+        >
+        </IconContainer>
+      </Button>
+    },
+  ];
+
+  const handleChangeAccountId = (e: ChangeEvent<HTMLSelectElement>): void => {
+    setUser({
+      ...user, 
+      account_id: e.target.value, 
+    });
+  }
+
+  const handleChangeName = (e: ChangeEvent<HTMLInputElement>): void => {
+    setUser({
+      ...user, 
+      name: {
+        ...user.name, 
+        [e.target.name]: e.target.value, 
+      }
+    });
+  }
+
+  const handleChangeAddress = (e: ChangeEvent<HTMLInputElement>): void => {
+    setUser({
+      ...user, 
+      address: {
+        ...user.address, 
+        [e.target.name]: e.target.value, 
+      }
+    });
+  }
+
+  const handleChangeEmail = (e: ChangeEvent<HTMLInputElement>): void => {
+    setUser({
+      ...user, 
+      email: e.target.value, 
+    });
+  }
+
+  const handleChangeBirthday = (e: ChangeEvent<HTMLInputElement>): void => {
+    setUser({
+      ...user, 
+      birthday: new Date(e.target.value), 
+    });
+  }
+
+  const handleChangeGender = (e: ChangeEvent<HTMLSelectElement>): void => {
+    setUser({
+      ...user, 
+      gender: e.target.value, 
+    });
+  }
+  const genderOptions: ISelectOption[] = enumToKeyValueArray(EUserGender)
+    .map((array: string[]): ISelectOption => ({
+      label: array[0], 
+      value: array[1], 
+    }));
+
+  return (
+    <ManagerPage<collectionType>
+      columns={columns} 
+      collectionName={collectionName} 
+      defaultCollection={DEFAULT_USER}
+      collection={user}
+      setCollection={setUser}
+      isModalReadonly={isModalReadOnly} 
+      setIsModalReadonly={setIsModalReadOnly}
+      isClickShowMore={isClickShowMore}
+      isClickDelete={isClickDelete}
+    >
+      <Tabs>
+
+        <TabItem label={`Account`}>
+
+          <InputSection label={`For Account`}>
+            <SelectDropdown
+              isLoading={isLoading}
+              isDisable={isModalReadOnly}
+              options={accountOptions}
+              defaultOptionIndex={getSelectedOptionIndex(
+                accountOptions, user.account_id
+              )}
+              onInputChange={handleChangeAccountId}
+            >
+            </SelectDropdown>
+          </InputSection>
+
+        </TabItem>
+
+        <TabItem label={`Name`}>
+
+          <div className={`flex flex-col gap-2`}>
+            <InputSection label={`First Name`}>
+              <TextInput
+                name={`first`}
+                isDisable={isModalReadOnly}
+                value={user.name.first}
+                onInputChange={handleChangeName}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Middle Name`}>
+              <TextInput
+                name={`middle`}
+                isDisable={isModalReadOnly}
+                value={user.name.middle}
+                onInputChange={handleChangeName}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Last Name`}>
+              <TextInput
+                name={`last`}
+                isDisable={isModalReadOnly}
+                value={user.name.last}
+                onInputChange={handleChangeName}
+              >
+              </TextInput>
+            </InputSection>
+          </div>
+
+        </TabItem>
+
+        <TabItem label={`Address`}>
+
+          <div className={`flex flex-col gap-2`}>
+            <InputSection label={`Country`}>
+              <TextInput
+                name={`country`}
+                isDisable={isModalReadOnly}
+                value={user.address.country}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`City`}>
+              <TextInput
+                name={`city`}
+                isDisable={isModalReadOnly}
+                value={user.address.city}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`District`}>
+              <TextInput
+                name={`district`}
+                isDisable={isModalReadOnly}
+                value={user.address.district}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Ward`}>
+              <TextInput
+                name={`ward`}
+                isDisable={isModalReadOnly}
+                value={user.address.ward}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Street`}>
+              <TextInput
+                name={`street`}
+                isDisable={isModalReadOnly}
+                value={user.address.street}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Number`}>
+              <TextInput
+                name={`number`}
+                isDisable={isModalReadOnly}
+                value={user.address.number}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+          </div>
+
+        </TabItem>
+
+        <TabItem label={`Other`}>
+
+          <div className={`flex flex-col gap-2`}>
+            <InputSection label={`Email`}>
+              <TextInput
+                name={`email`}
+                isDisable={isModalReadOnly}
+                value={user.email}
+                onInputChange={handleChangeEmail}
+              >
+              </TextInput>
+            </InputSection>
+
+            {user.birthday ? 
+              <InputSection label={`Birthday`}>
+                <DateInput
+                  name={`birthday`}
+                  isDisable={isModalReadOnly}
+                  value={user.birthday}
+                  onInputChange={handleChangeBirthday}
+                >
+                </DateInput>
+              </InputSection> : <Text>{user.birthday}</Text>
+            }
+
+            <InputSection label={`Gender`}>
+              <SelectDropdown
+                isDisable={isModalReadOnly}
+                options={genderOptions}
+                defaultOptionIndex={getSelectedOptionIndex(
+                  genderOptions, 
+                  (user.gender 
+                    ? user.gender 
+                    : EUserGender.FEMALE
+                  ) as unknown as string
+                )}
+                onInputChange={handleChangeGender}
+              >
+              </SelectDropdown>
+            </InputSection>
+          </div>
+
+        </TabItem>
+
+        <TabItem label={`Timestamp`} isDisable={!isModalReadOnly}>
+          <TimestampTabItem<collectionType> collection={user}>
+          </TimestampTabItem>
+        </TabItem>
+
+      </Tabs>
+
+    </ManagerPage>
+  )
+}

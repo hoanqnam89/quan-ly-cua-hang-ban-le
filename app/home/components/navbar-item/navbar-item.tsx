@@ -1,19 +1,21 @@
-import React, { Dispatch, ReactElement, SetStateAction } from 'react';
+import React, { CSSProperties, Dispatch, ReactElement, SetStateAction } from 'react';
 import Link from 'next/link';
-import { INavbarItem } from '../../layout';
-import IconContainer from '@/components/icon-container/icon-container';
-import Text from '@/components/text/text';
-import styles from './style.module.css'
+import { CNavbarItem } from '../../layout';
+import { IconContainer, Text } from '@/components';
 
 interface INavbarItemProps {
   setIsLoading?: Dispatch<SetStateAction<boolean>>
-  navbarItem: INavbarItem, 
+  navbarItem: CNavbarItem, 
 }
 
 export default function NavbarItem({ 
   setIsLoading, 
   navbarItem, 
 }: Readonly<INavbarItemProps>): ReactElement {
+  const navbarItemStyle: CSSProperties = { 
+    gridTemplateColumns: `24px auto`, 
+  }
+
   const handleRedirect = (): void => {
     if (setIsLoading)
       setIsLoading(true);
@@ -24,26 +26,32 @@ export default function NavbarItem({
       <Link
         href={navbarItem.link}
         onClick={handleRedirect}
-        className={`p-2 grid gap-6 rounded-2xl transition-all select-none ${styles[`navbar-item`]}`}
+        className={`
+          p-2 grid gap-6 rounded-2xl transition-all select-none
+        `}
+        style={navbarItemStyle}
         title={navbarItem.label}
       >
         <IconContainer iconLink={navbarItem.icon}>
         </IconContainer>
 
-        <Text className={`${styles.text}`}>{navbarItem.label}</Text>
+        <Text weight={600} isEllipsis={true}>{navbarItem.label}</Text>
       </Link>
     );
 
   return (
     <div
-      className={`p-2 grid gap-6 rounded-2xl transition-all select-none cursor-pointer ${styles[`navbar-item`]}`}
+      className={`
+        p-2 grid gap-6 rounded-2xl transition-all select-none cursor-pointer
+      `}
+      style={navbarItemStyle}
       title={navbarItem.label}
       onClick={navbarItem.onClick}
     >
       <IconContainer iconLink={navbarItem.icon}>
       </IconContainer>
 
-      <Text className={`${styles.text}`}>{navbarItem.label}</Text>
+      <Text weight={600} isEllipsis={true}>{navbarItem.label}</Text>
     </div>
   );
 }

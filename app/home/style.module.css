@@ -1,7 +1,0 @@
-.nav {
-  background: lch(from var(--background) calc(l + var(--brightness-different) * var(--brightness-different-scale)) c h);
-}
-
-.main {
-  background: var(--background);
-}

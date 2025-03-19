@@ -1,8 +1,0 @@
-.overlay {
-  background: lch(from var(--gradient-background) l c h / 0.2);
-  backdrop-filter: blur(4px);
-}
-
-.modal {
-  background: var(--gradient-background);
-}

@@ -1,25 +1,13 @@
-'use client'
+'use client';
 
-import Checkboxes from '@/components/checkboxes/checkboxes'
-import React, { ReactNode, useState } from 'react'
+import { ReactElement } from "react";
+import { Text} from '@/components'
+import { ECollectionNames } from "@/enums";
 
-export default function Home(): ReactNode {
-  const [options, setOptions] = useState([
-    {
-      label: `a`, 
-      value: `a`, 
-      isChecked: false
-    }, 
-    {
-      label: `b`, 
-      value: `b`, 
-      isChecked: false
-    }, 
-  ]);
-
+export default function Home(): ReactElement {
   return (
-    <div>
-      <Checkboxes options={options} setOptions={setOptions}></Checkboxes>
-    </div>
-  )
+    <>
+      <Text>Number of {ECollectionNames.ACCOUNT}: 2</Text>
+    </>
+  );
 }

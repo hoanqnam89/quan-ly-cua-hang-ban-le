@@ -1,43 +1,43 @@
-import React, { ChangeEvent, CSSProperties, ReactElement } from 'react'
-import styles from './style.module.css';
+import React, { memo, ReactElement } from 'react';
+import { IInputProps } from '../interfaces/input-props.interface';
+import Input from '../input/input';
 
-interface INumberInputProps {
-  name?: string
-  isPassword?: boolean
-  value?: number 
-  isDisable?: boolean
-  isRequire?: boolean
-  pattern?: string
-  className?: string
-  style?: CSSProperties
-  placeholder?: string
-  onChange?: (e: ChangeEvent<HTMLInputElement>) => void
-}
-
-export default function NumberInput({
+function NumberInput({
   name = ``, 
-  value = 0, 
+  minWidth = 100,
+  background = {
+    light: `#ffffff`,
+    dark: `#000000`
+  },
+  value = `0`,
   isDisable = false, 
-  isRequire = false, 
-  pattern = `.{1,}`, 
-  className = ``, 
-  style = {}, 
+  className = `w-full`, 
+  style = {
+  }, 
+  min = 0, 
+  max = 10, 
   placeholder = ``, 
-  onChange = () => {}
-}: Readonly<INumberInputProps>): ReactElement {
+  onInputChange = () => {},
+  onInputBlur = () => {},
+}: Readonly<IInputProps<string>>): ReactElement {
   return (
-    <input
-      className={`p-2 rounded-lg ${styles[`text-input`]} ${className}`}
-      disabled={isDisable}
-      name={name}
-      onChange={onChange}
-      placeholder={placeholder}
-      style={style}
+    <Input 
       type={`number`}
+      min={min}
+      max={max}
+      placeholder={placeholder}
+      name={name}
+      minWidth={minWidth}
+      background={background}
       value={value}
-      required={isRequire}
-      pattern={pattern}
+      isDisable={isDisable}
+      className={className}
+      style={style}
+      onInputBlur={onInputBlur}
+      onInputChange={onInputChange}
     >
-    </input>
+    </Input>
   )
 }
+
+export default memo( NumberInput );

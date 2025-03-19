@@ -1,8 +1,6 @@
-import LoadingPage from '@/pages/loading-page/loading-page'
-import React from 'react'
+import React, { ReactElement } from 'react';
+import { LoadingScreen } from '@/components';
 
-export default function Loading() {
-  return (
-    <LoadingPage></LoadingPage>
-  )
+export default function Loading(): ReactElement {
+  return <LoadingScreen></LoadingScreen>
 }

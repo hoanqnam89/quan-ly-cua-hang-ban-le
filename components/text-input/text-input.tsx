@@ -1,44 +1,40 @@
-import React, { ChangeEvent, CSSProperties, ReactElement } from 'react'
-import styles from './style.module.css';
+import React, { memo, ReactElement } from 'react';
+import { IInputProps } from '../interfaces/input-props.interface';
+import Input from '../input/input';
 
-interface ITextInputProps {
-  name?: string
-  isPassword?: boolean
-  value?: string
-  isDisable?: boolean
-  isRequire?: boolean
-  pattern?: string
-  className?: string
-  style?: CSSProperties
-  placeholder?: string
-  onChange?: (e: ChangeEvent<HTMLInputElement>) => void
-}
-
-export default function TextInput({
+function TextInput({
   name = ``, 
-  isPassword = false, 
-  value = ``, 
+  minWidth = 100,
+  background = {
+    light: `#ffffff`,
+    dark: `#000000`
+  },
+  value = ``,
   isDisable = false, 
-  isRequire = false, 
-  pattern = `.{1,}`, 
-  className = ``, 
-  style = {}, 
+  className = `w-full`, 
+  style = {
+  }, 
   placeholder = ``, 
-  onChange = () => {}
-}: Readonly<ITextInputProps>): ReactElement {
+  onInputChange = () => {},
+  onInputBlur = () => {},
+  isPassword = false, 
+}: Readonly<IInputProps<string>> & {isPassword?: boolean}): ReactElement {
   return (
-    <input
-      className={`p-2 rounded-lg ${styles[`text-input`]} ${className}`}
-      disabled={isDisable}
-      name={name}
-      onChange={onChange}
-      placeholder={placeholder}
-      style={style}
+    <Input 
       type={`${isPassword ? `password` : `text`}`}
+      placeholder={placeholder}
+      name={name}
+      minWidth={minWidth}
+      background={background}
       value={value}
-      required={isRequire}
-      pattern={pattern}
+      isDisable={isDisable}
+      className={className}
+      style={style}
+      onInputBlur={onInputBlur}
+      onInputChange={onInputChange}
     >
-    </input>
+    </Input>
   )
 }
+
+export default memo( TextInput );

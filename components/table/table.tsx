@@ -1,18 +1,18 @@
 import React, { ChangeEvent, CSSProperties, Fragment, MouseEvent, ReactElement, useCallback, useEffect, useState } from 'react';
+import "./style.css";
+import { Button, Text, IconContainer, LoadingIcon, TextInput } from '@/components';
 import { IColumnProps } from './interfaces/column-props.interface';
 import { arrowDownWideNarrowIcon, arrowUpNarrowWideIcon, columns4Icon, emptyIcon, listRestartIcon, plusIcon, trashIcon } from '@/public';
 import { ESortStatus } from '@/enums/sort-status.enum';
 import { enumToArray } from '@/utils/enum-to-array';
+import { TRANSPARENT_BUTTON } from '@/constants';
 import { countVisibleElements } from '@/utils/count-visible-elements';
+import { TColorMode } from '../interfaces/color-mode.interface';
 import Checkboxes, { ICheckbox } from '../checkboxes/checkboxes';
-import Text from '../text/text';
-import IconContainer from '../icon-container/icon-container';
-import Button from '../button/button';
-import TextInput from '../text-input/text-input';
-import styles from './style.module.css';
 
 interface IHeaderButtons {
   className: string
+  background: TColorMode
   onClick: () => void
   iconLink: string
   size: number
@@ -33,7 +33,7 @@ interface ITableProps<T> {
 
 export default function Table<T extends {_id: string, index?: number}>({
   name = ``, 
-  // isGetDatasDone = true, 
+  isGetDatasDone = true, 
   onClickAdd = () => {}, 
   onClickDelete = () => {}, 
   columns = [], 
@@ -211,10 +211,6 @@ export default function Table<T extends {_id: string, index?: number}>({
     setIsVisibles([...newDatas]);
   }
 
-  const textStyle: CSSProperties = {
-    fontWeight: 600, 
-  }
-
   const headerElements: ReactElement[] = columns.map(
     (column: IColumnProps<T>, columnIndex: number): ReactElement => {
       return visibleColumns[columnIndex].isChecked ?
@@ -224,11 +220,11 @@ export default function Table<T extends {_id: string, index?: number}>({
           className={`h-full flex items-center gap-0 select-none relative`}
         >
           <Text 
-            // isEllipsis={true} 
-            style={textStyle}
+            isEllipsis={true} 
+            weight={600}
             onClick={(): void => sortHeader(columnIndex, column.key)} 
-            title={`Click to sort ${column.title}`}
-            // className={`${column.key && `cursor-pointer`}`}
+            tooltip={`Click to sort ${column.title}`}
+            className={`${column.key && `cursor-pointer`}`}
           >
             {column.title}
           </Text>
@@ -243,8 +239,8 @@ export default function Table<T extends {_id: string, index?: number}>({
           <div
             onMouseDown={(): void => handleMouseDown(columnIndex)}
             className={`${ 
-              activeIndex === columnIndex && styles.active
-            } ${styles[`resize-handle`]} h-full block ml-auto cursor-col-resize border-white`}
+              activeIndex === columnIndex && 'active' 
+            } h-full resize-handle block ml-auto cursor-col-resize border-white`}
             title={`Click and drag to resize '${column.title}' column\nDouble click to reset this '${column.title}' column size`}
             onClick={
               (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>): void => 
@@ -259,9 +255,7 @@ export default function Table<T extends {_id: string, index?: number}>({
 
   const rowElements: ReactElement = datas.length === 0 ? (
     <div className={`flex justify-center items-center p-1`}>
-      <Text 
-        // isItalic={true}
-      >No Data</Text>
+      <Text isItalic={true}>No Data</Text>
     </div>
   ) : isAllTableColumnInvisible() ? 
     <></> : (
@@ -291,9 +285,9 @@ export default function Table<T extends {_id: string, index?: number}>({
               
               return <Text 
                 key={key} 
-                // isCopyable={true} 
-                // isEllipsis={true} 
-                title={rowData}
+                isCopyable={true} 
+                isEllipsis={true} 
+                tooltip={rowData}
               >
                 {rowData}
               </Text>
@@ -308,6 +302,7 @@ export default function Table<T extends {_id: string, index?: number}>({
   const headerButtons: IHeaderButtons[] = [
     {
       className: ``, 
+      background: TRANSPARENT_BUTTON, 
       onClick: handleResetColumns, 
       iconLink: listRestartIcon, 
       size: 32, 
@@ -315,6 +310,7 @@ export default function Table<T extends {_id: string, index?: number}>({
     }, 
     ...canDeleteCollection ? [{
       className: ``, 
+      background: TRANSPARENT_BUTTON, 
       onClick: onClickDelete, 
       iconLink: trashIcon, 
       size: 32, 
@@ -322,6 +318,7 @@ export default function Table<T extends {_id: string, index?: number}>({
     }] : [], 
     ...canCreateCollection ? [{
       className: ``, 
+      background: TRANSPARENT_BUTTON, 
       onClick: onClickAdd, 
       iconLink: plusIcon, 
       size: 32, 
@@ -332,7 +329,10 @@ export default function Table<T extends {_id: string, index?: number}>({
   const headerButtonElements: ReactElement[] = headerButtons.map(
     (headerButton: IHeaderButtons, headerButtonIndex: number): ReactElement =>
       <div key={`${headerButtonIndex}`}>
-        <Button onClick={headerButton.onClick}>
+        <Button 
+          background={headerButton.background} 
+          onClick={headerButton.onClick}
+        >
           <IconContainer 
             iconLink={headerButton.iconLink} 
             size={headerButton.size} 
@@ -343,23 +343,18 @@ export default function Table<T extends {_id: string, index?: number}>({
       </div>
   );
 
-  const titleStyle: CSSProperties = {
-    fontSize: 24, 
-    fontWeight: 600, 
-  }
-
   return (
     <div className={`h-full flex flex-col gap-4 p-1`}>
       <div className={`flex gap-2 items-center`}>
-        <Text style={titleStyle}>
-          Danh sách {name} ({countVisibleElements(isVisibles)})
+        <Text size={24} weight={600}>
+          List of {name}s ({countVisibleElements(isVisibles)} entries)
         </Text>
 
         <div className={`flex-1`}>
           <TextInput
             value={searchValue} 
-            placeholder={`Tìm kiếm ${name}...`}
-            onChange={(e: ChangeEvent<HTMLInputElement>): void => 
+            placeholder={`Search ${name}...`}
+            onInputChange={(e: ChangeEvent<HTMLInputElement>): void => 
               handleSearch(e.target.value)
             }
           >
@@ -371,14 +366,17 @@ export default function Table<T extends {_id: string, index?: number}>({
 
       <div className={`flex gap-2 items-center`}>
         <Checkboxes 
-          title={`Hiện các cột:`}
+          title={`Show Columns:`}
           options={visibleColumns}
           setOptions={setVisibleColumns}
         >
         </Checkboxes>
 
         <div>
-          <Button onClick={(): void => handleShowAllTableColumns()}>
+          <Button 
+            background={TRANSPARENT_BUTTON} 
+            onClick={(): void => handleShowAllTableColumns()}
+          >
             <IconContainer 
               iconLink={columns4Icon} 
               size={24} 
@@ -397,11 +395,10 @@ export default function Table<T extends {_id: string, index?: number}>({
       </div>
 
       <div className={`flex flex-col overflow-y-scroll`}>
-        {/* {isGetDatasDone 
+        {isGetDatasDone 
           ? <LoadingIcon></LoadingIcon>
           : rowElements
-        } */}
-        {rowElements}
+        }
       </div>
     </div>
   )

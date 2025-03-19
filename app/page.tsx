@@ -1,15 +1,21 @@
-'use client'
+'use client';
 
-import Button, { EButtonType } from '@/components/button/button';
-import TextInput from '@/components/text-input/text-input';
-import Text from '@/components/text/text'
+import React, { ChangeEvent, CSSProperties, ReactElement, useState } from 'react';
 import { redirect } from 'next/navigation';
-import React, { ChangeEvent, CSSProperties, useState } from 'react'
-import styles from './style.module.css';
+// import { notification } from 'antd';
+import { EStatusCode } from '@/enums/status-code.enum';
+import { login } from '@/services/Auth';
+import { Button, LoadingScreen, Text, TextInput } from '@/components';
 
-export default function Login() {
+export default function Login(): ReactElement {
   const [username, setUsername] = useState<string>(``);
   const [password, setPassword] = useState<string>(``);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // const [notificationApi, contextHolder] = notification.useNotification();
+
+  const loginSectionStyle: CSSProperties = {
+    backgroundImage: `linear-gradient(315deg, #2b4162 0%, #12100e 74%)`, 
+  }
 
   const handleChangeUsername = (e: ChangeEvent<HTMLInputElement>): void => {
     setUsername(e.target.value);
@@ -18,52 +24,61 @@ export default function Login() {
   const handleChangePassword = (e: ChangeEvent<HTMLInputElement>): void => {
     setPassword(e.target.value);
   }
-          
-  const handleLogin = async () => {
-    redirect(`/home`);
-  }
 
-  const titleStyle: CSSProperties = {
-    fontSize: `1.5rem`, 
-    fontWeight: 600, 
-  }
+  const handleLogin = async (): Promise<void> => {
+    setIsLoading(true);
+    const loginApiResponse: Response = await login(username, password);
+    setIsLoading(false);
 
-  const textStyle: CSSProperties = {
-    fontWeight: 600, 
+    switch (loginApiResponse.status) {
+      case EStatusCode.OK:
+        redirect(`/home`);
+      case EStatusCode.UNAUTHORIZED:
+        // notificationApi.error({
+        //   message: `Login Failed! Username or Password is incorrect.`,
+        //   placement: `topRight`,
+        // });
+        break;
+      default:
+        // notificationApi.error({
+        //   message: `Login Failed! Unknown Error.`,
+        //   placement: `topRight`,
+        // });
+        break;
+    }
   }
 
   return (
     <div className={`h-lvh flex items-center justify-center`}>
+      {/* {contextHolder} */}
+
       <div 
-        className={`p-10 flex flex-col gap-2 rounded-xl ${styles[`login-section`]}`} 
+        className={`p-10 flex flex-col gap-2 rounded-xl`} 
+        style={loginSectionStyle}
       >
-        <Text style={titleStyle}>Đăng nhập vào hệ thống quản lý bán lẻ</Text>
+        <Text weight={600} size={24}>Đăng nhập vào hệ thống quản lý bán lẻ</Text>
 
-        <Text style={textStyle}>Tên tài khoản:</Text>
-
+        <Text weight={600}>Tên đăng nhập:</Text>
         <TextInput 
-          name={`username`}
           value={username} 
-          onChange={handleChangeUsername}
-          placeholder={`Nhập tên tài khoản`}
+          onInputChange={handleChangeUsername}
         >
         </TextInput>
 
-        <Text style={textStyle}>Mật khẩu:</Text>
-
+        <Text weight={600}>Mật khẩu:</Text>
         <TextInput 
-          isPassword={true}
-          name={`password`}
-          value={password} 
-          onChange={handleChangePassword}
-          placeholder={`Nhập mật khẩu`}
+          value={password}
+          isPassword={true} 
+          onInputChange={handleChangePassword}
         >
         </TextInput>
 
-        <Button onClick={handleLogin} type={EButtonType.SUCCESS}>
-          <Text style={textStyle}>Đăng nhập</Text>
+        <Button onClick={handleLogin}>
+          <Text weight={600}>Đăng nhập</Text>
         </Button>
       </div>
+
+      {isLoading && <LoadingScreen></LoadingScreen>}
     </div>
   )
 }
