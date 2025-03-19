@@ -38,7 +38,7 @@ function Input({
       min={min}
       max={max}
       style={inputStyle}
-      className={`w-full p-2 rounded-lg ${className} ${styles.input}`}
+      className={`w-full p-2 rounded-lg outline-none ${className} ${styles.input}`}
       type={type}
       value={value}
       disabled={isDisable}

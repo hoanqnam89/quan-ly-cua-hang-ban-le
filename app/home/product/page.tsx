@@ -138,7 +138,6 @@ export default function Product() {
         const fileReader: FileReader = new FileReader();
         fileReaders.push(fileReader);
         fileReader.onload = (e: ProgressEvent<FileReader>) => {
-          // console.log(e.target);
           const result = e.target?.result;
           if (result) {
             images.push(result.toString());

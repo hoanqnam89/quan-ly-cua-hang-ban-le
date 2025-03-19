@@ -18,11 +18,11 @@
     outline: none;
   }
 
-  &:valid {
-    outline: .125em solid green;
+  &:valid, &:user-valid, &:in-range {
+    border-bottom: .125em solid green;
   }
 
-  &:invalid {
-    outline: .125em solid red;
+  &:invalid, &:user-invalid, &:out-of-range {
+    border-bottom: .125em solid red;
   }
 }
