@@ -5,11 +5,6 @@ import { pad } from '@/utils/pad';
 
 function DateInput({
   name = ``, 
-  minWidth = 100,
-  background = {
-    light: `#ffffff`,
-    dark: `#000000`
-  },
   value = new Date(),
   isDisable = false, 
   className = `w-full`, 
@@ -32,8 +27,6 @@ function DateInput({
     <Input 
       type={`date`}
       name={name}
-      minWidth={minWidth}
-      background={background}
       value={getDate()}
       isDisable={isDisable}
       className={className}

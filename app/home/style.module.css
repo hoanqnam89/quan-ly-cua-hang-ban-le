@@ -1,0 +1,14 @@
+.nav {
+  background: lch(from var(--background) calc(l + var(--brightness-different) * var(--brightness-different-scale)) c h);
+}
+
+.main {
+  background: var(--background);
+}
+
+.box {
+  width: 100%;
+  border-width: 1;
+  border-style: solid;
+  border-color: var(--foreground);
+}

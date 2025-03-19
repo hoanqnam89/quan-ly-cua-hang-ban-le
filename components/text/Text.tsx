@@ -1,5 +1,6 @@
 import React, { CSSProperties, MouseEvent, ReactElement, ReactNode } from 'react';
 import { TColorMode } from '@/components/interfaces/color-mode.interface';
+import styles from './style.module.css';
 
 interface ITextProps {
   onClick?: (e: MouseEvent<HTMLParagraphElement, globalThis.MouseEvent>) => void
@@ -46,7 +47,6 @@ export default function Text({
     fontSize: size,
     fontWeight: weight,
     fontStyle: isItalic ? `italic` : `none`, 
-    color: `light-dark(${color.light}, ${color.dark})`,
     textAlign: isCenter ? `center` : `initial`, 
     textShadow: isOutlined 
       ? `-${outlineWidth} -${outlineWidth} 0 ${outlineColor}, ${outlineWidth} -${outlineWidth} 0 ${outlineColor}, -${outlineWidth} ${outlineWidth} 0 ${outlineColor}, ${outlineWidth} ${outlineWidth} 0 ${outlineColor}` 
@@ -66,7 +66,7 @@ export default function Text({
   return (
     <p 
       title={tooltip}
-      className={`${getEllipsisStyles()} ${className}`} 
+      className={`${getEllipsisStyles()} ${className} ${styles.text}`} 
       style={textStyle}
       onClick={
         (e: MouseEvent<HTMLParagraphElement, globalThis.MouseEvent>): void => 

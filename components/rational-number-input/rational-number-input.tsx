@@ -1,13 +1,10 @@
 import React, { ChangeEvent, CSSProperties, memo, ReactElement, Ref, useRef } from 'react';
-import { TColorMode } from '@/components/interfaces/color-mode.interface';
 import { IRationalNumber } from '@/interfaces/rational-number.interface';
 import Text from '../text/text';
 
 interface INumberInputProps {
   numeratorName?: string
   denominatorName?: string
-  minWidth?: number
-  background?: TColorMode
   borderWidth?: number
   borderColor?: string
   borderRadius?: number
@@ -25,11 +22,6 @@ interface INumberInputProps {
 function NumberInput({
   numeratorName = ``, 
   denominatorName = ``, 
-  minWidth = 50,
-  background = {
-    light: `#ffffff`,
-    dark: `#232323`
-  },
   borderWidth = 0,
   borderColor = `#ffffff`,
   borderRadius = 4,
@@ -41,8 +33,6 @@ function NumberInput({
   onInputBlur = () => {},
 }: Readonly<INumberInputProps>): ReactElement {
   const inputStyle: CSSProperties = {
-    minWidth: minWidth,
-    background: `light-dark(${background.light}, ${background.dark})`,
     borderStyle: `solid`,
     borderWidth: borderWidth,
     borderColor: borderColor,

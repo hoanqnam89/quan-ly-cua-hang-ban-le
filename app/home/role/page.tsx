@@ -5,7 +5,6 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { ECollectionNames } from '@/enums';
 import { IRole } from '@/interfaces';
 import { infoIcon, trashIcon } from '@/public';
-import { TRANSPARENT_BUTTON } from '@/constants';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import { Button, IconContainer, SelectDropdown, Text } from '@/components';
 import { DEFAULT_ROLE } from '@/constants/role.constant';
@@ -88,7 +87,6 @@ export default function Role(): ReactElement {
       size: `2fr`, 
       render: (collection: collectionType): ReactElement => <Button 
         title={createMoreInfoTooltip(collectionName)}
-        background={TRANSPARENT_BUTTON} 
         onClick={(): void => {
           setIsClickShowMore({
             id: collection._id, 
@@ -109,7 +107,6 @@ export default function Role(): ReactElement {
       size: `2fr`, 
       render: (collection: collectionType): ReactElement => <Button 
         title={createDeleteTooltip(collectionName)}
-        background={TRANSPARENT_BUTTON} 
         onClick={(): void => {
           setIsClickDelete({
             id: collection._id, 

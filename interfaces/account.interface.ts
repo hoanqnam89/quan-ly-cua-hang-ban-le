@@ -5,5 +5,5 @@ export interface IAccount {
 
   username: string
   password: string
-  role_group_ids: string[]
+  is_admin: boolean
 }

@@ -1,17 +1,17 @@
 'use client';
 
 import React, { Dispatch, ReactElement, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
-import { notification } from 'antd';
+// import { notification } from 'antd';
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface';
 import Table from '@/components/table/table';
 import { ECollectionNames, EStatusCode } from '@/enums';
 import { deleteCollections, deleteCollectionById, addCollection, getCollectionById, updateCollectionById } from '@/services/api-service';
-import { EAction } from '@/utils/create-api-notification-result';
+// import { EAction } from '@/utils/create-api-notification-result';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { LoadingScreen} from '@/components';
 import CollectionForm from './collection-form/collection-form';
 
-const placement = `topRight`;
+// const placement = `topRight`;
 
 export interface ICollectionIdNotify {
   id: string
@@ -48,7 +48,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAddCollectionModalOpen, setIsAddCollectionModalOpen] = 
     useState<boolean>(false);
-  const [notificationService, contextHolder] = notification.useNotification();
+  // const [notificationService, contextHolder] = notification.useNotification();
   const [collections, setCollections] = useState<T[]>([]);
   const [isUpdateCollection, setIsUpdateCollection] = useState<boolean>(false);
 
@@ -71,15 +71,20 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
   const toggleAddCollectionModal = useCallback(
     (isReadOnly: boolean = false): void => {
-      console.log(isModalReadonly, isUpdateCollection);
-
       if ( !isReadOnly ) 
         setCollection(defaultCollection);
 
-      setIsModalReadonly(isReadOnly);
+      // setIsModalReadonly(isReadOnly);
+      setIsModalReadonly(false);
       setIsAddCollectionModalOpen((prev: boolean): boolean => !prev);
     }, 
-    [defaultCollection, setIsModalReadonly, setCollection],
+    [
+      defaultCollection, 
+      setIsModalReadonly, 
+      setCollection, 
+      isModalReadonly, 
+      isUpdateCollection
+    ],
   );
 
   const handleAddCollection = async (): Promise<void> => {
@@ -91,46 +96,46 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
     switch (addCollectionApiResponse.status) {
       case EStatusCode.OK:
-        notificationService.success({
-          message: `${EAction.CREATE} ${collectionName} Successfully!`,
-          placement: placement, 
-        });
+        // notificationService.success({
+        //   message: `${EAction.CREATE} ${collectionName} Successfully!`,
+        //   placement: placement, 
+        // });
         break;
       case EStatusCode.CREATED:
-        notificationService.success({
-          message: `${EAction.CREATE} ${collectionName} Successfully!`,
-          placement: placement, 
-        });
+        // notificationService.success({
+        //   message: `${EAction.CREATE} ${collectionName} Successfully!`,
+        //   placement: placement, 
+        // });
         break;
       case EStatusCode.UNPROCESSABLE_ENTITY:
-        notificationService.error({
-          message: `${EAction.CREATE} ${collectionName} Failed! Unprocessable Entity.`,
-          placement: placement, 
-        });
+        // notificationService.error({
+        //   message: `${EAction.CREATE} ${collectionName} Failed! Unprocessable Entity.`,
+        //   placement: placement, 
+        // });
         break;
       case EStatusCode.CONFLICT:
-        notificationService.error({
-          message: `${EAction.CREATE} ${collectionName} Failed! ${collectionName} already existed.`,
-          placement: placement, 
-        });
+        // notificationService.error({
+        //   message: `${EAction.CREATE} ${collectionName} Failed! ${collectionName} already existed.`,
+        //   placement: placement, 
+        // });
         break;
       case EStatusCode.METHOD_NOT_ALLOWED:
-        notificationService.error({
-          message: `${EAction.CREATE} ${collectionName} Failed! Method not allowed.`,
-          placement: placement, 
-        });
+        // notificationService.error({
+        //   message: `${EAction.CREATE} ${collectionName} Failed! Method not allowed.`,
+        //   placement: placement, 
+        // });
         break;
       case EStatusCode.INTERNAL_SERVER_ERROR:
-        notificationService.error({
-          message: `${EAction.CREATE} ${collectionName} Failed! Internal Server Error.`,
-          placement: placement,
-        });
+        // notificationService.error({
+        //   message: `${EAction.CREATE} ${collectionName} Failed! Internal Server Error.`,
+        //   placement: placement,
+        // });
         break;
       default:
-        notificationService.error({
-          message: `${EAction.CREATE} ${collectionName} Failed! Unknown Error.`,
-          placement: placement,
-        });
+        // notificationService.error({
+        //   message: `${EAction.CREATE} ${collectionName} Failed! Unknown Error.`,
+        //   placement: placement,
+        // });
     }
 
     await getCollections();
@@ -152,40 +157,40 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
     switch (updateCollectionApiResponse.status) {
       case EStatusCode.OK:
-        notificationService.success({
-          message: `${EAction.UPDATE} ${collectionName} Successfully!`,
-          placement: placement, 
-        });
+        // notificationService.success({
+        //   message: `${EAction.UPDATE} ${collectionName} Successfully!`,
+        //   placement: placement, 
+        // });
         break;
       case EStatusCode.CREATED:
-        notificationService.success({
-          message: `${EAction.UPDATE} ${collectionName} Successfully!`,
-          placement: placement, 
-        });
+        // notificationService.success({
+        //   message: `${EAction.UPDATE} ${collectionName} Successfully!`,
+        //   placement: placement, 
+        // });
         break;
       case EStatusCode.CONFLICT:
-        notificationService.error({
-          message: `${EAction.UPDATE} ${collectionName} Failed! ${collectionName} already existed.`,
-          placement: placement, 
-        });
+        // notificationService.error({
+        //   message: `${EAction.UPDATE} ${collectionName} Failed! ${collectionName} already existed.`,
+        //   placement: placement, 
+        // });
         break;
       case EStatusCode.UNPROCESSABLE_ENTITY:
-        notificationService.error({
-          message: `${EAction.UPDATE} ${collectionName} Failed! Unprocessable Entity.`,
-          placement: placement, 
-        });
+        // notificationService.error({
+        //   message: `${EAction.UPDATE} ${collectionName} Failed! Unprocessable Entity.`,
+        //   placement: placement, 
+        // });
         break;
       case EStatusCode.INTERNAL_SERVER_ERROR:
-        notificationService.error({
-          message: `${EAction.UPDATE} ${collectionName} Failed! Internal Server Error.`,
-          placement: placement,
-        });
+        // notificationService.error({
+        //   message: `${EAction.UPDATE} ${collectionName} Failed! Internal Server Error.`,
+        //   placement: placement,
+        // });
         break;
       default:
-        notificationService.error({
-          message: `${EAction.UPDATE} ${collectionName} Failed! Unknown Error.`,
-          placement: placement,
-        });
+        // notificationService.error({
+        //   message: `${EAction.UPDATE} ${collectionName} Failed! Unknown Error.`,
+        //   placement: placement,
+        // });
     }
 
     await getCollections();
@@ -194,10 +199,10 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
   const handleDeleteCollection = async (): Promise<void> => {
     if ( collections.length === 0 ) {
-      notificationService.error({
-        message: `There is no ${collectionName} to delete!`,
-        placement: `topRight`, 
-      });
+      // notificationService.error({
+      //   message: `There is no ${collectionName} to delete!`,
+      //   placement: `topRight`, 
+      // });
       return;
     }
     
@@ -211,28 +216,28 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
     switch (deleteCollectionApiResponse.status) {
       case EStatusCode.OK:
-        notificationService.success({
-          message: `${EAction.DELETE} ${collectionName} Successfully!`,
-          placement: placement, 
-        });
+        // notificationService.success({
+        //   message: `${EAction.DELETE} ${collectionName} Successfully!`,
+        //   placement: placement, 
+        // });
         break;
       case EStatusCode.CREATED:
-        notificationService.success({
-          message: `${EAction.DELETE} ${collectionName} Successfully!`,
-          placement: placement, 
-        });
+        // notificationService.success({
+        //   message: `${EAction.DELETE} ${collectionName} Successfully!`,
+        //   placement: placement, 
+        // });
         break;
       case EStatusCode.INTERNAL_SERVER_ERROR:
-        notificationService.error({
-          message: `${EAction.DELETE} ${collectionName} Failed! Internal Server Error.`,
-          placement: placement,
-        });
+        // notificationService.error({
+        //   message: `${EAction.DELETE} ${collectionName} Failed! Internal Server Error.`,
+        //   placement: placement,
+        // });
         break;
       default:
-        notificationService.error({
-          message: `${EAction.DELETE} ${collectionName} Failed! Unknown Error.`,
-          placement: placement,
-        });
+        // notificationService.error({
+        //   message: `${EAction.DELETE} ${collectionName} Failed! Unknown Error.`,
+        //   placement: placement,
+        // });
     }
 
     await getCollections();
@@ -273,33 +278,33 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
       switch (deleteCollectionByIdApiResponse.status) {
         case EStatusCode.OK:
-          notificationService.success({
-            message: `${EAction.DELETE} ${collectionName} Successfully!`,
-            placement: placement, 
-          });
+          // notificationService.success({
+          //   message: `${EAction.DELETE} ${collectionName} Successfully!`,
+          //   placement: placement, 
+          // });
           break;
         case EStatusCode.CREATED:
-          notificationService.success({
-            message: `${EAction.DELETE} ${collectionName} Successfully!`,
-            placement: placement, 
-          });
+          // notificationService.success({
+          //   message: `${EAction.DELETE} ${collectionName} Successfully!`,
+          //   placement: placement, 
+          // });
           break;
         case EStatusCode.INTERNAL_SERVER_ERROR:
-          notificationService.error({
-            message: `${EAction.DELETE} ${collectionName} Failed! Internal Server Error.`,
-            placement: placement,
-          });
+          // notificationService.error({
+          //   message: `${EAction.DELETE} ${collectionName} Failed! Internal Server Error.`,
+          //   placement: placement,
+          // });
           break;
         default:
-          notificationService.error({
-            message: `${EAction.DELETE} ${collectionName} Failed! Unknown Error.`,
-            placement: placement,
-          });
+          // notificationService.error({
+          //   message: `${EAction.DELETE} ${collectionName} Failed! Unknown Error.`,
+          //   placement: placement,
+          // });
       }
 
       await getCollections();
     }, 
-    [collectionName, getCollections, notificationService],
+    [collectionName, getCollections],
   );
 
   const mounted = useRef(false);
@@ -321,7 +326,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   const managerPage: ReactElement = isLoading 
     ? <LoadingScreen></LoadingScreen>
     : <>
-      {contextHolder}
+      {/* {contextHolder} */}
       <title>{`${collectionName} Manager`}</title>
 
       <Table<T>

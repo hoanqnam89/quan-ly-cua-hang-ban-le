@@ -1,0 +1,43 @@
+.notification {
+  max-width: 430;
+  max-height: 200;
+  overflow: hidden;
+  padding: 12 48 12 12;
+  z-index: 99;
+  position: relative;
+  background: var(--button-color);
+}
+
+.notification:not(:last-child) {
+  margin-bottom: 8;
+}
+
+.info {
+  --button-color: #0000ffff;
+}
+
+.error {
+  --button-color: #ff0000ff;
+}
+
+.danger {
+  --button-color: #ffff00ff;
+}
+
+.warning {
+  --button-color: #ffa500ff;
+}
+
+.success {
+  --button-color: #00ff00ff;
+}
+
+.transparent {
+  --button-color: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  .info, .success, .danger {
+    background: lch(from var(--button-color) calc(l - var(--brightness-different)) c h);
+  }
+}

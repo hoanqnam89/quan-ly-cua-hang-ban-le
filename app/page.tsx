@@ -1,21 +1,33 @@
 'use client';
 
-import React, { ChangeEvent, CSSProperties, ReactElement, useState } from 'react';
+import React, { ChangeEvent, ReactElement, useState } from 'react';
 import { redirect } from 'next/navigation';
 // import { notification } from 'antd';
 import { EStatusCode } from '@/enums/status-code.enum';
 import { login } from '@/services/Auth';
 import { Button, LoadingScreen, Text, TextInput } from '@/components';
+import { EButtonType } from '@/components/button/interfaces/button-type.interface';
+import styles from './style.module.css';
+import Notification from '@/components/notification/notification';
 
 export default function Login(): ReactElement {
   const [username, setUsername] = useState<string>(``);
   const [password, setPassword] = useState<string>(``);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   // const [notificationApi, contextHolder] = notification.useNotification();
+  const [notifications, setNotifications] = useState<{
+    type: EButtonType, 
+    id: number, 
+  }[]>([]);
 
-  const loginSectionStyle: CSSProperties = {
-    backgroundImage: `linear-gradient(315deg, #2b4162 0%, #12100e 74%)`, 
-  }
+  const createNotification = () => 
+    setNotifications([
+      ...notifications, 
+      {
+        type: EButtonType.INFO, 
+        id: notifications.length
+      }
+    ]);
 
   const handleChangeUsername = (e: ChangeEvent<HTMLInputElement>): void => {
     setUsername(e.target.value);
@@ -26,6 +38,7 @@ export default function Login(): ReactElement {
   }
 
   const handleLogin = async (): Promise<void> => {
+    // redirect(`/home`);
     setIsLoading(true);
     const loginApiResponse: Response = await login(username, password);
     setIsLoading(false);
@@ -53,8 +66,7 @@ export default function Login(): ReactElement {
       {/* {contextHolder} */}
 
       <div 
-        className={`p-10 flex flex-col gap-2 rounded-xl`} 
-        style={loginSectionStyle}
+        className={`p-10 flex flex-col gap-2 rounded-xl ${styles[`login-section`]}`} 
       >
         <Text weight={600} size={24}>Đăng nhập vào hệ thống quản lý bán lẻ</Text>
 
@@ -73,12 +85,26 @@ export default function Login(): ReactElement {
         >
         </TextInput>
 
-        <Button onClick={handleLogin}>
+        <Button 
+          onClick={handleLogin} 
+          type={EButtonType.SUCCESS} 
+          isLoading={isLoading}
+        >
           <Text weight={600}>Đăng nhập</Text>
         </Button>
+
+        {/* <Button onClick={createNotification} type={EButtonType.SUCCESS}>
+          <Text weight={600}>Đăng nhập</Text>
+        </Button> */}
       </div>
 
       {isLoading && <LoadingScreen></LoadingScreen>}
+
+      {/* {notifications.map(({type, id}) => {
+        <Notification key={id} type={type}>
+          <Text>Lmao</Text>
+        </Notification>
+      })} */}
     </div>
   )
 }

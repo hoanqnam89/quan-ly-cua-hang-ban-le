@@ -4,11 +4,6 @@ import Input from '../input/input';
 
 function TextInput({
   name = ``, 
-  minWidth = 100,
-  background = {
-    light: `#ffffff`,
-    dark: `#000000`
-  },
   value = ``,
   isDisable = false, 
   className = `w-full`, 
@@ -24,8 +19,6 @@ function TextInput({
       type={`${isPassword ? `password` : `text`}`}
       placeholder={placeholder}
       name={name}
-      minWidth={minWidth}
-      background={background}
       value={value}
       isDisable={isDisable}
       className={className}

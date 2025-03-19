@@ -3,7 +3,6 @@
 import { Button, IconContainer, SelectDropdown, Text, TextInput } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
-import { TRANSPARENT_BUTTON } from '@/constants'
 import { DEFAULT_USER } from '@/constants/user.constant'
 import { ECollectionNames } from '@/enums'
 import { IAccount, IUser } from '@/interfaces'
@@ -166,7 +165,6 @@ export default function User() {
       size: `2fr`, 
       render: (user: collectionType): ReactElement => <Button 
         title={createMoreInfoTooltip(collectionName)}
-        background={TRANSPARENT_BUTTON} 
         onClick={(): void => {
           setIsClickShowMore({
             id: user._id, 
@@ -187,7 +185,6 @@ export default function User() {
       size: `2fr`, 
       render: (user: collectionType): ReactElement => <Button 
         title={createDeleteTooltip(collectionName)}
-        background={TRANSPARENT_BUTTON} 
         onClick={(): void => {
           setIsClickDelete({
             id: user._id, 

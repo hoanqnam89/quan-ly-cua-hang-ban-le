@@ -5,11 +5,6 @@ import { pad } from '@/utils/pad';
 
 function DatetimeInput({
   name = ``, 
-  minWidth = 100,
-  background = {
-    light: `#ffffff`,
-    dark: `#000000`
-  },
   value = new Date(),
   isDisable = false, 
   className = `w-full`, 
@@ -38,8 +33,6 @@ function DatetimeInput({
     <Input 
       type={`datetime-local`}
       name={name}
-      minWidth={minWidth}
-      background={background}
       value={getDate()}
       isDisable={isDisable}
       className={className}

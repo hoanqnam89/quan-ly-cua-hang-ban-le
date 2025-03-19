@@ -1,14 +1,13 @@
 'use client';
 
 import { CSSProperties, ReactElement, useState } from 'react';
-import '@/styles/globals.css';
 import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
 import { logout, me } from '@/services/Auth';
 import { redirect } from 'next/navigation';
-import { blocksIcon, boxIcon, chevronLeftIcon, chevronRightIcon, circleUserRoundIcon, homeIcon, logOutIcon, paintRollerIcon, pencilIcon, textIcon, toyBrickIcon, userIcon } from '@/public';
+import { boxIcon, chevronLeftIcon, chevronRightIcon, circleUserRoundIcon, homeIcon, logOutIcon, userIcon } from '@/public';
 import { LoadingScreen } from '@/components';
 import { IRootLayout } from '@/app/interfaces/root-layout.interface';
-import { ECollectionNames } from '@/enums';
+import styles from './style.module.css';
 
 export interface CNavbarItem {
   link?: string
@@ -55,54 +54,14 @@ export default function RootLayout({
       icon: circleUserRoundIcon, 
     },
     {
-      link: `${currentPath}/role`,
-      label: `Role`,
-      icon: pencilIcon, 
-    },
-    {
-      link: `${currentPath}/role-group`,
-      label: `Role Group`,
-      icon: pencilIcon, 
-    },
-    {
-      link: `${currentPath}/rubik-color-set`,
-      label: `Rubik Color Set`,
-      icon: paintRollerIcon, 
-    },
-    {
-      link: `${currentPath}/rubik`,
-      label: ECollectionNames.RUBIK,
-      icon: toyBrickIcon, 
-    },
-    {
-      link: `${currentPath}/rubik-algorithm-set`,
-      label: ECollectionNames.RUBIK_ALGORITHM_SET,
-      icon: blocksIcon, 
-    },
-    {
-      link: `${currentPath}/rubik-case`,
-      label: ECollectionNames.RUBIK_CASE,
-      icon: blocksIcon, 
-    },
-    {
-      link: `${currentPath}/rubik-algorithm`,
-      label: ECollectionNames.RUBIK_ALGORITHM,
-      icon: textIcon, 
+      link: `${currentPath}/product`,
+      label: `Product`,
+      icon: boxIcon, 
     },
     {
       link: `${currentPath}/user`,
       label: `Users`,
       icon: userIcon, 
-    },
-    {
-      link: `${currentPath}/rubik-simulator`,
-      label: `Rubik Simulator`,
-      icon: boxIcon, 
-    },
-    {
-      link: `${currentPath}/test-component`,
-      label: `Test UI Components`,
-      icon: boxIcon, 
     },
     {
       label: `Log Out`,
@@ -118,23 +77,9 @@ export default function RootLayout({
       } auto`,
   }
 
-  const navStyle: CSSProperties = {
-    background: `linear-gradient(to right, #2d7ad9, #5833d4)`, 
-  }
-
-  const mainStyle: CSSProperties = {
-    background: `light-dark(
-      linear-gradient(315deg, #ffffff 0%, #aaaaaa 100%), 
-      linear-gradient(315deg, #2b4162 0%, #12100e 74%)
-    )`, 
-  }
-
   return (
     <div className={`h-lvh grid`} style={pageStyle}>
-      <nav 
-        className={`h-lvh overflow-y-scroll flex flex-col gap-4 no-scrollbar p-4`}
-        style={navStyle}
-      >
+      <nav className={`h-lvh overflow-y-scroll flex flex-col gap-4 no-scrollbar p-4 ${styles.nav}`}>
         {navbarItems.map((navbarItem: CNavbarItem, index: number) =>
           <NavbarItem 
             // setIsLoading={setIsLoading} 
@@ -145,10 +90,7 @@ export default function RootLayout({
         )}
       </nav>
 
-      <main 
-        className={`h-lvh p-4 tab-color flex flex-col gap-4`}
-        style={mainStyle}
-      >
+      <main className={`h-lvh p-4 tab-color flex flex-col gap-4 ${styles.main}`}>
         {children}
       </main>
 

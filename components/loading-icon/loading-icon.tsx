@@ -1,10 +1,8 @@
 import React, { ReactElement } from 'react';
-import { Spin } from 'antd';
+import styles from './style.module.css';
 
 export default function LoadingIcon(): ReactElement {
   return (
-    <div className={`w-full h-full flex items-center justify-center`}>
-      <Spin size={`large`}></Spin>
-    </div>
+    <div className={`${styles.loading}`}></div>
   )
 }

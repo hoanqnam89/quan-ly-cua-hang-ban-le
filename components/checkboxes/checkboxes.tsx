@@ -1,5 +1,6 @@
 import React, { ChangeEvent, CSSProperties, Dispatch, ReactElement, SetStateAction } from 'react'
 import { LoadingIcon, Text } from '@/components';
+import styles from './style.module.css';
 
 export interface ICheckbox {
   label: string
@@ -11,8 +12,6 @@ interface ICheckboxesProps {
   isDisable?: boolean
   isLoading?: boolean
   title?: string
-  uncheckedStyle?: CSSProperties
-  checkedStyle?: CSSProperties
   options?: ICheckbox[] 
   setOptions: Dispatch<SetStateAction<ICheckbox[]>>
   shouldSetOptions?: boolean
@@ -25,21 +24,11 @@ export default function Checkboxes({
   isDisable = false, 
   isLoading = false, 
   title = ``, 
-  uncheckedStyle = {
-    background: `#333`, 
-  }, 
-  checkedStyle = {
-    background: `linear-gradient(to right, #2d7ad9, #5833d4)`, 
-  }, 
   options = [], 
   setOptions, 
   shouldSetOptions = true, 
   onInputChange = () => {}, 
 }: Readonly<ICheckboxesProps>): ReactElement {
-  const inputStyle: CSSProperties = {
-    display: `none`, 
-  }
-
   return (
     <div className={`flex gap-2 items-center`}>
       {title !== `` && <Text>{title}</Text>}
@@ -53,17 +42,16 @@ export default function Checkboxes({
           <div key={optionIndex} className={`py-2`}>
             <label 
               htmlFor={`${option.value}`}
-              className={`checkbox select-none p-2 rounded-lg whitespace-nowrap overflow-hidden text-ellipsis`}
-              style={option.isChecked ? checkedStyle : uncheckedStyle}
+              className={`checkbox select-none p-2 rounded-lg whitespace-nowrap overflow-hidden text-ellipsis ${option.isChecked ? styles.checked : styles.unchecked}`}
             >
               {option.label}
             </label>
             <input 
+              className={`hidden`}
               disabled={isDisable}
               id={`${option.value}`} 
               name={`${option.value}`} 
               type={`checkbox`} 
-              style={inputStyle}
               value={option.value}
               checked={option.isChecked}
               onChange={(e: ChangeEvent<HTMLInputElement>): void => {

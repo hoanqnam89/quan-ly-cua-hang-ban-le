@@ -4,8 +4,9 @@ import React, { CSSProperties, Dispatch, ReactElement, ReactNode, SetStateAction
 import Text from '../text/text';
 import Button from '../button/button';
 import IconContainer from '../icon-container/icon-container';
-import { TColorMode } from '@/components/interfaces/color-mode.interface';
 import { xIcon } from '@/public';
+import { EButtonType } from '../button/interfaces/button-type.interface';
+import styles from './style.module.css';
 
 interface IModalProps {
   width?: string
@@ -14,17 +15,11 @@ interface IModalProps {
   isOpen: boolean
   setIsOpen: Dispatch<SetStateAction<boolean>>
   padding?: number
-  overlayColor?: TColorMode
-  modalColor?: TColorMode
-  blur?: string
   title?: string 
   showButtons?: boolean
   isOkDisable?: boolean
   okText?: string
   cancelText?: string
-  buttonsPadding?: number
-  okButtonColor?: TColorMode
-  cancelButtonColor?: TColorMode
   okAction?: () => void
   cancelAction?: () => void
 }
@@ -36,31 +31,11 @@ export default function Modal({
   isOpen,
   setIsOpen,
   padding = 16,
-  overlayColor = {
-    light: `#ffffff22`,
-    dark: `#00000022`, 
-  },
-  modalColor = {
-    // light: `linear-gradient(315deg, #ffffff 0%, #eeeeee 100%)`, 
-    light: `#ffffffff`, 
-    // dark: `linear-gradient(315deg, #1b2845 0%, #274060 74%)`, 
-    dark: `#000000ff`, 
-  },
-  blur = `4px`,
   title = `New Modal`, 
   showButtons = true, 
   isOkDisable = false, 
   okText = `Save`,
   cancelText = `Cancel`,
-  buttonsPadding = 8, 
-  okButtonColor = {
-    light: `#76b900`,
-    dark: `#76b900`
-  }, 
-  cancelButtonColor = {
-    light: `#ff0000`,
-    dark: `#ff0000`
-  }, 
   okAction,
   cancelAction,
 }: Readonly<IModalProps>): ReactElement {
@@ -70,17 +45,13 @@ export default function Modal({
 
   const overlayStyle: CSSProperties = {
     display: isOpen ? `initial` : `none`,
-    background: `light-dark(${overlayColor.light}, ${overlayColor.dark})`,
-    backdropFilter: `blur(${blur})`,
   }
 
   const modalStyle: CSSProperties = {
-    background: `light-dark(${modalColor.light}, ${modalColor.dark})`,
     width: width,
     maxHeight: height,
     padding: padding,
     display: isOpen ? `flex` : `none`,
-    backdropFilter: `blur(${blur})`,
   }
 
   const modalHeaderStyle: CSSProperties = {
@@ -109,17 +80,14 @@ export default function Modal({
     <>
       <div
         style={overlayStyle}
-        className={`
-          w-screen h-screen z-0 top-1/2 left-1/2 
-          -translate-x-1/2 -translate-y-1/2 absolute
-        `}
+        className={`w-screen h-screen z-0 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 absolute ${styles.overlay}`}
         onClick={toggleModal}
       >
       </div>
 
       <div
         style={modalStyle}
-        className={`fixed top-1/2 left-1/2 rounded-lg flex-col -translate-x-1/2 -translate-y-1/2`}
+        className={`fixed top-1/2 left-1/2 rounded-lg flex-col -translate-x-1/2 -translate-y-1/2 ${styles.modal}`}
       >
         <div
           style={modalHeaderStyle}
@@ -128,13 +96,7 @@ export default function Modal({
           <Text weight={600}>{title}</Text>
 
           <div>
-            <Button 
-              background={{
-                light: `transparent`, 
-                dark: `transparent`
-              }} 
-              onClick={toggleModal}
-            >
+            <Button onClick={toggleModal}>
               <IconContainer iconLink={xIcon}></IconContainer>
             </Button>
           </div>
@@ -142,7 +104,7 @@ export default function Modal({
 
         <div
           style={modalHeaderStyle}
-          className={`z-10 rounded-lg items-center justify-center overflow-y-scroll`}
+          className={`z-10 rounded-lg items-center justify-center overflow-y-scroll no-scrollbar`}
         >
           {children}
         </div>
@@ -152,22 +114,17 @@ export default function Modal({
           className={`${showButtons ? `flex` : `hidden`} z-10 rounded-lg gap-2 items-center justify-end`}
         >
           <div>
-            <Button 
-              background={cancelButtonColor} 
-              padding={buttonsPadding} 
-              onClick={handleCancel}
-            >
-              {cancelText}
+            <Button onClick={handleCancel} type={EButtonType.ERROR}>
+              <Text>{cancelText}</Text>
             </Button>
           </div>
           <div>
             <Button
               isDisable={isOkDisable}
-              background={okButtonColor} 
-              padding={buttonsPadding}
               onClick={handleOk}
+              type={EButtonType.SUCCESS}
             >
-              {okText}
+              <Text>{okText}</Text>
             </Button>
           </div>
         </div>

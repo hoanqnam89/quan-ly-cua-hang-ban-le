@@ -58,7 +58,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
 
   const accountPayload: IAccountPayload = {
     username: foundAccounts[0].username, 
-    role_group_ids: foundAccounts[0].role_group_ids, 
   }
 
   const payload: string = await encrypt({...accountPayload});

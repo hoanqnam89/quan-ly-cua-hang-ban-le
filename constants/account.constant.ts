@@ -6,7 +6,7 @@ export const DEFAULT_ACCOUNT: IAccount = {
   created_at: new Date(),
   updated_at: new Date(),
 
-  username: `LeeTrongjNghiax`,
-  password: `12345678`,
-  role_group_ids: [], 
+  username: `admin`,
+  password: `admin`,
+  is_admin: true,
 }

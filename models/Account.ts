@@ -22,9 +22,9 @@ const AccountSchema = new Schema({
     type: String, 
     required: [true, `Password is required!`], 
   }, 
-  role_group_ids: {
-    type: [ObjectId], 
-    required: [true, `Role Group IDs is required!`], 
+  is_admin: {
+    type: Boolean, 
+    required: [true, `Is Admin is required!`], 
   }, 
 });
 

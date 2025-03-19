@@ -2,13 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { deleteCollectionByIdApi, getCollectionByIdApi } from "@/utils/api-helper";
 import { IQueryString } from "../../interfaces/query-string.interface";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { IAccount, IRoleGroup } from "@/interfaces";
-import { AccountModel, RoleGroupModel } from "@/models";
+import { IAccount } from "@/interfaces";
+import { AccountModel } from "@/models";
 import { print } from "@/utils/print";
 import { connectToDatabase } from "@/utils/database";
-import { isIdsValid } from "@/utils/is-ids-valid";
 import { createErrorMessage } from "@/utils/create-error-message";
-import { isIdsExist } from "@/utils/is-ids-exist";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { cookies } from "next/headers";
 import { isAdmin } from "@/utils/is-admin";
@@ -60,38 +58,11 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.NOT_FOUND }
       );
     
-    if ( !isIdsValid(account.role_group_ids) ) 
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to update ${collectionName}.`,
-          `Some of the ID in role_group_ids is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.ROLE_GROUP} ID is correct.`, 
-        ),
-        { status: EStatusCode.UNPROCESSABLE_ENTITY }
-      );
-
-    const isRoleGroupIdsExist: boolean = await isIdsExist<IRoleGroup>(
-      account.role_group_ids, RoleGroupModel 
-    );
-
-    if ( !isRoleGroupIdsExist ) 
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to update ${collectionName}.`,
-          `Some of the ${ECollectionNames.ROLE_GROUP} in role_group_ids does not exist in our records.`,
-          path, 
-          `Please check if the ${ECollectionNames.ROLE_GROUP} ID is correct.`, 
-        ),          
-        { status: EStatusCode.NOT_FOUND }
-      );
-
     const updatedAccount = await collectionModel.findOneAndUpdate(
       { _id: account._id }, 
       {
         $set: {
           password: account.password, 
-          role_group_ids: account.role_group_ids, 
           updated_at: new Date(), 
         }
       }

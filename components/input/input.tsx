@@ -1,20 +1,18 @@
 import React, { KeyboardEvent, ChangeEvent, CSSProperties, HTMLInputTypeAttribute, memo, ReactElement } from 'react';
 import { IInputProps } from '../interfaces/input-props.interface';
+import styles from './style.module.css';
 
 function Input({
   type = `text`, 
   name = ``, 
-  minWidth = 100,
-  background = {
-    light: `#eeeeee`,
-    dark: `#121212`
-  },
   value = ``,
   isDisable = false, 
   className = ``, 
   style = {}, 
   min = 0, 
   max = 10, 
+  isRequire = false, 
+  pattern = `.{1,}`, 
   onInputChange = () => {},
   onInputBlur = () => {},
   onInputKeyDown = () => {}, 
@@ -22,10 +20,6 @@ function Input({
 }: Readonly<IInputProps<string> & {type: HTMLInputTypeAttribute}>
 ): ReactElement {
   const inputStyle: CSSProperties = {
-    minWidth: minWidth,
-    background: `light-dark(${background.light}, ${background.dark})`,
-    color: isDisable ? `#7f7f7f` : `initial`, 
-    padding: 4, 
     ...style, 
   }
 
@@ -44,7 +38,7 @@ function Input({
       min={min}
       max={max}
       style={inputStyle}
-      className={`w-full ${className}`}
+      className={`w-full p-2 rounded-lg ${className} ${styles.input}`}
       type={type}
       value={value}
       disabled={isDisable}
@@ -52,6 +46,8 @@ function Input({
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
       placeholder={placeholder}
+      required={isRequire}
+      pattern={pattern}
     >
     </input>
   )
