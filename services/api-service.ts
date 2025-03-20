@@ -2,6 +2,11 @@ import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames } from "@/enums";
 import { nameToHyphenAndLowercase } from "@/utils/name-to-hyphen-and-lowercase";
 
+const getCollectionCount = async (
+  collectionName: ECollectionNames, 
+): Promise<Response> => 
+  await fetch(`${ROOT}/${nameToHyphenAndLowercase(collectionName)}/count`);
+
 const getCollections = async (
   collectionName: ECollectionNames, 
 ): Promise<Response> => 
@@ -46,6 +51,7 @@ const deleteCollectionById = async (
   );
 
   export {
+    getCollectionCount,
     getCollections, 
     addCollection, 
     deleteCollections, 

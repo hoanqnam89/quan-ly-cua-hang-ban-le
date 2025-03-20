@@ -23,7 +23,6 @@ import { ISelectOption } from '@/components/select-dropdown/interfaces/select-op
 import { ISupplier } from '@/interfaces/supplier.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
-import { getCollectionById } from '@/services/api-service';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
