@@ -7,8 +7,8 @@ export interface IInputProps<T> {
   className?: string 
   style?: CSSProperties
   placeholder?: string
-  min?: number 
-  max?: number
+  min?: number | string
+  max?: number | string
   isRequire?: boolean
   pattern?: string
   onInputChange?: (e: ChangeEvent<HTMLInputElement>) => void

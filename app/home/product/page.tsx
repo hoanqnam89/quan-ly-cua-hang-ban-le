@@ -358,7 +358,9 @@ export default function Product() {
             >
             </NumberInput>
           </InputSection>
+        </TabItem>
 
+        <TabItem label={`Hình ảnh`}>
           <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>
             <div>
               <input

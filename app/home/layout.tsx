@@ -4,7 +4,7 @@ import { CSSProperties, ReactElement, useState } from 'react';
 import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
 import { logout, me } from '@/services/Auth';
 import { redirect } from 'next/navigation';
-import { boxIcon, chevronLeftIcon, chevronRightIcon, circleUserRoundIcon, homeIcon, logOutIcon, warehouseIcon } from '@/public';
+import { boxIcon, chevronLeftIcon, chevronRightIcon, circleUserRoundIcon, homeIcon, logOutIcon, userIcon, warehouseIcon } from '@/public';
 import { LoadingScreen } from '@/components';
 import { IRootLayout } from '@/app/interfaces/root-layout.interface';
 import styles from './style.module.css';
@@ -57,6 +57,11 @@ export default function RootLayout({
       link: `${currentPath}/product`,
       label: `Sản phẩm`,
       icon: boxIcon, 
+    },
+    {
+      link: `${currentPath}/user`,
+      label: `Nhân viên`,
+      icon: userIcon, 
     },
     {
       link: `${currentPath}/supplier`,

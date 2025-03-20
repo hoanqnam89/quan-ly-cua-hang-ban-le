@@ -43,10 +43,10 @@ export default function User() {
         ECollectionNames.ACCOUNT, 
       );
 
-      // setUser({
-      //   ...user, 
-      //   account_id: newAccounts[0]._id, 
-      // });
+      setUser({
+        ...user, 
+        account_id: newAccounts[0]._id, 
+      });
       setAccountOptions([
         ...newAccounts.map((account: IAccount): ISelectOption => ({
           label: `${account.username}`,
@@ -392,6 +392,7 @@ export default function User() {
           <div className={`flex flex-col gap-2`}>
             <InputSection label={`Email`}>
               <TextInput
+                textType={`email`}
                 name={`email`}
                 isDisable={isModalReadOnly}
                 value={user.email}

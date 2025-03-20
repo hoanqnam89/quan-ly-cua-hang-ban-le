@@ -1,4 +1,4 @@
-import React, { memo, ReactElement } from 'react';
+import React, { HTMLInputTypeAttribute, memo, ReactElement } from 'react';
 import { IInputProps } from '../interfaces/input-props.interface';
 import Input from '../input/input';
 
@@ -12,11 +12,13 @@ function TextInput({
   placeholder = ``, 
   onInputChange = () => {},
   onInputBlur = () => {},
-  isPassword = false, 
-}: Readonly<IInputProps<string>> & {isPassword?: boolean}): ReactElement {
+  textType = `text`,
+}: Readonly<IInputProps<string>> & {
+  textType?: HTMLInputTypeAttribute
+}): ReactElement {
   return (
     <Input 
-      type={`${isPassword ? `password` : `text`}`}
+      type={textType}
       placeholder={placeholder}
       name={name}
       value={value}
