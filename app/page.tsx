@@ -2,13 +2,11 @@
 
 import React, { ChangeEvent, ReactElement, useState } from 'react';
 import { redirect } from 'next/navigation';
-// import { notification } from 'antd';
 import { EStatusCode } from '@/enums/status-code.enum';
 import { login } from '@/services/Auth';
 import { Button, LoadingScreen, Text, TextInput } from '@/components';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 import styles from './style.module.css';
-import Notification from '@/components/notification/notification';
 
 export default function Login(): ReactElement {
   const [username, setUsername] = useState<string>(``);
@@ -38,7 +36,6 @@ export default function Login(): ReactElement {
   }
 
   const handleLogin = async (): Promise<void> => {
-    // redirect(`/home`);
     setIsLoading(true);
     const loginApiResponse: Response = await login(username, password);
     setIsLoading(false);
@@ -80,7 +77,7 @@ export default function Login(): ReactElement {
         <Text weight={600}>Mật khẩu:</Text>
         <TextInput 
           value={password}
-          isPassword={true} 
+          textType={`password`}
           onInputChange={handleChangePassword}
         >
         </TextInput>

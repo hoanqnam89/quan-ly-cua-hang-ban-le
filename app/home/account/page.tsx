@@ -245,7 +245,7 @@ export default function Account() {
 
           <InputSection label={`Password`} gridColumns={gridColumns}>
             <TextInput
-              isPassword={true}
+              textType={`password`}
               name={`password`}
               isDisable={isModalReadOnly}
               value={account.password}

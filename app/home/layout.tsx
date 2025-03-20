@@ -2,9 +2,7 @@
 
 import { CSSProperties, ReactElement, useState } from 'react';
 import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
-import { logout, me } from '@/services/Auth';
-import { redirect } from 'next/navigation';
-import { boxIcon, chevronLeftIcon, chevronRightIcon, circleUserRoundIcon, homeIcon, logOutIcon, truckIcon, userIcon, warehouseIcon } from '@/public';
+import { boxIcon, chevronLeftIcon, chevronRightIcon, circleUserRoundIcon, homeIcon, truckIcon, userIcon, warehouseIcon } from '@/public';
 import { LoadingScreen } from '@/components';
 import { IRootLayout } from '@/app/interfaces/root-layout.interface';
 import styles from './style.module.css';
@@ -24,16 +22,6 @@ export default function RootLayout({
 
   const toggleNavbar = (): void => {
     setIsExpand((prev: boolean): boolean => !prev);
-  }
-
-  const handleLogOut = async (): Promise<void> => {
-    if ( !confirm(`Are you sure you want to log out?`) ) 
-      return;
-
-    await me();
-    setIsLoading(true);
-    await logout();
-    redirect("/");
   }
 
   const currentPath: string = `/home`;
@@ -74,9 +62,9 @@ export default function RootLayout({
       icon: warehouseIcon, 
     },
     {
-      label: `Đăng xuất`,
-      icon: logOutIcon, 
-      onClick: handleLogOut, 
+      link: `${currentPath}/personal-info`,
+      label: `Thông tin cá nhân`, 
+      icon: circleUserRoundIcon, 
     },
   ];
 

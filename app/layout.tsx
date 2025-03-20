@@ -2,7 +2,6 @@
 
 import "./globals.css";
 import { Context, createContext, ReactElement, useMemo } from "react";
-// import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { IRootLayout } from "@/app/interfaces/root-layout.interface";
 
 const context: Context<{name: string}> = createContext({name: `default`});
@@ -15,11 +14,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {/* <AntdRegistry> */}
-          <context.Provider value={contextValue}>
-            {children}
-          </context.Provider>
-        {/* </AntdRegistry> */}
+        <context.Provider value={contextValue}>
+          {children}
+        </context.Provider>
       </body>
     </html>
   );

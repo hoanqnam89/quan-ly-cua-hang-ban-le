@@ -1,43 +1,37 @@
 'use client';
 
-import { Button, IconContainer, SelectDropdown, Text, TextInput } from '@/components'
-import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
-import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
-import { DEFAULT_USER } from '@/constants/user.constant'
-import { ECollectionNames } from '@/enums'
-import { IAccount, IUser } from '@/interfaces'
-import { infoIcon, trashIcon } from '@/public'
-import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip'
-import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
-import InputSection from '../components/input-section/input-section';
+import React, { ChangeEvent, ReactElement, useCallback, useEffect, useState } from 'react'
+import InputSection from '../components/input-section/input-section'
+import { Button, IconContainer, LoadingScreen, SelectDropdown, Text, TextInput } from '@/components'
+import { IAccount, IUser } from '@/interfaces';
+import { DEFAULT_USER } from '@/constants/user.constant';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
+import { fetchGetCollections } from '@/utils/fetch-get-collections';
+import { ECollectionNames } from '@/enums';
+import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
+import { trashIcon } from '@/public';
+import DateInput from '@/components/date-input/date-input';
 import { enumToKeyValueArray } from '@/utils/enum-to-array';
 import { EUserGender } from '@/enums/user-gender.enum';
-import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
-import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import Image from 'next/image';
+import styles from './style.module.css';
 import Tabs from '@/components/tabs/tabs';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
-import DateInput from '@/components/date-input/date-input';
-import styles from './style.module.css';
+import { EButtonType } from '@/components/button/interfaces/button-type.interface';
+import Checkbox from '@/components/checkbox/checkbox';
+import { DEFAULT_ACCOUNT } from '@/constants/account.constant';
+import { logout, me } from '@/services/Auth';
+import { redirect } from 'next/navigation';
 
 type collectionType = IUser;
-const collectionName: ECollectionNames = ECollectionNames.USER;
 
-export default function User() {
-  const [imageFile, setImageFile] = useState<File | null>(null);
+export default function PersonalInfo(): ReactElement {
+  const [account, setAccount] = useState<IAccount>(DEFAULT_ACCOUNT);
   const [user, setUser] = useState<IUser>(DEFAULT_USER);
-  const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
-  const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
-    id: ``, 
-    isClicked: false, 
-  });
-  const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({
-    id: ``, 
-    isClicked: false, 
-  });
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [accountOptions, setAccountOptions] = useState<ISelectOption[]>([]);
 
   const getAccounts: () => Promise<void> = useCallback(
@@ -100,157 +94,6 @@ export default function User() {
   useEffect((): void => {
     getAccounts();
   }, [getAccounts]);
-  
-  const columns: Array<IColumnProps<collectionType>> = [
-    {
-      key: `index`,
-      ref: useRef(null), 
-      title: `#`,
-      size: `1fr`,
-    },
-    {
-      key: `_id`,
-      ref: useRef(null), 
-      title: `ID`,
-      size: `6fr`,
-      isVisible: false, 
-    },
-    {
-      key: `account_id`,
-      ref: useRef(null), 
-      title: `Account`,
-      size: `3fr`, 
-    },
-    {
-      key: `name`,
-      ref: useRef(null), 
-      title: `Full Name`,
-      size: `3fr`, 
-      render: (user: collectionType): ReactElement => {
-        const name: string = `${user.name.first} ${user.name.middle + ` `}${user.name.last}`;
-        return <Text isEllipsis={true} tooltip={name}>{name}</Text>
-      }
-    },
-    {
-      key: `address`,
-      ref: useRef(null), 
-      title: `Address`,
-      size: `3fr`, 
-      isVisible: false, 
-      render: (user: collectionType): ReactElement => {
-        const address: string = `${user.address.number} ${user.address.street} ${user.address.ward} ${user.address.district} ${user.address.city} ${user.address.country}`;
-        return <Text isEllipsis={true} tooltip={address}>{address}</Text>
-      }
-    },
-    {
-      key: `email`,
-      ref: useRef(null), 
-      title: `Email`,
-      size: `3fr`, 
-      isVisible: false, 
-    },
-    {
-      key: `birthday`,
-      ref: useRef(null), 
-      title: `Birthday`,
-      size: `3fr`, 
-      isVisible: false, 
-      render: (user: collectionType): ReactElement => {
-        if ( !user.birthday )
-          return <Text isEllipsis={true}>NaN</Text>
-
-        const date: string = new Date(user.birthday).toLocaleString();
-        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
-      }
-    },
-    {
-      key: `gender`,
-      ref: useRef(null), 
-      title: `Gender`,
-      size: `3fr`, 
-      isVisible: false, 
-    },
-    {
-      key: `avatar`,
-      ref: useRef(null), 
-      title: `Hình ảnh`,
-      size: `3fr`, 
-      render: (collection: collectionType): ReactElement => collection.avatar ? <div 
-        className={`relative ${styles[`image-container`]}`}
-      >
-        <Image 
-          className={`w-full max-w-full max-h-full`}
-          src={collection.avatar} 
-          alt={``}
-          width={0}
-          height={0}
-          quality={10}
-        >
-        </Image>
-      </div> : <></>
-    }, 
-    {
-      key: `created_at`,
-      ref: useRef(null), 
-      title: `Created At`,
-      size: `4fr`, 
-      isVisible: false, 
-      render: (user: collectionType): ReactElement => {
-        const date: string = new Date(user.created_at).toLocaleString();
-        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
-      }
-    },
-    {
-      key: `updated_at`,
-      ref: useRef(null), 
-      title: `Updated At`,
-      size: `4fr`, 
-      render: (user: collectionType): ReactElement => {
-        const date: string = new Date(user.updated_at).toLocaleString();
-        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
-      }
-    },
-    {
-      title: `More`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (user: collectionType): ReactElement => <Button 
-        title={createMoreInfoTooltip(collectionName)}
-        onClick={(): void => {
-          setIsClickShowMore({
-            id: user._id, 
-            isClicked: !isClickShowMore.isClicked, 
-          });
-        }}
-      >
-        <IconContainer 
-          tooltip={createMoreInfoTooltip(collectionName)}
-          iconLink={infoIcon}
-        >
-        </IconContainer>
-      </Button>
-    },
-    {
-      title: `Delete`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (user: collectionType): ReactElement => <Button 
-        title={createDeleteTooltip(collectionName)}
-        onClick={(): void => {
-          setIsClickDelete({
-            id: user._id, 
-            isClicked: !isClickDelete.isClicked, 
-          });
-        }}
-      >
-        <IconContainer 
-          tooltip={createDeleteTooltip(collectionName)}
-          iconLink={trashIcon}
-        >
-        </IconContainer>
-      </Button>
-    },
-  ];
 
   const handleChangeAccountId = (e: ChangeEvent<HTMLSelectElement>): void => {
     setUser({
@@ -308,28 +151,46 @@ export default function User() {
     setImageFile(null);
   }
 
+  const handleChangeAccount = (e: ChangeEvent<HTMLInputElement>): void => {
+    setAccount({
+      ...account, 
+      [e.target.name]: e.target.value, 
+    });
+  }
+
+  const handleChangeIsAdmin = (e: ChangeEvent<HTMLInputElement>): void => {
+    setAccount({
+      ...account, 
+      is_admin: e.target.checked, 
+    });
+  }
+
+  const handleLogOut = async (): Promise<void> => {
+    if ( !confirm(`Are you sure you want to log out?`) ) 
+      return;
+
+    await me();
+    setIsLoading(true);
+    await logout();
+    redirect("/");
+  }
+
   const genderOptions: ISelectOption[] = enumToKeyValueArray(EUserGender)
     .map((array: string[]): ISelectOption => ({
       label: array[0], 
       value: array[1], 
     }));
 
+	const titleSize: number = 24;
+
   return (
-    <ManagerPage<collectionType>
-      columns={columns} 
-      collectionName={collectionName} 
-      defaultCollection={DEFAULT_USER}
-      collection={user}
-      setCollection={setUser}
-      isModalReadonly={isModalReadOnly} 
-      setIsModalReadonly={setIsModalReadOnly}
-      isClickShowMore={isClickShowMore}
-      isClickDelete={isClickDelete}
-    >
+    <>
+			{isLoading ? <LoadingScreen></LoadingScreen> : <></>}
+
+			<Text size={titleSize}>Thông tin nhân viên</Text>
+
       <Tabs>
-
         <TabItem label={`Tài khoản`}>
-
           <InputSection label={`Cho tài khoản`}>
             <SelectDropdown
               isLoading={isLoading}
@@ -534,9 +395,44 @@ export default function User() {
           <TimestampTabItem<collectionType> collection={user}>
           </TimestampTabItem>
         </TabItem>
-
       </Tabs>
 
-    </ManagerPage>
+			<Text size={titleSize}>Thông tin tài khoản</Text>
+
+			<InputSection label={`Tên tài khoản`}>
+				<TextInput
+					name={`username`}
+					isDisable={isModalReadOnly}
+					value={account.username}
+					onInputChange={handleChangeAccount}
+				>
+				</TextInput>
+			</InputSection>
+
+			<InputSection label={`Là quản lý`}>
+				<Checkbox 
+					isChecked={account.is_admin}
+					onInputChange={handleChangeIsAdmin}
+				>
+				</Checkbox>
+			</InputSection>
+
+			<Text size={titleSize}>Chức năng</Text>
+
+			<div className={`flex gap-2`}>
+				<Button type={EButtonType.INFO}>
+					<Text>Chỉnh sửa</Text>
+				</Button>
+				<Button type={EButtonType.INFO}>
+					<Text>Đổi mật khẩu</Text>
+				</Button>
+				<Button type={EButtonType.INFO}>
+					<Text>Quên mật khẩu?</Text>
+				</Button>
+				<Button type={EButtonType.ERROR} onClick={handleLogOut}>
+					<Text>Đăng xuất</Text>
+				</Button>
+			</div>
+    </>
   )
 }
