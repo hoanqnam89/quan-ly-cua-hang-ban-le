@@ -21,6 +21,15 @@ const SupplierSchema = new Schema({
     type: String, 
     required: [false], 
   }, 
+  address: {
+    number: { type: String, }, 
+    street: { type: String, }, 
+    city: { type: String, }, 
+    ward: { type: String, }, 
+    district: { type: String, }, 
+    country: { type: String, }
+  }, 
+  email: { type: String, }, 
 });
 
 export const SupplierModel = models.Supplier || model(`Supplier`, SupplierSchema);

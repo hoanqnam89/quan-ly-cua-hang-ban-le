@@ -13,6 +13,10 @@ const ProductSchema = new Schema({
     type: Date, 
   }, 
 
+  supplier_id: { 
+    type: ObjectId, 
+    required: [true, `Supplier is required!`], 
+  }, 
   name: {
     type: String, 
     required: [true, `Name is required!`], 

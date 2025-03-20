@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, IconContainer, NumberInput, Text, TextInput } from '@/components'
+import { Button, IconContainer, NumberInput, SelectDropdown, Text, TextInput } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
@@ -19,6 +19,11 @@ import { DEFAULT_PROCDUCT } from '@/constants/product.constant';
 import Image from 'next/image';
 import styles from './style.module.css';
 import { MAX_PRICE } from '@/constants/max-price.constant';
+import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
+import { ISupplier } from '@/interfaces/supplier.interface';
+import { fetchGetCollections } from '@/utils/fetch-get-collections';
+import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
+import { getCollectionById } from '@/services/api-service';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -39,6 +44,29 @@ export default function Product() {
   const [canRead, setCanRead] = useState<boolean>(false);
   const [canUpdate, setCanUpdate] = useState<boolean>(false);
   const [canDelete, setCanDelete] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
+
+  const getSuppliers: () => Promise<void> = useCallback(
+    async (): Promise<void> => {
+      const newSuppliers: ISupplier[] = await fetchGetCollections<ISupplier>(
+        ECollectionNames.SUPPLIER, 
+      );
+
+      setProduct({
+        ...product, 
+        supplier_id: newSuppliers[0]._id, 
+      });
+      setSupplierOptions([
+        ...newSuppliers.map((supplier: ISupplier): ISelectOption => ({
+          label: `${supplier.name}`,
+          value: supplier._id,
+        }))
+      ]);
+      setIsLoading(false);
+    }, 
+    [product.supplier_id],
+  );
   
   const setCanReadCollection: () => Promise<void> = useCallback(
     async (): Promise<void> => {
@@ -112,6 +140,10 @@ export default function Product() {
     setCanDeleteCollection();
   }, [setCanDeleteCollection])
 
+  useEffect((): void => {
+    getSuppliers();
+  }, [getSuppliers]);
+
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
     const { files } = e.target;
     const validImageFiles: File[] = [];
@@ -179,6 +211,12 @@ export default function Product() {
       isVisible: false, 
     },
     {
+      key: `supplier_id`,
+      ref: useRef(null), 
+      title: `Nhà cung cấp`,
+      size: `3fr`, 
+    },
+    {
       key: `name`,
       ref: useRef(null), 
       title: `Tên sản phẩm`,
@@ -189,6 +227,7 @@ export default function Product() {
       ref: useRef(null), 
       title: `Mô tả`,
       size: `5fr`, 
+      isVisible: false
     },
     {
       key: `price`,
@@ -201,6 +240,7 @@ export default function Product() {
       ref: useRef(null), 
       title: `Hình ảnh`,
       size: `3fr`, 
+      isVisible: false, 
       render: (product: collectionType): ReactElement => 
         <div className={`flex flex-wrap gap-2`}>
           {
@@ -292,6 +332,13 @@ export default function Product() {
       [e.target.name]: e.target.value, 
     });
   }
+  
+  const handleChangeSupplierId = (e: ChangeEvent<HTMLSelectElement>): void => {
+    setProduct({
+      ...product, 
+      supplier_id: e.target.value, 
+    });
+  }
 
   const handleDeleteImage = (index: number): void => {
     const newImages: string[] = product.image_links.filter(
@@ -326,6 +373,21 @@ export default function Product() {
       canDeleteCollection={canDelete}
     >
       <Tabs>
+        <TabItem label={`Nhà cung cấp`}>
+          <InputSection label={`Cho nhà cung cấp`}>
+            <SelectDropdown
+              isLoading={isLoading}
+              isDisable={isModalReadOnly}
+              options={supplierOptions}
+              defaultOptionIndex={getSelectedOptionIndex(
+                supplierOptions, product.supplier_id
+              )}
+              onInputChange={handleChangeSupplierId}
+            >
+            </SelectDropdown>
+          </InputSection>
+
+        </TabItem>
 
         <TabItem label={`${collectionName}`}>
           <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>

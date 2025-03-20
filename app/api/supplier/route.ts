@@ -44,6 +44,8 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       updated_at: new Date(), 
       name: supplier.name,
       logo: supplier.logo,
+      address: supplier.address,
+      email: supplier.email,
     });
 
     const savedSupplier: collectionType = await newSupplier.save();

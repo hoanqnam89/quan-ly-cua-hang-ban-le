@@ -41,7 +41,7 @@ const UserSchema = new Schema({
     type: String, 
     enum: enumToArray(EUserGender), 
   }, 
-  avatarLink: { type: String, }, 
+  avatar: { type: String }, 
 });
 
 export const UserModel = models.User || model(`User`, UserSchema);

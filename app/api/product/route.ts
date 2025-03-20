@@ -1,11 +1,13 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { IProduct } from "@/interfaces/product.interface";
-import { ProductModel } from "@/models";
+import { ISupplier } from "@/interfaces/supplier.interface";
+import { ProductModel, SupplierModel } from "@/models";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { print } from "@/utils/print";
+import { isValidObjectId } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 
 type collectionType = IProduct;
@@ -38,10 +40,36 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
 
   try {
     connectToDatabase();
+
+    if ( !isValidObjectId(product.supplier_id) )
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `The ID '${product.supplier_id}' is not valid.`,
+          path, 
+          `Please check if the ${ECollectionNames.ACCOUNT} ID is correct.`, 
+        ),
+        { status: EStatusCode.UNPROCESSABLE_ENTITY }
+      );
+
+    const foundSupplier: ISupplier | null = 
+      await SupplierModel.findById(product.supplier_id);
+
+    if (!foundSupplier) 
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `The ${ECollectionNames.ACCOUNT} with the ID '${product.supplier_id}' does not exist in our records.`,
+          path, 
+          `Please check if the ${ECollectionNames.ACCOUNT} ID is correct.`
+        ),          
+        { status: EStatusCode.NOT_FOUND }
+      );
     
     const newProduct = new collectionModel({
       created_at: new Date(), 
       updated_at: new Date(), 
+      supplier_id: product.supplier_id,
       name: product.name,
       description: product.description,
       price: product.price,

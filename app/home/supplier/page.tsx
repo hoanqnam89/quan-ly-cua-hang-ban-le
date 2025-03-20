@@ -187,6 +187,17 @@ export default function Product() {
       </div> : <></>
     }, 
     {
+      key: `address`,
+      ref: useRef(null), 
+      title: `Địa chỉ`,
+      size: `5fr`, 
+      isVisible: false, 
+      render: (user: collectionType): ReactElement => {
+        const address: string = `${user.address.number} ${user.address.street}, ${user.address.ward}, ${user.address.district}, ${user.address.city}, ${user.address.country}`;
+        return <Text isEllipsis={true} tooltip={address}>{address}</Text>
+      }
+    },
+    {
       key: `created_at`,
       ref: useRef(null), 
       title: `Ngày tạo`,
@@ -334,6 +345,71 @@ export default function Product() {
               </div> 
             </div>
           </InputSection>
+        </TabItem>
+
+        <TabItem label={`Địa chỉ`}>
+          <div className={`flex flex-col gap-2`}>
+            <InputSection label={`Quốc gia`}>
+              <TextInput
+                name={`country`}
+                isDisable={isModalReadOnly}
+                value={supplier.address.country}
+                onInputChange={handleChangeSupplier}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Thành phố`}>
+              <TextInput
+                name={`city`}
+                isDisable={isModalReadOnly}
+                value={supplier.address.city}
+                onInputChange={handleChangeSupplier}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Quận`}>
+              <TextInput
+                name={`district`}
+                isDisable={isModalReadOnly}
+                value={supplier.address.district}
+                onInputChange={handleChangeSupplier}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Phường`}>
+              <TextInput
+                name={`ward`}
+                isDisable={isModalReadOnly}
+                value={supplier.address.ward}
+                onInputChange={handleChangeSupplier}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Đường`}>
+              <TextInput
+                name={`street`}
+                isDisable={isModalReadOnly}
+                value={supplier.address.street}
+                onInputChange={handleChangeSupplier}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Số nhà`}>
+              <TextInput
+                name={`number`}
+                isDisable={isModalReadOnly}
+                value={supplier.address.number}
+                onInputChange={handleChangeSupplier}
+              >
+              </TextInput>
+            </InputSection>
+          </div>
+
         </TabItem>
 
         <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>

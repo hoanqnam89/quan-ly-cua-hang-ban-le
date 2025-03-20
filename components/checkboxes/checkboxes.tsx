@@ -1,6 +1,7 @@
 import React, { ChangeEvent, Dispatch, ReactElement, SetStateAction } from 'react'
-import { LoadingIcon, Text } from '@/components';
+import { IconContainer, LoadingIcon, Text } from '@/components';
 import styles from './style.module.css';
+import { checkIcon } from '@/public';
 
 export interface ICheckbox {
   label: string
@@ -15,6 +16,7 @@ interface ICheckboxesProps {
   options?: ICheckbox[] 
   setOptions: Dispatch<SetStateAction<ICheckbox[]>>
   shouldSetOptions?: boolean
+  showCheckMark?: boolean
   onInputChange?: (
     e: ChangeEvent<HTMLInputElement>, option: ICheckbox, index: number, 
   ) => void 
@@ -27,6 +29,7 @@ export default function Checkboxes({
   options = [], 
   setOptions, 
   shouldSetOptions = true, 
+  showCheckMark = false,
   onInputChange = () => {}, 
 }: Readonly<ICheckboxesProps>): ReactElement {
   return (
@@ -42,8 +45,12 @@ export default function Checkboxes({
           <div key={optionIndex} className={`py-2`}>
             <label 
               htmlFor={`${option.value}`}
-              className={`checkbox select-none p-2 rounded-lg whitespace-nowrap overflow-hidden text-ellipsis ${option.isChecked ? styles.checked : styles.unchecked}`}
+              className={`checkbox flex gap-2 select-none p-2 rounded-lg whitespace-nowrap overflow-hidden text-ellipsis ${option.isChecked ? styles.checked : styles.unchecked}`}
             >
+              {option.isChecked && showCheckMark
+                ? <IconContainer iconLink={checkIcon}></IconContainer> 
+                : null
+              }
               {option.label}
             </label>
             <input 

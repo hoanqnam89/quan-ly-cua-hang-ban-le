@@ -1,3 +1,5 @@
+import { IUserAddress } from "./user-address.interface"
+
 export interface ISupplier {
   _id: string
   created_at: Date
@@ -5,4 +7,6 @@ export interface ISupplier {
 
   name: string
   logo?: string, 
+  address: IUserAddress
+  email: string
 }
