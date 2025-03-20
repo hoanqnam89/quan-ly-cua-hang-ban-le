@@ -190,22 +190,6 @@ export default function PersonalInfo(): ReactElement {
 			<Text size={titleSize}>Thông tin nhân viên</Text>
 
       <Tabs>
-        <TabItem label={`Tài khoản`}>
-          <InputSection label={`Cho tài khoản`}>
-            <SelectDropdown
-              isLoading={isLoading}
-              isDisable={isModalReadOnly}
-              options={accountOptions}
-              defaultOptionIndex={getSelectedOptionIndex(
-                accountOptions, user.account_id
-              )}
-              onInputChange={handleChangeAccountId}
-            >
-            </SelectDropdown>
-          </InputSection>
-
-        </TabItem>
-
         <TabItem label={`Họ và Tên`}>
 
           <div className={`flex flex-col gap-2`}>
@@ -423,12 +407,15 @@ export default function PersonalInfo(): ReactElement {
 				<Button type={EButtonType.INFO}>
 					<Text>Chỉnh sửa</Text>
 				</Button>
+
 				<Button type={EButtonType.INFO}>
 					<Text>Đổi mật khẩu</Text>
 				</Button>
+
 				<Button type={EButtonType.INFO}>
 					<Text>Quên mật khẩu?</Text>
 				</Button>
+
 				<Button type={EButtonType.ERROR} onClick={handleLogOut}>
 					<Text>Đăng xuất</Text>
 				</Button>

@@ -1,6 +1,7 @@
 import { ChangeEvent, ReactElement } from "react";
 import { ISelectOption } from "./interfaces/select-option.interface";
 import LoadingIcon from "../loading-icon/loading-icon";
+import styles from './style.module.css';
 
 interface ISelectDropdownProps {
   name?: string
@@ -27,7 +28,7 @@ export default function SelectDropdown({
       <select 
         name={name}
         disabled={isDisable}
-        className={`p-2 outline outline-2 outline-gray-900`} 
+        className={`p-2 outline outline-1 ${styles.select}`} 
         onChange={onInputChange}
         value={options.length > 0 ? options[defaultOptionIndex].value : ``}
         multiple={isSelectMultiple}

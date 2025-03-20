@@ -3,6 +3,7 @@
 import React, { Children, isValidElement, ReactElement, useEffect, useState } from 'react'
 import TabItem, { ITabProps } from './components/tab-item/tab-item';
 import { Button, Text } from '..';
+import styles from './style.module.css';
 
 interface ITabsProps {
   activeTabIndex?: number
@@ -33,14 +34,14 @@ export default function Tabs({
 
   return (
     <div className={`flex flex-col gap-2`}>
-      <ul className={`tab-list flex overflow-x-scroll border-b-2 border-solid border-b-gray no-scrollbar`}>
+      <ul className={`tab-list flex overflow-x-scroll border-b-2 border-solid no-scrollbar ${styles[`tab-list`]}`}>
         {tabs.map((
           tab: ReactElement<ITabProps>, index: number
         ): ReactElement => (
           <li 
             key={`tab-${index}`} 
             className={`p-1 block border-b-2 border-solid ${
-              activeTab === index ? `border-b-blue-700` : `border-none`
+              activeTab === index ? styles[`active-tab`] : `border-none`
             }`
           }>
             <Button

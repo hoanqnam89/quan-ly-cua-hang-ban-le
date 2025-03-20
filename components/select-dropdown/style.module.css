@@ -1,0 +1,20 @@
+.select {
+	background: var(--background);
+	outline-color: var(--foreground);
+
+  &:hover {
+    filter: brightness(.9);
+  }
+
+  &:active {
+    filter: brightness(.8);
+  }
+
+  &:disabled {
+    filter: brightness(.7);
+  }
+
+	&:open {
+		background: var(--background);
+	}
+}
