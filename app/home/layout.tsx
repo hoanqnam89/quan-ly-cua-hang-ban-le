@@ -3,7 +3,6 @@
 import { CSSProperties, ReactElement, useState } from 'react';
 import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
 import { boxIcon, chevronLeftIcon, chevronRightIcon, circleUserRoundIcon, homeIcon, truckIcon, userIcon, warehouseIcon } from '@/public';
-import { LoadingScreen } from '@/components';
 import { IRootLayout } from '@/app/interfaces/root-layout.interface';
 import styles from './style.module.css';
 
@@ -18,7 +17,6 @@ export default function RootLayout({
   children 
 }: Readonly<IRootLayout>): ReactElement {
   const [isExpand, setIsExpand] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const toggleNavbar = (): void => {
     setIsExpand((prev: boolean): boolean => !prev);
@@ -80,7 +78,6 @@ export default function RootLayout({
       <nav className={`h-lvh overflow-y-scroll flex flex-col gap-4 no-scrollbar p-4 ${styles.nav}`}>
         {navbarItems.map((navbarItem: CNavbarItem, index: number) =>
           <NavbarItem 
-            setIsLoading={setIsLoading} 
             navbarItem={navbarItem} 
             key={index}
           >
@@ -91,8 +88,6 @@ export default function RootLayout({
       <main className={`h-lvh p-4 tab-color flex flex-col gap-4 ${styles.main}`}>
         {children}
       </main>
-
-      {isLoading && <LoadingScreen></LoadingScreen>}
     </div>
   );
 }
