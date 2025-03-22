@@ -13,7 +13,7 @@ interface ICollectionFormProps<T> {
   isUpdateCollection?: boolean
 }
 
-export default function CollectionForm<T>({
+export default function CollectionForm<T extends {_id: string, index?: number}>({
   children, 
   collection, 
   collectionName, 

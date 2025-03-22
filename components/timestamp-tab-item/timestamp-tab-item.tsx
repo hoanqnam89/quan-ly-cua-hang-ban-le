@@ -16,7 +16,7 @@ export default function TimestampTabItem<T extends {
 }: Readonly<ITimestampTabItemProps<T>>): ReactElement {
   return (
     <>
-      <InputSection label={`Created At`}>
+      <InputSection label={`Ngày tạo`}>
         <DatetimeInput
           name={`created_at`}
           isDisable={isModalReadOnly}
@@ -25,7 +25,7 @@ export default function TimestampTabItem<T extends {
         </DatetimeInput>
       </InputSection>
 
-      <InputSection label={`Updated At`}>
+      <InputSection label={`Ngày cập nhật`}>
         <DatetimeInput
           name={`updated_at`}
           isDisable={isModalReadOnly}

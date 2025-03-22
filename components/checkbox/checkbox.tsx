@@ -10,6 +10,7 @@ interface ICheckboxProps {
   borderRadius?: number
   padding?: number
   isChecked?: boolean
+  isDisable?: boolean
   onInputChange?: (e: ChangeEvent<HTMLInputElement>) => void
   onInputBlur?: (e: ChangeEvent<HTMLInputElement>) => void
 }
@@ -26,6 +27,7 @@ function Checkbox({
   borderRadius = 4,
   padding = 0,
   isChecked = false,
+  isDisable = false,
   onInputChange = () => {},
   onInputBlur = () => {},
 }: Readonly<ICheckboxProps>): ReactElement {
@@ -56,6 +58,7 @@ function Checkbox({
       onChange={handleChange}
       onBlur={handleBlur}
       className={`w-full`}
+      disabled={isDisable}
     >
     </input>
   )

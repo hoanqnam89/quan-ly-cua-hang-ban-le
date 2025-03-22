@@ -71,11 +71,10 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
   const toggleAddCollectionModal = useCallback(
     (isReadOnly: boolean = false): void => {
-      if ( !isReadOnly ) 
+      if ( isReadOnly ) 
         setCollection(defaultCollection);
 
-      // setIsModalReadonly(isReadOnly);
-      setIsModalReadonly(false);
+      setIsModalReadonly(!isReadOnly);
       setIsAddCollectionModalOpen((prev: boolean): boolean => !prev);
     }, 
     [
@@ -86,7 +85,6 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   );
 
   const handleAddCollection = async (): Promise<void> => {
-    console.log(2);
     setIsLoading(true);
 
     const addCollectionApiResponse: Response = 
@@ -140,14 +138,11 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   }
 
   const handleClickUpdateCollection = (): void => {
-    console.log(0);
-
     setIsUpdateCollection(true);
     setIsModalReadonly(false);
   }
 
   const handleUpdateCollection = async (): Promise<void> => {
-    console.log(1);
     setIsLoading(true);
 
     const updateCollectionApiResponse: Response = 
@@ -243,6 +238,8 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
   const handleShowMore: (collectionId: string) => Promise<void> = useCallback(
     async (collectionId: string): Promise<void> => {
+      console.log(`Show more`);
+
       setIsLoading(true);
 
       const getCollectionByIdApiResponse: Response = 
@@ -255,7 +252,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
         await getCollectionByIdApiResponse.json();
 
       setCollection({...getCollectionByIdApiJson});
-      toggleAddCollectionModal(true);
+      toggleAddCollectionModal(false);
       
       setIsLoading(false);
     }, 

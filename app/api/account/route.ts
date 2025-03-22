@@ -39,6 +39,21 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   try {
     connectToDatabase();
     
+    const otherAccounts = await collectionModel.find({
+      username: account.username, 
+    });
+
+    if (otherAccounts.length > 0) 
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `The ${collectionName} with the username '${account.username}' is already exist.`,
+          path, 
+          `Please check if the ${collectionName} username is correct.`
+        ),          
+        { status: EStatusCode.CONFLICT }
+      );
+
     const newAccount = new collectionModel({
       created_at: new Date(), 
       updated_at: new Date(), 

@@ -63,6 +63,7 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
       {
         $set: {
           password: account.password, 
+          is_admin: account.is_admin, 
           updated_at: new Date(), 
         }
       }

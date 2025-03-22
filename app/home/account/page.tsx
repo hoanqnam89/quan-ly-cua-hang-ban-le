@@ -5,7 +5,7 @@ import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/mana
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
 import { IAccount } from '@/interfaces'
-import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
+import React, { ChangeEvent, ReactElement, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
 import { infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
@@ -13,9 +13,6 @@ import { DEFAULT_ACCOUNT } from '@/constants/account.constant';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
-import { ERoleAction } from '@/interfaces/role.interface';
-import { auth } from '@/services/Auth';
-import { IAccountAuthentication } from '@/interfaces/account-authentication.interface';
 import Checkbox from '@/components/checkbox/checkbox';
 
 type collectionType = IAccount;
@@ -32,82 +29,6 @@ export default function Account() {
     id: ``, 
     isClicked: false
   });
-  const [canCreate, setCanCreate] = useState<boolean>(false);
-  const [canRead, setCanRead] = useState<boolean>(false);
-  const [canUpdate, setCanUpdate] = useState<boolean>(false);
-  const [canDelete, setCanDelete] = useState<boolean>(false);
-  
-  const setCanReadCollection: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const canReadCollectionApiResponse: Response = await auth(
-        ERoleAction.READ, collectionName
-      );
-
-      const canReadCollectionApiJson: IAccountAuthentication = 
-        await canReadCollectionApiResponse.json();
-
-      setCanRead(canReadCollectionApiJson.isAccountHadPrivilage);
-    },
-    [],
-  );
-
-  const setCanCreateCollection: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const canCreateCollectionApiResponse: Response = await auth(
-        ERoleAction.CREATE, collectionName
-      );
-
-      const canCreateCollectionApiJson: IAccountAuthentication = 
-        await canCreateCollectionApiResponse.json();
-
-      setCanCreate(canCreateCollectionApiJson.isAccountHadPrivilage);
-    },
-    [],
-  );
-
-  const setCanUpdateCollection: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const canUpdateCollectionApiResponse: Response = await auth(
-        ERoleAction.CREATE, collectionName
-      );
-
-      const canUpdateCollectionApiJson: IAccountAuthentication = 
-        await canUpdateCollectionApiResponse.json();
-
-      setCanUpdate(canUpdateCollectionApiJson.isAccountHadPrivilage);
-    },
-    [],
-  );
-
-  const setCanDeleteCollection: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const canDeleteCollectionApiResponse: Response = await auth(
-        ERoleAction.CREATE, collectionName
-      );
-
-      const canDeleteCollectionApiJson: IAccountAuthentication = 
-        await canDeleteCollectionApiResponse.json();
-
-      setCanDelete(canDeleteCollectionApiJson.isAccountHadPrivilage);
-    },
-    [],
-  );
-
-  useEffect((): void => {
-    setCanCreateCollection();
-  }, [setCanCreateCollection])
-
-  useEffect((): void => {
-    setCanReadCollection();
-  }, [setCanReadCollection])
-
-  useEffect((): void => {
-    setCanUpdateCollection();
-  }, [setCanUpdateCollection])
-
-  useEffect((): void => {
-    setCanDeleteCollection();
-  }, [setCanDeleteCollection])
 
   const columns: Array<IColumnProps<collectionType>> = [
     {
@@ -126,19 +47,19 @@ export default function Account() {
     {
       key: `username`,
       ref: useRef(null), 
-      title: `Username`,
+      title: `Tài khoản`,
       size: `3fr`, 
     },
     {
       key: `password`,
       ref: useRef(null), 
-      title: `Password`,
+      title: `Mật khẩu`,
       size: `3fr`, 
     },
     {
       key: `created_at`,
       ref: useRef(null), 
-      title: `Created At`,
+      title: `Ngày tạo`,
       size: `4fr`, 
       isVisible: false, 
       render: (account: collectionType): ReactElement => {
@@ -149,7 +70,7 @@ export default function Account() {
     {
       key: `updated_at`,
       ref: useRef(null), 
-      title: `Updated At`,
+      title: `Ngày cập nhật`,
       size: `4fr`, 
       render: (account: collectionType): ReactElement => {
         const date: string = new Date(account.updated_at).toLocaleString();
@@ -157,7 +78,7 @@ export default function Account() {
       }
     },
     {
-      title: `More`,
+      title: `Xem thêm`,
       ref: useRef(null), 
       size: `2fr`, 
       render: (collection: collectionType): ReactElement => <Button 
@@ -177,7 +98,7 @@ export default function Account() {
       </Button>
     },
     {
-      title: `Delete`,
+      title: `Xóa`,
       ref: useRef(null), 
       size: `2fr`, 
       render: (collection: collectionType): ReactElement => <Button 
@@ -212,7 +133,7 @@ export default function Account() {
     });
   }
 
-  const gridColumns: string = `80px 1fr`;
+  const gridColumns: string = `200px 1fr`;
 
   return (
     <ManagerPage<collectionType>
@@ -225,15 +146,11 @@ export default function Account() {
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
-      canCreateCollection={canCreate}
-      canReadCollection={canRead}
-      canUpdateCollection={canUpdate}
-      canDeleteCollection={canDelete}
     >
       <Tabs>
 
         <TabItem label={`${collectionName}`}>
-          <InputSection label={`Username`} gridColumns={gridColumns}>
+          <InputSection label={`Tài khoản`} gridColumns={gridColumns}>
             <TextInput
               name={`username`}
               isDisable={isModalReadOnly}
@@ -243,7 +160,7 @@ export default function Account() {
             </TextInput>
           </InputSection>
 
-          <InputSection label={`Password`} gridColumns={gridColumns}>
+          <InputSection label={`Mật khẩu`} gridColumns={gridColumns}>
             <TextInput
               textType={`password`}
               name={`password`}
@@ -254,16 +171,17 @@ export default function Account() {
             </TextInput>
           </InputSection>
 
-          <InputSection label={`Is Admin`} gridColumns={gridColumns}>
+          <InputSection label={`Là quản trị viên`} gridColumns={gridColumns}>
             <Checkbox 
               isChecked={account.is_admin}
+              isDisable={isModalReadOnly}
               onInputChange={handleChangeIsAdmin}
             >
             </Checkbox>
           </InputSection>
         </TabItem>
 
-        <TabItem label={`Timestamp`} isDisable={!isModalReadOnly}>
+        <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
           <TimestampTabItem<collectionType> collection={account}>
           </TimestampTabItem>
         </TabItem>
