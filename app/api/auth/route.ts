@@ -66,14 +66,14 @@ export const POST = async (): Promise<NextResponse> => {
         { status: EStatusCode.UNAUTHORIZED }
       );
 
-    const isAccountHadPrivilage: boolean = await isAuthenticated(
-      account, 
+    // const isAccountHadPrivilage: boolean = await isAuthenticated(
+    //   account, 
       // action, 
       // collectionName
-    );
+    // );
 
     return NextResponse.json({
-      isAccountHadPrivilage: isAccountHadPrivilage
+      isAccountHadPrivilage: true
     }, { 
       status: EStatusCode.OK, 
     });
