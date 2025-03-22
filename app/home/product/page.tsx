@@ -346,6 +346,7 @@ export default function Product() {
                 accept={`image/*`}
                 multiple={true}
                 onChange={handleChangeImage}
+                disabled={isModalReadOnly}
               >
               </input>
 
