@@ -7,11 +7,14 @@ import { login } from '@/services/Auth';
 import { Button, LoadingScreen, Text, TextInput } from '@/components';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 import styles from './style.module.css';
+import useNotificationsHook from '@/hooks/notifications-hook';
+import { ENotificationType } from '@/components/notify/notification/notification';
 
 export default function Login(): ReactElement {
   const [username, setUsername] = useState<string>(``);
   const [password, setPassword] = useState<string>(``);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { createNotification, notificationElements } = useNotificationsHook();
 
   const handleChangeUsername = (e: ChangeEvent<HTMLInputElement>): void => {
     setUsername(e.target.value);
@@ -26,28 +29,29 @@ export default function Login(): ReactElement {
     const loginApiResponse: Response = await login(username, password);
     setIsLoading(false);
 
+    let errorText: string;
+
     switch (loginApiResponse.status) {
       case EStatusCode.OK:
         redirect(`/home`);
       case EStatusCode.UNAUTHORIZED:
-        // notificationApi.error({
-        //   message: `Login Failed! Username or Password is incorrect.`,
-        //   placement: `topRight`,
-        // });
+        errorText = `Đăng nhập thất bại! Tài khoản hoặc mật khẩu không đúng.`;
         break;
       default:
-        // notificationApi.error({
-        //   message: `Login Failed! Unknown Error.`,
-        //   placement: `topRight`,
-        // });
+        errorText = `Đăng nhập thất bại! Không rõ lỗi.`;
         break;
     }
+
+    createNotification({
+      id: 0,
+      children: <Text>{errorText}</Text>,
+      type: ENotificationType.ERROR,
+      isAutoClose: true, 
+    });
   }
 
   return (
     <div className={`h-lvh flex items-center justify-center`}>
-      {/* {contextHolder} */}
-
       <div 
         className={`p-10 flex flex-col gap-2 rounded-xl ${styles[`login-section`]}`} 
       >
@@ -83,11 +87,7 @@ export default function Login(): ReactElement {
 
       {isLoading && <LoadingScreen></LoadingScreen>}
 
-      {/* {notifications.map(({type, id}) => {
-        <Notification key={id} type={type}>
-          <Text>Lmao</Text>
-        </Notification>
-      })} */}
+      {notificationElements}
     </div>
   )
 }
