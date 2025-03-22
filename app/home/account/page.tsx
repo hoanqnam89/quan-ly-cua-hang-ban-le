@@ -14,6 +14,7 @@ import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import Checkbox from '@/components/checkbox/checkbox';
+import { translateCollectionName } from '@/utils/translate-collection-name';
 
 type collectionType = IAccount;
 const collectionName: ECollectionNames = ECollectionNames.ACCOUNT;
@@ -149,7 +150,7 @@ export default function Account() {
     >
       <Tabs>
 
-        <TabItem label={`Tài khoản`}>
+        <TabItem label={`${translateCollectionName(collectionName)}`}>
           <InputSection label={`Tên tài khoản`} gridColumns={gridColumns}>
             <TextInput
               name={`username`}

@@ -368,7 +368,7 @@ export default function Table<T extends {_id: string, index?: number}>({
             <IconContainer 
               iconLink={columns4Icon} 
               size={24} 
-              tooltip={`Click to toggle all table columns`}
+              tooltip={`Bấm để hiện/ẩn toàn bộ cột trong bảng`}
             >
             </IconContainer>
           </Button>

@@ -10,6 +10,7 @@ import { LoadingScreen, Text } from '@/components';
 import CollectionForm from './collection-form/collection-form';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '../notify/notification/notification';
+import { translateCollectionName } from '@/utils/translate-collection-name';
 
 export interface ICollectionIdNotify {
   id: string
@@ -305,11 +306,10 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   const managerPage: ReactElement = isLoading 
     ? <LoadingScreen></LoadingScreen>
     : <>
-      {/* {contextHolder} */}
-      <title>{`Quản lý ${collectionName}`}</title>
+      <title>{`Quản lý ${translateCollectionName(collectionName)}`}</title>
 
       <Table<T>
-        name={collectionName}
+        name={translateCollectionName(collectionName)}
         isGetDatasDone={isLoading}
         datas={collections}
         columns={columns}

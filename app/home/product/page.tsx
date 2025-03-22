@@ -20,6 +20,7 @@ import { ISelectOption } from '@/components/select-dropdown/interfaces/select-op
 import { ISupplier } from '@/interfaces/supplier.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
+import { translateCollectionName } from '@/utils/translate-collection-name';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -306,7 +307,7 @@ export default function Product() {
 
         </TabItem>
 
-        <TabItem label={`Sản phẩm`}>
+        <TabItem label={`${translateCollectionName(collectionName)}`}>
           <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>
             <TextInput
               name={`name`}

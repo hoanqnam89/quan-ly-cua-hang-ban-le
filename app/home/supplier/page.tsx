@@ -15,6 +15,7 @@ import Image from 'next/image';
 import styles from './style.module.css';
 import { ISupplier } from '@/interfaces/supplier.interface';
 import { DEFAULT_SUPPLIER } from '@/constants/supplier.constant';
+import { translateCollectionName } from '@/utils/translate-collection-name';
 
 type collectionType = ISupplier;
 const collectionName: ECollectionNames = ECollectionNames.SUPPLIER;
@@ -222,7 +223,7 @@ export default function Product() {
     >
       <Tabs>
 
-        <TabItem label={`${collectionName}`}>
+        <TabItem label={`${translateCollectionName(collectionName)}`}>
           <InputSection label={`Tên nhà cung cấp`} gridColumns={gridColumns}>
             <TextInput
               name={`name`}

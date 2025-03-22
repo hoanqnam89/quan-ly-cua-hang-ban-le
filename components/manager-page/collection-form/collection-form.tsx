@@ -1,6 +1,7 @@
 import React, { Dispatch, ReactElement, SetStateAction } from 'react'
 import { Modal} from '@/components';
 import { ECollectionNames } from '@/enums';
+import { translateCollectionName } from '@/utils/translate-collection-name';
 
 interface ICollectionFormProps<T> {
   children: ReactElement
@@ -31,9 +32,9 @@ export default function CollectionForm<T extends {_id: string, index?: number}>(
 
   return (
     <Modal 
-      okText={`${getActionName} dữ liệu`}
+      okText={`${getActionName} ${translateCollectionName(collectionName)}`}
       okAction={(): void => okAction(collection)}
-      title={`${getActionName} ${collectionName}`}
+      title={`${getActionName} ${translateCollectionName(collectionName)}`}
       isOpen={isModalOpen} 
       setIsOpen={setIsModalOpen}
     >

@@ -16,6 +16,7 @@ import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constan
 import Checkboxes, { ICheckbox } from '@/components/checkboxes/checkboxes';
 import { IProduct } from '@/interfaces/product.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
+import { translateCollectionName } from '@/utils/translate-collection-name';
 
 type collectionType = IWarehouseReceipt;
 const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;
@@ -195,7 +196,7 @@ export default function Product() {
     >
       <Tabs>
 
-        <TabItem label={`${collectionName}`}>
+        <TabItem label={`${translateCollectionName(collectionName)}`}>
           <InputSection label={`Danh sách sản phẩm`} gridColumns={gridColumns}>
             <Checkboxes
               isDisable={isModalReadOnly}
