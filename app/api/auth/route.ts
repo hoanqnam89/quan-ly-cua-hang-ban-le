@@ -5,7 +5,6 @@ import { AccountModel } from "@/models";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { decrypt } from "@/utils/decrypt";
-import { isAuthenticated } from "@/utils/is-authenticated";
 import { JWTPayload } from "jose";
 import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
