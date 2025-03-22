@@ -57,7 +57,8 @@ export default function Product() {
       ]);
       setIsLoading(false);
     }, 
-    [product],
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+    [product.supplier_id],
   );
   
   useEffect((): void => {

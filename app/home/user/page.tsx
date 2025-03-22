@@ -58,6 +58,7 @@ export default function User() {
       ]);
       setIsLoading(false);
     }, 
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
     [user.account_id],
   );
 
