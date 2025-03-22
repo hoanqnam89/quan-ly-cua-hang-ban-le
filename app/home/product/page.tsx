@@ -128,7 +128,7 @@ export default function Product() {
     {
       key: `_id`,
       ref: useRef(null), 
-      title: `ID`,
+      title: `Mã`,
       size: `6fr`,
       isVisible: false, 
     },
@@ -136,13 +136,13 @@ export default function Product() {
       key: `supplier_id`,
       ref: useRef(null), 
       title: `Nhà cung cấp`,
-      size: `3fr`, 
+      size: `6fr`, 
     },
     {
       key: `name`,
       ref: useRef(null), 
       title: `Tên sản phẩm`,
-      size: `3fr`, 
+      size: `4fr`, 
     },
     {
       key: `description`,
@@ -152,9 +152,27 @@ export default function Product() {
       isVisible: false
     },
     {
-      key: `price`,
+      key: `input_price`,
       ref: useRef(null), 
-      title: `Giá (VNĐ)`,
+      title: `Giá nhập (VNĐ)`,
+      size: `3fr`, 
+    },
+    {
+      key: `output_price`,
+      ref: useRef(null), 
+      title: `Giá bán (VNĐ)`,
+      size: `3fr`, 
+    },
+    {
+      key: `input_quantity`,
+      ref: useRef(null), 
+      title: `Số lượng trong kho`,
+      size: `3fr`, 
+    },
+    {
+      key: `output_quantity`,
+      ref: useRef(null), 
+      title: `Số lượng đang bán`,
       size: `3fr`, 
     },
     {
@@ -327,12 +345,25 @@ export default function Product() {
             >
             </TextInput>
           </InputSection>
+        </TabItem>
 
-          <InputSection label={`Giá`} gridColumns={gridColumns}>
+        <TabItem label={`Giá`}>
+          <InputSection label={`Giá nhập (VNĐ)`} gridColumns={gridColumns}>
             <NumberInput
-              name={`price`}
+              name={`input_price`}
               isDisable={isModalReadOnly}
-              value={product.price + ``}
+              value={product.input_price + ``}
+              onInputChange={handleChangeProduct}
+              max={MAX_PRICE}
+            >
+            </NumberInput>
+          </InputSection>
+
+          <InputSection label={`Giá bán (VNĐ)`} gridColumns={gridColumns}>
+            <NumberInput
+              name={`output_price`}
+              isDisable={isModalReadOnly}
+              value={product.output_price + ``}
               onInputChange={handleChangeProduct}
               max={MAX_PRICE}
             >
@@ -383,6 +414,26 @@ export default function Product() {
                 }
               </div> 
             </div>
+          </InputSection>
+        </TabItem>
+
+        <TabItem label={`Số lượng`} isDisable={!isModalReadOnly}>
+          <InputSection label={`Số lượng trong kho`} gridColumns={gridColumns}>
+            <NumberInput
+              isDisable={true}
+              value={product.input_quantity + ``}
+              max={MAX_PRICE}
+            >
+            </NumberInput>
+          </InputSection>
+
+          <InputSection label={`Số lượng đang bán`} gridColumns={gridColumns}>
+            <NumberInput
+              isDisable={true}
+              value={product.output_quantity + ``}
+              max={MAX_PRICE}
+            >
+            </NumberInput>
           </InputSection>
         </TabItem>
 

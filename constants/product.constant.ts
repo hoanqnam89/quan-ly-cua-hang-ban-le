@@ -7,8 +7,11 @@ export const DEFAULT_PROCDUCT: IProduct = {
   updated_at: new Date(),
 
   supplier_id: createId(`Supplier`),
-  name: `Coca Cola 390ml`, 
+  name: `Coca Cola 390ml`,
   description: `Nước ngọt giải khát`,
-  price: 8900, 
-  image_links: [], 
+  image_links: [],
+  input_price: 1000,
+  output_price: 2000,
+  input_quantity: 0,
+  output_quantity: 0
 }

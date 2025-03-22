@@ -23,16 +23,28 @@ const ProductSchema = new Schema({
   }, 
   description: {
     type: String, 
-    required: [true, `description is required!`], 
-  }, 
-  price: {
-    type: String, 
-    required: [true, `Price is required!`], 
+    required: [true, `Description is required!`], 
   }, 
   image_links: {
     type: [String], 
     required: [true, `Image Links is required!`], 
-  }
+  }, 
+  input_price: {
+    type: String, 
+    required: [true, `Input Price is required!`], 
+  }, 
+  output_price: {
+    type: String, 
+    required: [true, `Output Price is required!`], 
+  }, 
+  input_quantity: {
+    type: Number, 
+    required: [true, `Input Quantity is required!`], 
+  }, 
+  output_quantity: {
+    type: Number, 
+    required: [true, `Output Quantity is required!`], 
+  }, 
 });
 
 export const ProductModel = models.Product || model(`Product`, ProductSchema);
