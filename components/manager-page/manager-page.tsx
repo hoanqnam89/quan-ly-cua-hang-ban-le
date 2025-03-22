@@ -1,17 +1,15 @@
 'use client';
 
 import React, { Dispatch, ReactElement, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
-// import { notification } from 'antd';
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface';
 import Table from '@/components/table/table';
 import { ECollectionNames, EStatusCode } from '@/enums';
 import { deleteCollections, deleteCollectionById, addCollection, getCollectionById, updateCollectionById } from '@/services/api-service';
-// import { EAction } from '@/utils/create-api-notification-result';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
-import { LoadingScreen} from '@/components';
+import { LoadingScreen, Text } from '@/components';
 import CollectionForm from './collection-form/collection-form';
-
-// const placement = `topRight`;
+import useNotificationsHook from '@/hooks/notifications-hook';
+import { ENotificationType } from '../notify/notification/notification';
 
 export interface ICollectionIdNotify {
   id: string
@@ -51,6 +49,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   // const [notificationService, contextHolder] = notification.useNotification();
   const [collections, setCollections] = useState<T[]>([]);
   const [isUpdateCollection, setIsUpdateCollection] = useState<boolean>(false);
+  const { createNotification, notificationElements } = useNotificationsHook();
 
   const getCollections: () => Promise<void> = useCallback(
     async (): Promise<void> => {
@@ -90,49 +89,40 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
     const addCollectionApiResponse: Response = 
       await addCollection<T>( collection, collectionName );
 
+    let notificationText: string = ``;
+    let notificationType: ENotificationType = ENotificationType.ERROR;
+
     switch (addCollectionApiResponse.status) {
       case EStatusCode.OK:
-        // notificationService.success({
-        //   message: `${EAction.CREATE} ${collectionName} Successfully!`,
-        //   placement: placement, 
-        // });
+        notificationText = `Tạo ${collectionName} thành công!`;
+        notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.CREATED:
-        // notificationService.success({
-        //   message: `${EAction.CREATE} ${collectionName} Successfully!`,
-        //   placement: placement, 
-        // });
+        notificationText = `Tạo ${collectionName} thành công!`;
+        notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.UNPROCESSABLE_ENTITY:
-        // notificationService.error({
-        //   message: `${EAction.CREATE} ${collectionName} Failed! Unprocessable Entity.`,
-        //   placement: placement, 
-        // });
+        notificationText = `Tạo ${collectionName} thất bại! Không thể đọc được ${collectionName} đầu vào.`;
         break;
       case EStatusCode.CONFLICT:
-        // notificationService.error({
-        //   message: `${EAction.CREATE} ${collectionName} Failed! ${collectionName} already existed.`,
-        //   placement: placement, 
-        // });
+        notificationText = `Tạo ${collectionName} thất bại! ${collectionName} đã tồn tại.`;
         break;
       case EStatusCode.METHOD_NOT_ALLOWED:
-        // notificationService.error({
-        //   message: `${EAction.CREATE} ${collectionName} Failed! Method not allowed.`,
-        //   placement: placement, 
-        // });
+        notificationText = `Tạo ${collectionName} thất bại! Phương thức không cho phép.`;
         break;
       case EStatusCode.INTERNAL_SERVER_ERROR:
-        // notificationService.error({
-        //   message: `${EAction.CREATE} ${collectionName} Failed! Internal Server Error.`,
-        //   placement: placement,
-        // });
+        notificationText = `Tạo ${collectionName} thất bại! Server bị lỗi.`;
         break;
       default:
-        // notificationService.error({
-        //   message: `${EAction.CREATE} ${collectionName} Failed! Unknown Error.`,
-        //   placement: placement,
-        // });
+        notificationText = `Tạo ${collectionName} thất bại! Lỗi không xác định.`;
     }
+
+    createNotification({
+      id: 0,
+      children: <Text>{notificationText}</Text>,
+      type: notificationType,
+      isAutoClose: true, 
+    });
 
     await getCollections();
   }
@@ -148,43 +138,37 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
     const updateCollectionApiResponse: Response = 
       await updateCollectionById<T>( collection, collection._id, collectionName );
 
+    let notificationText: string = ``;
+    let notificationType: ENotificationType = ENotificationType.ERROR;
+
     switch (updateCollectionApiResponse.status) {
       case EStatusCode.OK:
-        // notificationService.success({
-        //   message: `${EAction.UPDATE} ${collectionName} Successfully!`,
-        //   placement: placement, 
-        // });
+        notificationText = `Cập nhật ${collectionName} thành công!`;
+        notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.CREATED:
-        // notificationService.success({
-        //   message: `${EAction.UPDATE} ${collectionName} Successfully!`,
-        //   placement: placement, 
-        // });
+        notificationText = `Cập nhật ${collectionName} thành công!`;
+        notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.CONFLICT:
-        // notificationService.error({
-        //   message: `${EAction.UPDATE} ${collectionName} Failed! ${collectionName} already existed.`,
-        //   placement: placement, 
-        // });
+        notificationText = `Cập nhật ${collectionName} thất bại! ${collectionName} đã tồn tại.`;
         break;
       case EStatusCode.UNPROCESSABLE_ENTITY:
-        // notificationService.error({
-        //   message: `${EAction.UPDATE} ${collectionName} Failed! Unprocessable Entity.`,
-        //   placement: placement, 
-        // });
+        notificationText = `Cập nhật ${collectionName} thất bại! Không thể đọc được ${collectionName} đầu vào.`;
         break;
       case EStatusCode.INTERNAL_SERVER_ERROR:
-        // notificationService.error({
-        //   message: `${EAction.UPDATE} ${collectionName} Failed! Internal Server Error.`,
-        //   placement: placement,
-        // });
+        notificationText = `Cập nhật ${collectionName} thất bại! Server bị lỗi.`;
         break;
       default:
-        // notificationService.error({
-        //   message: `${EAction.UPDATE} ${collectionName} Failed! Unknown Error.`,
-        //   placement: placement,
-        // });
+        notificationText = `Cập nhật ${collectionName} thất bại! Lỗi không xác định.`;
     }
+
+    createNotification({
+      id: 0,
+      children: <Text>{notificationText}</Text>,
+      type: notificationType,
+      isAutoClose: true, 
+    });
 
     await getCollections();
     setIsUpdateCollection(false);
@@ -192,14 +176,16 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
   const handleDeleteCollection = async (): Promise<void> => {
     if ( collections.length === 0 ) {
-      // notificationService.error({
-      //   message: `There is no ${collectionName} to delete!`,
-      //   placement: `topRight`, 
-      // });
+      createNotification({
+        id: 0,
+        children: <Text>Không có {collectionName} để xóa!</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true, 
+      });
       return;
     }
     
-    if ( !confirm(`Are you sure you want to delete ALL ${collectionName}s?`) )
+    if ( !confirm(`Bạn có muốn xóa TẤT CẢ ${collectionName}?`) )
       return;
     
     setIsLoading(true);
@@ -207,31 +193,31 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
     const deleteCollectionApiResponse: Response = 
       await deleteCollections(collectionName);
 
+    let notificationText: string = ``;
+    let notificationType: ENotificationType = ENotificationType.ERROR;
+
     switch (deleteCollectionApiResponse.status) {
       case EStatusCode.OK:
-        // notificationService.success({
-        //   message: `${EAction.DELETE} ${collectionName} Successfully!`,
-        //   placement: placement, 
-        // });
+        notificationText = `Xóa ${collectionName} thành công!`;
+        notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.CREATED:
-        // notificationService.success({
-        //   message: `${EAction.DELETE} ${collectionName} Successfully!`,
-        //   placement: placement, 
-        // });
+        notificationText = `Xóa ${collectionName} thành công!`;
+        notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.INTERNAL_SERVER_ERROR:
-        // notificationService.error({
-        //   message: `${EAction.DELETE} ${collectionName} Failed! Internal Server Error.`,
-        //   placement: placement,
-        // });
+        notificationText = `Xóa ${collectionName} thất bại! Server bị lỗi.`;
         break;
       default:
-        // notificationService.error({
-        //   message: `${EAction.DELETE} ${collectionName} Failed! Unknown Error.`,
-        //   placement: placement,
-        // });
+        notificationText = `Xóa ${collectionName} thất bại! Lỗi không xác định.`;
     }
+
+    createNotification({
+      id: 0,
+      children: <Text>{notificationText}</Text>,
+      type: notificationType,
+      isAutoClose: true, 
+    });
 
     await getCollections();
   }
@@ -263,7 +249,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
     collectionId: string
   ) => Promise<void> = useCallback(
     async (collectionId: string): Promise<void> => {
-      if ( !confirm(`Are you sure you want to delete this ${collectionName}?`) )
+      if ( !confirm(`Bạn có muốn xóa ${collectionName} này?`) )
         return;
 
       setIsLoading(true);
@@ -271,35 +257,35 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
       const deleteCollectionByIdApiResponse: Response = 
         await deleteCollectionById( collectionId, collectionName );
 
+      let notificationText: string = ``;
+      let notificationType: ENotificationType = ENotificationType.ERROR;
+
       switch (deleteCollectionByIdApiResponse.status) {
         case EStatusCode.OK:
-          // notificationService.success({
-          //   message: `${EAction.DELETE} ${collectionName} Successfully!`,
-          //   placement: placement, 
-          // });
+          notificationText = `Xóa ${collectionName} có mã ${collectionId} thành công!`;
+          notificationType = ENotificationType.SUCCESS;
           break;
         case EStatusCode.CREATED:
-          // notificationService.success({
-          //   message: `${EAction.DELETE} ${collectionName} Successfully!`,
-          //   placement: placement, 
-          // });
+          notificationText = `Xóa ${collectionName} có mã ${collectionId} thành công!`;
+          notificationType = ENotificationType.SUCCESS;
           break;
         case EStatusCode.INTERNAL_SERVER_ERROR:
-          // notificationService.error({
-          //   message: `${EAction.DELETE} ${collectionName} Failed! Internal Server Error.`,
-          //   placement: placement,
-          // });
+          notificationText = `Xóa ${collectionName} có mã ${collectionId} thất bại! Server bị lỗi.`;
           break;
         default:
-          // notificationService.error({
-          //   message: `${EAction.DELETE} ${collectionName} Failed! Unknown Error.`,
-          //   placement: placement,
-          // });
+          notificationText = `Xóa ${collectionName} có mã ${collectionId} thất bại! Lỗi không xác định.`;
       }
+
+      createNotification({
+        id: 0,
+        children: <Text>{notificationText}</Text>,
+        type: notificationType,
+        isAutoClose: true, 
+      });
 
       await getCollections();
     }, 
-    [collectionName, getCollections],
+    [collectionName, getCollections, createNotification],
   );
 
   const mounted = useRef(false);
@@ -349,6 +335,8 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
       >
         {children}
       </CollectionForm>
+
+      {notificationElements}
     </>
 
   return managerPage;
