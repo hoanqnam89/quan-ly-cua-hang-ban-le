@@ -12,20 +12,6 @@ export default function Login(): ReactElement {
   const [username, setUsername] = useState<string>(``);
   const [password, setPassword] = useState<string>(``);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  // const [notificationApi, contextHolder] = notification.useNotification();
-  const [notifications, setNotifications] = useState<{
-    type: EButtonType, 
-    id: number, 
-  }[]>([]);
-
-  const createNotification = () => 
-    setNotifications([
-      ...notifications, 
-      {
-        type: EButtonType.INFO, 
-        id: notifications.length
-      }
-    ]);
 
   const handleChangeUsername = (e: ChangeEvent<HTMLInputElement>): void => {
     setUsername(e.target.value);

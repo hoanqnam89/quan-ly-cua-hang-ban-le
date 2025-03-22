@@ -2,13 +2,8 @@ import { COOKIE_NAME } from "@/constants";
 import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { decrypt } from "./decrypt";
-import { ECollectionNames } from "@/enums";
-import { ERoleAction, IRole } from "@/interfaces/role.interface";
-import { RoleGroupModel, RoleModel } from "@/models";
 import { JWTPayload } from "jose";
 import { connectToDatabase } from "./database";
-import { IRoleGroup } from "@/interfaces";
-import { convertToMongoCollectionName } from "./convert-to-mongo-collection-name";
 
 declare module 'jose' {
   export interface JWTPayload {
@@ -18,8 +13,8 @@ declare module 'jose' {
 
 export const isAdmin = async (
   cookieStore: ReadonlyRequestCookies, 
-  action: ERoleAction, 
-  collectionName: ECollectionNames, 
+  // action: ERoleAction, 
+  // collectionName: ECollectionNames, 
 ): Promise<boolean> => {
   const token: RequestCookie | undefined = cookieStore.get(COOKIE_NAME);
 
@@ -37,7 +32,7 @@ export const isAdmin = async (
   if ( account.username === `admin` )
     return true;
 
-  let result = false;
+  const result = false;
 
   try {
     connectToDatabase();

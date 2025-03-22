@@ -1,17 +1,15 @@
 import { IAccountPayload } from "@/app/api/interfaces/account-payload.interface";
 import { connectToDatabase } from "./database";
-import { ERoleAction } from "@/interfaces/role.interface";
-import { ECollectionNames } from "@/enums";
 
 export const isAuthenticated = async (
   account: IAccountPayload, 
-  action: ERoleAction, 
-  collectionName: ECollectionNames, 
+  // action: ERoleAction, 
+  // collectionName: ECollectionNames, 
 ) => {
   if ( account.username === `admin` )
     return true;
 
-  let result = false;
+  const result = false;
 
   try {
     connectToDatabase();

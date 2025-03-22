@@ -5,7 +5,6 @@ import { EInputType } from './enums/input-type';
 import { TTag } from './types/tag';
 import { Button, ColorInput, IconContainer, NumberInput, Tag, Text, TextInput } from '..';
 import { plusIcon } from '@/public';
-import { TColorMode } from '../interfaces/color-mode.interface';
 
 interface ITagsInputProps {
   isDisable?: boolean
@@ -24,7 +23,6 @@ export default function TagsInput({
   isDisable = false, 
   showIndex = false, 
   type = EInputType.TEXT, 
-  tagWidth = 43, 
   isVertical = false, 
   min = 0, 
   max = 99, 
@@ -33,11 +31,6 @@ export default function TagsInput({
   onChangeAction = () => {}
 }: Readonly<ITagsInputProps>): ReactElement {
   const [tags, setTags] = useState<TTag[]>([...values]);
-
-  const buttonBackground: TColorMode = {
-    light: `#ffffff`, 
-    dark: `#000000`, 
-  }
 
   useEffect((): () => void => {
     setTags([...values]);
@@ -92,7 +85,6 @@ export default function TagsInput({
           {type === EInputType.TEXT && 
             <TextInput
               isDisable={isDisable}
-              minWidth={tagWidth}
               value={tag + ``}
               onInputChange={(e: ChangeEvent<HTMLInputElement>): void => 
                 handleChangeTag(e, index)
@@ -103,7 +95,6 @@ export default function TagsInput({
           {type === EInputType.COLOR && 
             <ColorInput 
               isDisable={isDisable}
-              minWidth={tagWidth}
               value={tag + ``}
               onInputChange={(e: ChangeEvent<HTMLInputElement>): void => 
                 handleChangeTag(e, index)
@@ -114,7 +105,6 @@ export default function TagsInput({
           {type === EInputType.NUMBER && 
             <NumberInput
               isDisable={isDisable}
-              minWidth={tagWidth}
               value={tag + ``}
               min={min}
               max={max}
@@ -130,8 +120,6 @@ export default function TagsInput({
       {!isDisable && 
         <span>
           <Button 
-            background={buttonBackground} 
-            padding={8} 
             onClick={handleAddTag}
           >
             <Text>{addTagButtonText}</Text>

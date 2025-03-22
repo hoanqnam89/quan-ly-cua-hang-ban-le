@@ -10,12 +10,12 @@ import { JWTPayload } from "jose";
 import { RequestCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { cookies } from "next/headers";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 const path: string = `${ROOT}/auth/login`;
 
-export const POST = async (req: NextRequest): Promise<NextResponse> => {
-  const { action, collectionName } = await req.json();
+export const POST = async (): Promise<NextResponse> => {
+  // const { action, collectionName } = await req.json();
 
   try {
     connectToDatabase();
@@ -68,8 +68,8 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
 
     const isAccountHadPrivilage: boolean = await isAuthenticated(
       account, 
-      action, 
-      collectionName
+      // action, 
+      // collectionName
     );
 
     return NextResponse.json({

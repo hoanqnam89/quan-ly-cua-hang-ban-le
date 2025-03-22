@@ -80,7 +80,7 @@ export default function RootLayout({
       <nav className={`h-lvh overflow-y-scroll flex flex-col gap-4 no-scrollbar p-4 ${styles.nav}`}>
         {navbarItems.map((navbarItem: CNavbarItem, index: number) =>
           <NavbarItem 
-            // setIsLoading={setIsLoading} 
+            setIsLoading={setIsLoading} 
             navbarItem={navbarItem} 
             key={index}
           >

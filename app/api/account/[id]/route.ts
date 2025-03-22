@@ -7,10 +7,6 @@ import { AccountModel } from "@/models";
 import { print } from "@/utils/print";
 import { connectToDatabase } from "@/utils/database";
 import { createErrorMessage } from "@/utils/create-error-message";
-import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
-import { cookies } from "next/headers";
-import { isAdmin } from "@/utils/is-admin";
-import { ERoleAction } from "@/interfaces/role.interface";
 import { ROOT } from "@/constants/root.constant";
 
 type collectionType = IAccount;
@@ -21,23 +17,23 @@ const path: string = `${ROOT}/${collectionName.toLowerCase()}/[id]`;
 export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
   print(`${collectionName} API - PATCH ${collectionName}`, ETerminal.FgMagenta);
 
-  const cookieStore: ReadonlyRequestCookies = await cookies();
-  const isUserAdmin = await isAdmin(
-    cookieStore, 
-    ERoleAction.UPDATE, 
-    collectionName
-  );
+  // const cookieStore: ReadonlyRequestCookies = await cookies();
+  // const isUserAdmin = await isAdmin(
+  //   cookieStore, 
+  //   ERoleAction.UPDATE, 
+  //   collectionName
+  // );
 
-  if ( !isUserAdmin )
-    return NextResponse.json(
-      createErrorMessage(
-        `Failed to create ${collectionName}.`,
-        `You dont have privilage to do this action.`,
-        path, 
-        `Please check if the account had privilage to do this action.`, 
-      ),
-      { status: EStatusCode.UNAUTHORIZED }
-    );
+  // if ( !isUserAdmin )
+  //   return NextResponse.json(
+  //     createErrorMessage(
+  //       `Failed to create ${collectionName}.`,
+  //       `You dont have privilage to do this action.`,
+  //       path, 
+  //       `Please check if the account had privilage to do this action.`, 
+  //     ),
+  //     { status: EStatusCode.UNAUTHORIZED }
+  //   );
 
   const account: collectionType = await req.json();
 

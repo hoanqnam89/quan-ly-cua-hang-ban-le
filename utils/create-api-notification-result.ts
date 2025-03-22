@@ -1,5 +1,4 @@
 import { EStatusCode } from "@/enums/status-code.enum";
-import { NotificationInstance } from "antd/es/notification/interface";
 import { reloadPage } from "./reload-page";
 
 export enum ENotificationPlacement {
@@ -19,19 +18,19 @@ export enum EAction {
 }
 
 export const createApiNotificationResult = (
-  notificationService: NotificationInstance, 
+  // notificationService: NotificationInstance, 
   status: EStatusCode, 
-  name: string = ``, 
-  action: EAction = EAction.CREATE, 
-  placement: ENotificationPlacement = ENotificationPlacement.TOP_RIGHT, 
+  // name: string = ``, 
+  // action: EAction = EAction.CREATE, 
+  // placement: ENotificationPlacement = ENotificationPlacement.TOP_RIGHT, 
   shouldReloadPage: boolean = false, 
 ): void => {
   switch (status) {
     case EStatusCode.OK:
-      notificationService.success({
-        message: `${action} ${name} Successfully!`,
-        placement: placement, 
-      });
+      // notificationService.success({
+      //   message: `${action} ${name} Successfully!`,
+      //   placement: placement, 
+      // });
 
       if (shouldReloadPage)
         reloadPage();
@@ -39,10 +38,10 @@ export const createApiNotificationResult = (
       break;
 
     case EStatusCode.CREATED:
-      notificationService.success({
-        message: `${EAction.CREATE} ${name} Successfully!`,
-        placement: placement, 
-      });
+      // notificationService.success({
+      //   message: `${EAction.CREATE} ${name} Successfully!`,
+      //   placement: placement, 
+      // });
 
       if (shouldReloadPage)
         reloadPage();
@@ -50,23 +49,23 @@ export const createApiNotificationResult = (
       break;
 
     case EStatusCode.UNPROCESSABLE_ENTITY:
-      notificationService.error({
-        message: `${action} ${name} Failed! Unprocessable Entity.`,
-        placement: placement, 
-      });
+      // notificationService.error({
+      //   message: `${action} ${name} Failed! Unprocessable Entity.`,
+      //   placement: placement, 
+      // });
       break;
 
     case EStatusCode.INTERNAL_SERVER_ERROR:
-      notificationService.error({
-        message: `${action} ${name} Failed! Internal Server Error.`,
-        placement: placement,
-      });
+      // notificationService.error({
+      //   message: `${action} ${name} Failed! Internal Server Error.`,
+      //   placement: placement,
+      // });
       break;
 
     default:
-      notificationService.error({
-        message: `${action} ${name} Failed! Unknown Error.`,
-        placement: placement,
-      });
+      // notificationService.error({
+      //   message: `${action} ${name} Failed! Unknown Error.`,
+      //   placement: placement,
+      // });
   }
 }

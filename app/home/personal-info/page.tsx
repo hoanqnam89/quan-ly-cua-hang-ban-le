@@ -1,13 +1,11 @@
 'use client';
 
-import React, { ChangeEvent, ReactElement, useCallback, useEffect, useState } from 'react'
+import React, { ChangeEvent, ReactElement, useEffect, useState } from 'react'
 import InputSection from '../components/input-section/input-section'
 import { Button, IconContainer, LoadingScreen, SelectDropdown, Text, TextInput } from '@/components'
 import { IAccount, IUser } from '@/interfaces';
 import { DEFAULT_USER } from '@/constants/user.constant';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
-import { fetchGetCollections } from '@/utils/fetch-get-collections';
-import { ECollectionNames } from '@/enums';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
 import { trashIcon } from '@/public';
 import DateInput from '@/components/date-input/date-input';
@@ -32,28 +30,6 @@ export default function PersonalInfo(): ReactElement {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
-  const [accountOptions, setAccountOptions] = useState<ISelectOption[]>([]);
-
-  const getAccounts: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const newAccounts: IAccount[] = await fetchGetCollections<IAccount>(
-        ECollectionNames.ACCOUNT, 
-      );
-
-      setUser({
-        ...user, 
-        account_id: newAccounts[0]._id, 
-      });
-      setAccountOptions([
-        ...newAccounts.map((account: IAccount): ISelectOption => ({
-          label: `${account.username}`,
-          value: account._id,
-        }))
-      ]);
-      setIsLoading(false);
-    }, 
-    [user.account_id],
-  );
 
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files)
@@ -90,17 +66,6 @@ export default function PersonalInfo(): ReactElement {
       }
     }
   }, [imageFile, user]);
-
-  useEffect((): void => {
-    getAccounts();
-  }, [getAccounts]);
-
-  const handleChangeAccountId = (e: ChangeEvent<HTMLSelectElement>): void => {
-    setUser({
-      ...user, 
-      account_id: e.target.value, 
-    });
-  }
 
   const handleChangeName = (e: ChangeEvent<HTMLInputElement>): void => {
     setUser({
@@ -404,7 +369,7 @@ export default function PersonalInfo(): ReactElement {
 			<Text size={titleSize}>Chức năng</Text>
 
 			<div className={`flex gap-2`}>
-				<Button type={EButtonType.INFO}>
+				<Button type={EButtonType.INFO} onClick={() => setIsModalReadOnly(!isModalReadOnly)}>
 					<Text>Chỉnh sửa</Text>
 				</Button>
 

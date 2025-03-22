@@ -57,7 +57,7 @@ export default function Product() {
       ]);
       setIsLoading(false);
     }, 
-    [product.supplier_id],
+    [product],
   );
   
   useEffect((): void => {

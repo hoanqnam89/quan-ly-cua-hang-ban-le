@@ -9,10 +9,6 @@ import { ETerminal } from "@/enums/terminal.enum";
 import { connectToDatabase } from "./database";
 import { IQueryString } from "@/app/api/interfaces/query-string.interface";
 import { CONTACT_INFORMATION } from "@/constants";
-import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
-import { cookies } from "next/headers";
-import { isAdmin } from "./is-admin";
-import { ERoleAction } from "@/interfaces/role.interface";
 
 const getCollections = async <T>(model: Model<T>): Promise<NextResponse> => {
   const collections: T[] = await model.find({});
@@ -108,23 +104,23 @@ const getCollectionsApi = async <T>(
 ): Promise<NextResponse> => {
   print(`${collectionName} API - GET ${collectionName}s`, ETerminal.FgGreen);
 
-  const cookieStore: ReadonlyRequestCookies = await cookies();
-  const isUserAdmin = await isAdmin(
-    cookieStore, 
-    ERoleAction.READ, 
-    collectionName, 
-  );
+  // const cookieStore: ReadonlyRequestCookies = await cookies();
+  // const isUserAdmin = await isAdmin(
+  //   cookieStore, 
+  //   ERoleAction.READ, 
+  //   collectionName, 
+  // );
 
-  if ( !isUserAdmin )
-    return NextResponse.json(
-      createErrorMessage(
-        `Failed to ${EApiAction.READ} ${collectionName}.`,
-        `You dont have privilage to do this action.`,
-        path, 
-        `Please check if the account had privilage to do this action.`, 
-      ),
-      { status: EStatusCode.UNAUTHORIZED }
-    );
+  // if ( !isUserAdmin )
+  //   return NextResponse.json(
+  //     createErrorMessage(
+  //       `Failed to ${EApiAction.READ} ${collectionName}.`,
+  //       `You dont have privilage to do this action.`,
+  //       path, 
+  //       `Please check if the account had privilage to do this action.`, 
+  //     ),
+  //     { status: EStatusCode.UNAUTHORIZED }
+  //   );
 
   try {
     connectToDatabase();
@@ -152,23 +148,23 @@ const deleteCollectionsApi = async <T>(
 ): Promise<NextResponse> => {
   print(`${collectionName} API - DELETE ${collectionName}s`, ETerminal.FgRed);
 
-  const cookieStore: ReadonlyRequestCookies = await cookies();
-  const isUserAdmin = await isAdmin(
-    cookieStore, 
-    ERoleAction.DELETE, 
-    collectionName
-  );
+  // const cookieStore: ReadonlyRequestCookies = await cookies();
+  // const isUserAdmin = await isAdmin(
+  //   cookieStore, 
+  //   ERoleAction.DELETE, 
+  //   collectionName
+  // );
 
-  if ( !isUserAdmin )
-    return NextResponse.json(
-      createErrorMessage(
-        `Failed to ${EApiAction.DELETE} ${collectionName}.`,
-        `You dont have privilage to do this action.`,
-        path, 
-        `Please check if the account had privilage to do this action.`, 
-      ),
-      { status: EStatusCode.UNAUTHORIZED }
-    );
+  // if ( !isUserAdmin )
+  //   return NextResponse.json(
+  //     createErrorMessage(
+  //       `Failed to ${EApiAction.DELETE} ${collectionName}.`,
+  //       `You dont have privilage to do this action.`,
+  //       path, 
+  //       `Please check if the account had privilage to do this action.`, 
+  //     ),
+  //     { status: EStatusCode.UNAUTHORIZED }
+  //   );
 
   try {
     connectToDatabase();
@@ -199,22 +195,22 @@ const getCollectionByIdApi = async <T>(
     ETerminal.FgGreen, 
   );
 
-  const cookieStore: ReadonlyRequestCookies = await cookies();
-  const isUserAdmin = await isAdmin(
-    cookieStore, 
-    ERoleAction.CREATE, 
-    collectionName
-  );
-  if ( !isUserAdmin )
-    return NextResponse.json(
-      createErrorMessage(
-        `Failed to ${EApiAction.READ} ${collectionName}.`,
-        `You dont have privilage to do this action.`,
-        path, 
-        `Please check if the account had privilage to do this action.`, 
-      ),
-      { status: EStatusCode.UNAUTHORIZED }
-    );
+  // const cookieStore: ReadonlyRequestCookies = await cookies();
+  // const isUserAdmin = await isAdmin(
+  //   cookieStore, 
+  //   ERoleAction.CREATE, 
+  //   collectionName
+  // );
+  // if ( !isUserAdmin )
+  //   return NextResponse.json(
+  //     createErrorMessage(
+  //       `Failed to ${EApiAction.READ} ${collectionName}.`,
+  //       `You dont have privilage to do this action.`,
+  //       path, 
+  //       `Please check if the account had privilage to do this action.`, 
+  //     ),
+  //     { status: EStatusCode.UNAUTHORIZED }
+  //   );
 
   const params = await query.params;
   const id = params.id;
@@ -248,23 +244,23 @@ const deleteCollectionByIdApi = async <T>(
     ETerminal.FgRed, 
   );
 
-  const cookieStore: ReadonlyRequestCookies = await cookies();
-  const isUserAdmin = await isAdmin(
-    cookieStore, 
-    ERoleAction.DELETE, 
-    collectionName, 
-  );
+  // const cookieStore: ReadonlyRequestCookies = await cookies();
+  // const isUserAdmin = await isAdmin(
+  //   cookieStore, 
+  //   ERoleAction.DELETE, 
+  //   collectionName, 
+  // );
 
-  if ( !isUserAdmin )
-    return NextResponse.json(
-      createErrorMessage(
-        `Failed to ${EApiAction.DELETE} ${collectionName}.`,
-        `You dont have privilage to do this action.`,
-        path, 
-        `Please check if the account had privilage to do this action.`, 
-      ),
-      { status: EStatusCode.UNAUTHORIZED }
-    );
+  // if ( !isUserAdmin )
+  //   return NextResponse.json(
+  //     createErrorMessage(
+  //       `Failed to ${EApiAction.DELETE} ${collectionName}.`,
+  //       `You dont have privilage to do this action.`,
+  //       path, 
+  //       `Please check if the account had privilage to do this action.`, 
+  //     ),
+  //     { status: EStatusCode.UNAUTHORIZED }
+  //   );
 
   const params = await query.params;
   const id = params.id;
