@@ -206,7 +206,7 @@ export default function Product() {
     setImageFile(null);
   }
 
-  const gridColumns: string = `80px 1fr`;
+  const gridColumns: string = `200px 1fr`;
 
   return (
     <ManagerPage<collectionType>

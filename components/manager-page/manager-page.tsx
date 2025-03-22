@@ -46,7 +46,6 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAddCollectionModalOpen, setIsAddCollectionModalOpen] = 
     useState<boolean>(false);
-  // const [notificationService, contextHolder] = notification.useNotification();
   const [collections, setCollections] = useState<T[]>([]);
   const [isUpdateCollection, setIsUpdateCollection] = useState<boolean>(false);
   const { createNotification, notificationElements } = useNotificationsHook();
@@ -224,8 +223,6 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
   const handleShowMore: (collectionId: string) => Promise<void> = useCallback(
     async (collectionId: string): Promise<void> => {
-      console.log(`Show more`);
-
       setIsLoading(true);
 
       const getCollectionByIdApiResponse: Response = 
@@ -285,7 +282,8 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
       await getCollections();
     }, 
-    [collectionName, getCollections, createNotification],
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+    [collectionName, getCollections],
   );
 
   const mounted = useRef(false);

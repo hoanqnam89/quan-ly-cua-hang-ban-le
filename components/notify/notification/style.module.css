@@ -8,7 +8,7 @@
 }
 
 .notification {
-  color: var(--foreground);
+  color: #ffffffff;
   max-width: 430px;
   max-height: 200px;
   z-index: 99;
@@ -27,19 +27,19 @@
   }
 
   &.info {
-    --button-color: #0000ff;
+    --button-color: #0000ffff;
   }
 
   &.success {
-    --button-color: #00ff00;
+    --button-color: #00ff00ff;
   }
 
   &.error {
-    --button-color: #ff0000;
+    --button-color: #ff0000ff;
   }
 
   &.warning {
-    --button-color: #ffff00;
+    --button-color: #ffff00ff;
   }
 
   @media (prefers-color-scheme: dark) {

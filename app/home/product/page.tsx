@@ -275,7 +275,7 @@ export default function Product() {
     setImageFiles([...newImageFiles]);
   }
 
-  const gridColumns: string = `80px 1fr`;
+  const gridColumns: string = `200px 1fr`;
 
   return (
     <ManagerPage<collectionType>
@@ -306,7 +306,7 @@ export default function Product() {
 
         </TabItem>
 
-        <TabItem label={`${collectionName}`}>
+        <TabItem label={`Sản phẩm`}>
           <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>
             <TextInput
               name={`name`}

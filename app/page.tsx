@@ -35,7 +35,7 @@ export default function Login(): ReactElement {
       case EStatusCode.OK:
         redirect(`/home`);
       case EStatusCode.UNAUTHORIZED:
-        errorText = `Đăng nhập thất bại! Tài khoản hoặc mật khẩu không đúng.`;
+        errorText = `Đăng nhập thất bại! Tên đăng nhập hoặc mật khẩu không đúng.`;
         break;
       default:
         errorText = `Đăng nhập thất bại! Không rõ lỗi.`;
@@ -79,10 +79,6 @@ export default function Login(): ReactElement {
         >
           <Text weight={600}>Đăng nhập</Text>
         </Button>
-
-        {/* <Button onClick={createNotification} type={EButtonType.SUCCESS}>
-          <Text weight={600}>Đăng nhập</Text>
-        </Button> */}
       </div>
 
       {isLoading && <LoadingScreen></LoadingScreen>}

@@ -149,8 +149,8 @@ export default function Account() {
     >
       <Tabs>
 
-        <TabItem label={`${collectionName}`}>
-          <InputSection label={`Tài khoản`} gridColumns={gridColumns}>
+        <TabItem label={`Tài khoản`}>
+          <InputSection label={`Tên tài khoản`} gridColumns={gridColumns}>
             <TextInput
               name={`username`}
               isDisable={isModalReadOnly}
