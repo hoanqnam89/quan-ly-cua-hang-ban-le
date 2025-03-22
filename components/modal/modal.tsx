@@ -1,12 +1,12 @@
 'use client';
 
 import React, { CSSProperties, Dispatch, ReactElement, ReactNode, SetStateAction, useEffect } from 'react';
-import Text from '../text/text';
-import Button from '../button/button';
 import IconContainer from '../icon-container/icon-container';
 import { xIcon } from '@/public';
 import { EButtonType } from '../button/interfaces/button-type.interface';
 import styles from './style.module.css';
+import { Button } from '..';
+import { Text } from '..';
 
 interface IModalProps {
   width?: string
