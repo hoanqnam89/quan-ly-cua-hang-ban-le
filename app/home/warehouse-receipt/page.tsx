@@ -11,9 +11,6 @@ import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-toolt
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
-import { ERoleAction } from '@/interfaces/role.interface';
-import { auth } from '@/services/Auth';
-import { IAccountAuthentication } from '@/interfaces/account-authentication.interface';
 import { IWarehouseReceipt } from '@/interfaces/warehouse-receipt.interface';
 import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import Checkboxes, { ICheckbox } from '@/components/checkboxes/checkboxes';
@@ -36,10 +33,6 @@ export default function Product() {
     id: ``, 
     isClicked: false
   });
-  const [canCreate, setCanCreate] = useState<boolean>(false);
-  const [canRead, setCanRead] = useState<boolean>(false);
-  const [canUpdate, setCanUpdate] = useState<boolean>(false);
-  const [canDelete, setCanDelete] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [productOptions, setProductOptions] = useState<ICheckbox[]>([]);
 
@@ -67,78 +60,6 @@ export default function Product() {
     getProducts();
   }, [getProducts]);
   
-  const setCanReadCollection: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const canReadCollectionApiResponse: Response = await auth(
-        ERoleAction.READ, collectionName
-      );
-
-      const canReadCollectionApiJson: IAccountAuthentication = 
-        await canReadCollectionApiResponse.json();
-
-      setCanRead(canReadCollectionApiJson.isAccountHadPrivilage);
-    },
-    [],
-  );
-
-  const setCanCreateCollection: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const canCreateCollectionApiResponse: Response = await auth(
-        ERoleAction.CREATE, collectionName
-      );
-
-      const canCreateCollectionApiJson: IAccountAuthentication = 
-        await canCreateCollectionApiResponse.json();
-
-      setCanCreate(canCreateCollectionApiJson.isAccountHadPrivilage);
-    },
-    [],
-  );
-
-  const setCanUpdateCollection: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const canUpdateCollectionApiResponse: Response = await auth(
-        ERoleAction.CREATE, collectionName
-      );
-
-      const canUpdateCollectionApiJson: IAccountAuthentication = 
-        await canUpdateCollectionApiResponse.json();
-
-      setCanUpdate(canUpdateCollectionApiJson.isAccountHadPrivilage);
-    },
-    [],
-  );
-
-  const setCanDeleteCollection: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const canDeleteCollectionApiResponse: Response = await auth(
-        ERoleAction.CREATE, collectionName
-      );
-
-      const canDeleteCollectionApiJson: IAccountAuthentication = 
-        await canDeleteCollectionApiResponse.json();
-
-      setCanDelete(canDeleteCollectionApiJson.isAccountHadPrivilage);
-    },
-    [],
-  );
-
-  useEffect((): void => {
-    setCanCreateCollection();
-  }, [setCanCreateCollection])
-
-  useEffect((): void => {
-    setCanReadCollection();
-  }, [setCanReadCollection])
-
-  useEffect((): void => {
-    setCanUpdateCollection();
-  }, [setCanUpdateCollection])
-
-  useEffect((): void => {
-    setCanDeleteCollection();
-  }, [setCanDeleteCollection])
-
   const columns: Array<IColumnProps<collectionType>> = [
     {
       key: `index`,
@@ -271,10 +192,6 @@ export default function Product() {
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
-      canCreateCollection={canCreate}
-      canReadCollection={canRead}
-      canUpdateCollection={canUpdate}
-      canDeleteCollection={canDelete}
     >
       <Tabs>
 
