@@ -188,6 +188,16 @@ export default function Product() {
     });
   }
 
+  const handleChangeAddress = (e: ChangeEvent<HTMLInputElement>): void => {
+    setSupplier({
+      ...supplier, 
+      address: {
+        ...supplier.address, 
+        [e.target.name]: e.target.value, 
+      }
+    });
+  }
+
   const handleDeleteImage = (): void => {
     setSupplier({
       ...supplier, 
@@ -230,6 +240,7 @@ export default function Product() {
                 accept={`image/*`}
                 multiple={true}
                 onChange={handleChangeImage}
+                disabled={isModalReadOnly}
               >
               </input>
 
@@ -271,7 +282,7 @@ export default function Product() {
                 name={`country`}
                 isDisable={isModalReadOnly}
                 value={supplier.address.country}
-                onInputChange={handleChangeSupplier}
+                onInputChange={handleChangeAddress}
               >
               </TextInput>
             </InputSection>
@@ -281,7 +292,7 @@ export default function Product() {
                 name={`city`}
                 isDisable={isModalReadOnly}
                 value={supplier.address.city}
-                onInputChange={handleChangeSupplier}
+                onInputChange={handleChangeAddress}
               >
               </TextInput>
             </InputSection>
@@ -291,7 +302,7 @@ export default function Product() {
                 name={`district`}
                 isDisable={isModalReadOnly}
                 value={supplier.address.district}
-                onInputChange={handleChangeSupplier}
+                onInputChange={handleChangeAddress}
               >
               </TextInput>
             </InputSection>
@@ -301,7 +312,7 @@ export default function Product() {
                 name={`ward`}
                 isDisable={isModalReadOnly}
                 value={supplier.address.ward}
-                onInputChange={handleChangeSupplier}
+                onInputChange={handleChangeAddress}
               >
               </TextInput>
             </InputSection>
@@ -311,7 +322,7 @@ export default function Product() {
                 name={`street`}
                 isDisable={isModalReadOnly}
                 value={supplier.address.street}
-                onInputChange={handleChangeSupplier}
+                onInputChange={handleChangeAddress}
               >
               </TextInput>
             </InputSection>
@@ -321,7 +332,7 @@ export default function Product() {
                 name={`number`}
                 isDisable={isModalReadOnly}
                 value={supplier.address.number}
-                onInputChange={handleChangeSupplier}
+                onInputChange={handleChangeAddress}
               >
               </TextInput>
             </InputSection>

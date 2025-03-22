@@ -497,6 +497,7 @@ export default function User() {
                 accept={`image/*`}
                 multiple={true}
                 onChange={handleChangeImage}
+                disabled={isModalReadOnly}
               >
               </input>
 
