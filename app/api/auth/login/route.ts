@@ -57,6 +57,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   //   );
 
   const accountPayload: IAccountPayload = {
+    _id: foundAccounts[0]._id.toString(), 
     username: foundAccounts[0].username, 
   }
 

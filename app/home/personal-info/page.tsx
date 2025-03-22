@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ChangeEvent, ReactElement, useEffect, useState } from 'react'
+import React, { ChangeEvent, ReactElement, useCallback, useEffect, useState } from 'react'
 import InputSection from '../components/input-section/input-section'
 import { Button, IconContainer, LoadingScreen, SelectDropdown, Text, TextInput } from '@/components'
 import { IAccount, IUser } from '@/interfaces';
@@ -21,6 +21,7 @@ import Checkbox from '@/components/checkbox/checkbox';
 import { DEFAULT_ACCOUNT } from '@/constants/account.constant';
 import { logout, me } from '@/services/Auth';
 import { redirect } from 'next/navigation';
+import { IAccountPayload } from '@/app/api/interfaces/account-payload.interface';
 
 type collectionType = IUser;
 
@@ -28,8 +29,29 @@ export default function PersonalInfo(): ReactElement {
   const [account, setAccount] = useState<IAccount>(DEFAULT_ACCOUNT);
   const [user, setUser] = useState<IUser>(DEFAULT_USER);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
+
+  const getCurrentUser: () => Promise<void> = useCallback(
+    async (): Promise<void> => {
+      setIsLoading(true);
+
+      const meApiResponse: Response = await me();
+      const meApiJson: IAccountPayload = await meApiResponse.json();
+      const accountId = meApiJson._id;
+
+      const userApiResponse: Response = await fetch(`/api/user/account/${accountId}`);
+      const userApiJson: IUser = await userApiResponse.json();
+      setUser(userApiJson);
+
+      setIsLoading(false);
+    }, 
+    []
+  )
+    
+  useEffect((): void => {
+    getCurrentUser();
+  }, [getCurrentUser]);
 
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files)

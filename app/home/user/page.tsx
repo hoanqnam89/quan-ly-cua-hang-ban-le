@@ -58,7 +58,7 @@ export default function User() {
       ]);
       setIsLoading(false);
     }, 
-    [user],
+    [user.account_id],
   );
 
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
