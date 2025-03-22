@@ -153,7 +153,7 @@ export default function Account() {
           <InputSection label={`Tài khoản`} gridColumns={gridColumns}>
             <TextInput
               name={`username`}
-              isDisable={true}
+              isDisable={isModalReadOnly}
               value={account.username}
               onInputChange={handleChangeAccount}
             >
