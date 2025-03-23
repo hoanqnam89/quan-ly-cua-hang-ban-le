@@ -7,10 +7,11 @@ import { ECollectionNames } from "@/enums";
 import { getCollectionCount } from "@/services/api-service";
 
 export default function Home(): ReactElement {
-  const [productCount, setProductCount] = useState<number>(0);
-  const [supplierCount, setSupplierCount] = useState<number>(0);
-  const [warehouseReceiptCount, setWarehouseReceiptCount] = useState<number>(0);
-  const [userCount, setUserCount] = useState<number>(0);
+  const [productCount, setProductCount] = useState<number>(-1);
+  const [goodReceiptCount, setGoodReceiptCount] = useState<number>(-1);
+  const [supplierCount, setSupplierCount] = useState<number>(-1);
+  const [warehouseReceiptCount, setWarehouseReceiptCount] = useState<number>(-1);
+  const [userCount, setUserCount] = useState<number>(-1);
 
   const setCollectionCount = async (
     collectionName: ECollectionNames, 
@@ -26,6 +27,7 @@ export default function Home(): ReactElement {
 
   useEffect((): void => {
     setCollectionCount(ECollectionNames.PRODUCT, setProductCount);
+    setCollectionCount(ECollectionNames.GOOD_RECEIPT, setGoodReceiptCount);
     setCollectionCount(ECollectionNames.SUPPLIER, setSupplierCount);
     setCollectionCount(
       ECollectionNames.WAREHOUSE_RECEIPT, 
@@ -33,6 +35,9 @@ export default function Home(): ReactElement {
     );
     setCollectionCount(ECollectionNames.USER, setUserCount);
   }, []);
+
+  const collectionCount = (count: number = -1): string =>
+    count < 0 ? `Đang tính...` : count + ``;
 
   return (
     <>
@@ -45,28 +50,28 @@ export default function Home(): ReactElement {
         </div>
 
         <div className={`p-4 ${styles.box}`}>
-          <Text>Số lượng đơn hàng:</Text>
-          <Text size={32}>32</Text>
+          <Text>Số lượng phiếu nhập hàng:</Text>
+          <Text size={32}>{collectionCount(goodReceiptCount)}</Text>
         </div>
 
         <div className={`p-4 ${styles.box}`}>
           <Text>Số lượng sản phẩm:</Text>
-          <Text size={32}>{productCount}</Text>
+          <Text size={32}>{collectionCount(productCount)}</Text>
         </div>
 
         <div className={`p-4 ${styles.box}`}>
           <Text>Số lượng nhà cung cấp:</Text>
-          <Text size={32}>{supplierCount}</Text>
+          <Text size={32}>{collectionCount(supplierCount)}</Text>
         </div>
 
         <div className={`p-4 ${styles.box}`}>
           <Text>Số lượng phiếu nhập kho:</Text>
-          <Text size={32}>{warehouseReceiptCount}</Text>
+          <Text size={32}>{collectionCount(warehouseReceiptCount)}</Text>
         </div>
 
         <div className={`p-4 ${styles.box}`}>
           <Text>Số lượng nhân viên:</Text>
-          <Text size={32}>{userCount}</Text>
+          <Text size={32}>{collectionCount(userCount)}</Text>
         </div>
       </div>
     </>
