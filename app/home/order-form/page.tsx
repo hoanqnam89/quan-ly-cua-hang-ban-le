@@ -111,8 +111,8 @@ export default function Product() {
       title: `Ngày tạo`,
       size: `4fr`, 
       isVisible: false, 
-      render: (account: collectionType): ReactElement => {
-        const date: string = new Date(account.created_at).toLocaleString();
+      render: (collection: collectionType): ReactElement => {
+        const date: string = new Date(collection.created_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },

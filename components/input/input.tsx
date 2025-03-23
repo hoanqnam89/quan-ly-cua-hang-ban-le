@@ -17,6 +17,7 @@ function Input({
   onInputBlur = () => {},
   onInputKeyDown = () => {}, 
   placeholder = ``, 
+  step = 1, 
 }: Readonly<IInputProps<string> & {type: HTMLInputTypeAttribute}>
 ): ReactElement {
   const inputStyle: CSSProperties = {
@@ -48,6 +49,7 @@ function Input({
       placeholder={placeholder}
       required={isRequire}
       pattern={pattern}
+      step={step}
     >
     </input>
   )

@@ -14,6 +14,7 @@ function NumberInput({
   placeholder = ``, 
   onInputChange = () => {},
   onInputBlur = () => {},
+  step = 0, 
 }: Readonly<IInputProps<string>>): ReactElement {
   return (
     <Input 
@@ -29,6 +30,7 @@ function NumberInput({
       onInputBlur={onInputBlur}
       onInputChange={onInputChange}
       pattern={pattern}
+      step={step}
     >
     </Input>
   )

@@ -44,6 +44,8 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   isClickDelete, 
   onExitModalForm = () => {}
 }: Readonly<IManagerPageProps<T>>): ReactElement {
+  const translatedCollectionName: string = 
+    translateCollectionName(collectionName);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAddCollectionModalOpen, setIsAddCollectionModalOpen] = 
     useState<boolean>(false);
@@ -94,27 +96,27 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
     switch (addCollectionApiResponse.status) {
       case EStatusCode.OK:
-        notificationText = `Tạo ${collectionName} thành công!`;
+        notificationText = `Tạo ${translatedCollectionName} thành công!`;
         notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.CREATED:
-        notificationText = `Tạo ${collectionName} thành công!`;
+        notificationText = `Tạo ${translatedCollectionName} thành công!`;
         notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.UNPROCESSABLE_ENTITY:
-        notificationText = `Tạo ${collectionName} thất bại! Không thể đọc được ${collectionName} đầu vào.`;
+        notificationText = `Tạo ${translatedCollectionName} thất bại! Không thể đọc được ${translatedCollectionName} đầu vào.`;
         break;
       case EStatusCode.CONFLICT:
-        notificationText = `Tạo ${collectionName} thất bại! ${collectionName} đã tồn tại.`;
+        notificationText = `Tạo ${translatedCollectionName} thất bại! ${translatedCollectionName} đã tồn tại.`;
         break;
       case EStatusCode.METHOD_NOT_ALLOWED:
-        notificationText = `Tạo ${collectionName} thất bại! Phương thức không cho phép.`;
+        notificationText = `Tạo ${translatedCollectionName} thất bại! Phương thức không cho phép.`;
         break;
       case EStatusCode.INTERNAL_SERVER_ERROR:
-        notificationText = `Tạo ${collectionName} thất bại! Server bị lỗi.`;
+        notificationText = `Tạo ${translatedCollectionName} thất bại! Server bị lỗi.`;
         break;
       default:
-        notificationText = `Tạo ${collectionName} thất bại! Lỗi không xác định.`;
+        notificationText = `Tạo ${translatedCollectionName} thất bại! Lỗi không xác định.`;
     }
 
     createNotification({
@@ -143,24 +145,24 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
     switch (updateCollectionApiResponse.status) {
       case EStatusCode.OK:
-        notificationText = `Cập nhật ${collectionName} thành công!`;
+        notificationText = `Cập nhật ${translatedCollectionName} thành công!`;
         notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.CREATED:
-        notificationText = `Cập nhật ${collectionName} thành công!`;
+        notificationText = `Cập nhật ${translatedCollectionName} thành công!`;
         notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.CONFLICT:
-        notificationText = `Cập nhật ${collectionName} thất bại! ${collectionName} đã tồn tại.`;
+        notificationText = `Cập nhật ${translatedCollectionName} thất bại! ${translatedCollectionName} đã tồn tại.`;
         break;
       case EStatusCode.UNPROCESSABLE_ENTITY:
-        notificationText = `Cập nhật ${collectionName} thất bại! Không thể đọc được ${collectionName} đầu vào.`;
+        notificationText = `Cập nhật ${translatedCollectionName} thất bại! Không thể đọc được ${translatedCollectionName} đầu vào.`;
         break;
       case EStatusCode.INTERNAL_SERVER_ERROR:
-        notificationText = `Cập nhật ${collectionName} thất bại! Server bị lỗi.`;
+        notificationText = `Cập nhật ${translatedCollectionName} thất bại! Server bị lỗi.`;
         break;
       default:
-        notificationText = `Cập nhật ${collectionName} thất bại! Lỗi không xác định.`;
+        notificationText = `Cập nhật ${translatedCollectionName} thất bại! Lỗi không xác định.`;
     }
 
     createNotification({
@@ -178,14 +180,14 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
     if ( collections.length === 0 ) {
       createNotification({
         id: 0,
-        children: <Text>Không có {collectionName} để xóa!</Text>,
+        children: <Text>Không có {translatedCollectionName} để xóa!</Text>,
         type: ENotificationType.ERROR,
         isAutoClose: true, 
       });
       return;
     }
     
-    if ( !confirm(`Bạn có muốn xóa TẤT CẢ ${collectionName}?`) )
+    if ( !confirm(`Bạn có muốn xóa TẤT CẢ ${translatedCollectionName}?`) )
       return;
     
     setIsLoading(true);
@@ -198,18 +200,18 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
     switch (deleteCollectionApiResponse.status) {
       case EStatusCode.OK:
-        notificationText = `Xóa ${collectionName} thành công!`;
+        notificationText = `Xóa ${translatedCollectionName} thành công!`;
         notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.CREATED:
-        notificationText = `Xóa ${collectionName} thành công!`;
+        notificationText = `Xóa ${translatedCollectionName} thành công!`;
         notificationType = ENotificationType.SUCCESS;
         break;
       case EStatusCode.INTERNAL_SERVER_ERROR:
-        notificationText = `Xóa ${collectionName} thất bại! Server bị lỗi.`;
+        notificationText = `Xóa ${translatedCollectionName} thất bại! Server bị lỗi.`;
         break;
       default:
-        notificationText = `Xóa ${collectionName} thất bại! Lỗi không xác định.`;
+        notificationText = `Xóa ${translatedCollectionName} thất bại! Lỗi không xác định.`;
     }
 
     createNotification({
@@ -247,7 +249,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
     collectionId: string
   ) => Promise<void> = useCallback(
     async (collectionId: string): Promise<void> => {
-      if ( !confirm(`Bạn có muốn xóa ${collectionName} này?`) )
+      if ( !confirm(`Bạn có muốn xóa ${translatedCollectionName} này?`) )
         return;
 
       setIsLoading(true);
@@ -260,18 +262,18 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
       switch (deleteCollectionByIdApiResponse.status) {
         case EStatusCode.OK:
-          notificationText = `Xóa ${collectionName} có mã ${collectionId} thành công!`;
+          notificationText = `Xóa ${translatedCollectionName} có mã ${collectionId} thành công!`;
           notificationType = ENotificationType.SUCCESS;
           break;
         case EStatusCode.CREATED:
-          notificationText = `Xóa ${collectionName} có mã ${collectionId} thành công!`;
+          notificationText = `Xóa ${translatedCollectionName} có mã ${collectionId} thành công!`;
           notificationType = ENotificationType.SUCCESS;
           break;
         case EStatusCode.INTERNAL_SERVER_ERROR:
-          notificationText = `Xóa ${collectionName} có mã ${collectionId} thất bại! Server bị lỗi.`;
+          notificationText = `Xóa ${translatedCollectionName} có mã ${collectionId} thất bại! Server bị lỗi.`;
           break;
         default:
-          notificationText = `Xóa ${collectionName} có mã ${collectionId} thất bại! Lỗi không xác định.`;
+          notificationText = `Xóa ${translatedCollectionName} có mã ${collectionId} thất bại! Lỗi không xác định.`;
       }
 
       createNotification({
@@ -306,10 +308,10 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   const managerPage: ReactElement = isLoading 
     ? <LoadingScreen></LoadingScreen>
     : <>
-      <title>{`Quản lý ${translateCollectionName(collectionName)}`}</title>
+      <title>{`Quản lý ${translatedCollectionName}`}</title>
 
       <Table<T>
-        name={translateCollectionName(collectionName)}
+        name={translatedCollectionName}
         isGetDatasDone={isLoading}
         datas={collections}
         columns={columns}

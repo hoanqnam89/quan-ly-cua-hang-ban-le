@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, IconContainer, NumberInput, SelectDropdown, Text, TextInput } from '@/components'
+import { Button, IconContainer, NumberInput, SelectDropdown, Text } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
@@ -12,22 +12,23 @@ import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { IProduct } from '@/interfaces/product.interface';
-import { DEFAULT_PROCDUCT } from '@/constants/product.constant';
-import Image from 'next/image';
-import styles from './style.module.css';
 import { MAX_PRICE } from '@/constants/max-price.constant';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
-import { ISupplier } from '@/interfaces/supplier.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
 import { translateCollectionName } from '@/utils/translate-collection-name';
+import { IProductDetail } from '@/interfaces/product-detail.interface';
+import { DEFAULT_PROCDUCT_DETAIL } from '@/constants/product-detail.constant';
+import DateInput from '@/components/date-input/date-input';
+import { VND_UNIT } from '@/constants/vnd-unit.constant';
 
-type collectionType = IProduct;
-const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
+type collectionType = IProductDetail;
+const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
 
 export default function Product() {
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [product, setProduct] = useState<collectionType>(DEFAULT_PROCDUCT);
+  const [productDetail, setProductDetail] = useState<collectionType>(
+    DEFAULT_PROCDUCT_DETAIL
+  );
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
     id: ``, 
@@ -38,85 +39,33 @@ export default function Product() {
     isClicked: false
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
+  const [productOptions, setProductOptions] = useState<ISelectOption[]>([]);
 
-  const getSuppliers: () => Promise<void> = useCallback(
+  const getProducts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
-      const newSuppliers: ISupplier[] = await fetchGetCollections<ISupplier>(
-        ECollectionNames.SUPPLIER, 
+      const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
+        ECollectionNames.PRODUCT, 
       );
 
-      setProduct({
-        ...product, 
-        supplier_id: newSuppliers[0]._id, 
+      setProductDetail({
+        ...productDetail, 
+        product_id: newProducts[0]._id, 
       });
-      setSupplierOptions([
-        ...newSuppliers.map((supplier: ISupplier): ISelectOption => ({
-          label: `${supplier.name}`,
-          value: supplier._id,
+      setProductOptions([
+        ...newProducts.map((product: IProduct): ISelectOption => ({
+          label: `${product.name}`,
+          value: product._id,
         }))
       ]);
       setIsLoading(false);
     }, 
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
-    [product.supplier_id],
+    [],
   );
   
   useEffect((): void => {
-    getSuppliers();
-  }, [getSuppliers]);
-
-  const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
-    const { files } = e.target;
-    const validImageFiles: File[] = [];
-    if (!files)
-      return;
-
-    for (let i = 0; i < files.length; i++) {
-      const file: File = files[i];
-      if (file) {
-        validImageFiles.push(file);
-      }
-    }
-
-    setImageFiles([...validImageFiles]);
-  }
-
-  useEffect(() => {
-    const images: string[] = [];
-    const fileReaders: FileReader[] = [];
-    let isCancel = false;
-
-    if (imageFiles.length) {
-      imageFiles.forEach((file: File) => {
-        const fileReader: FileReader = new FileReader();
-        fileReaders.push(fileReader);
-        fileReader.onload = (e: ProgressEvent<FileReader>) => {
-          const result = e.target?.result;
-          if (result) {
-            images.push(result.toString());
-          }
-
-          if ( images.length === imageFiles.length && !isCancel ) {
-            setProduct({
-              ...product, 
-              image_links: images, 
-            });
-          }
-        }
-        fileReader.readAsDataURL(file);
-      });
-    }
-
-    return () => {
-      isCancel = true;
-      fileReaders.forEach((fileReader: FileReader) => {
-        if (fileReader.readyState === 1) {
-          fileReader.abort();
-        }
-      });
-    }
-  }, [imageFiles, product]);
+    getProducts();
+  }, [getProducts]);
 
   const columns: Array<IColumnProps<collectionType>> = [
     {
@@ -133,23 +82,31 @@ export default function Product() {
       isVisible: false, 
     },
     {
-      key: `supplier_id`,
+      key: `product_id`,
       ref: useRef(null), 
-      title: `Nhà cung cấp`,
+      title: `Sản phẩm`,
       size: `6fr`, 
     },
     {
-      key: `name`,
+      key: `date_of_manufacture`,
       ref: useRef(null), 
-      title: `Tên sản phẩm`,
+      title: `Ngày sản xuất`,
       size: `4fr`, 
+      render: (collection: collectionType): ReactElement => {
+        const date: string = 
+          new Date(collection.date_of_manufacture).toLocaleString();
+        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+      }
     },
     {
-      key: `description`,
+      key: `expiry_date`,
       ref: useRef(null), 
-      title: `Mô tả`,
-      size: `5fr`, 
-      isVisible: false
+      title: `Hạn sử dụng`,
+      size: `4fr`, 
+      render: (collection: collectionType): ReactElement => {
+        const date: string = new Date(collection.expiry_date).toLocaleString();
+        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+      }
     },
     {
       key: `input_price`,
@@ -176,41 +133,13 @@ export default function Product() {
       size: `3fr`, 
     },
     {
-      key: `image_links`,
-      ref: useRef(null), 
-      title: `Hình ảnh`,
-      size: `3fr`, 
-      isVisible: false, 
-      render: (product: collectionType): ReactElement => 
-        <div className={`flex flex-wrap gap-2`}>
-          {
-            product.image_links.map((image: string, index: number) => 
-              <div 
-                key={index} 
-                className={`relative ${styles[`image-container`]}`}
-              >
-                <Image 
-                  className={`w-full max-w-full max-h-full`}
-                  src={image} 
-                  alt={``}
-                  width={0}
-                  height={0}
-                  quality={10}
-                >
-                </Image>
-              </div>
-            )
-          }
-        </div>
-    }, 
-    {
       key: `created_at`,
       ref: useRef(null), 
       title: `Ngày tạo`,
       size: `4fr`, 
       isVisible: false, 
-      render: (account: collectionType): ReactElement => {
-        const date: string = new Date(account.created_at).toLocaleString();
+      render: (collection: collectionType): ReactElement => {
+        const date: string = new Date(collection.created_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
@@ -219,8 +148,8 @@ export default function Product() {
       ref: useRef(null), 
       title: `Ngày cập nhật`,
       size: `4fr`, 
-      render: (account: collectionType): ReactElement => {
-        const date: string = new Date(account.updated_at).toLocaleString();
+      render: (collection: collectionType): ReactElement => {
+        const date: string = new Date(collection.updated_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
@@ -266,32 +195,18 @@ export default function Product() {
     },
   ];
 
-  const handleChangeProduct = (e: ChangeEvent<HTMLInputElement>): void => {
-    setProduct({
-      ...product, 
+  const handleChangeProductDetail = (e: ChangeEvent<HTMLInputElement>): void => {
+    setProductDetail({
+      ...productDetail, 
       [e.target.name]: e.target.value, 
     });
   }
   
-  const handleChangeSupplierId = (e: ChangeEvent<HTMLSelectElement>): void => {
-    setProduct({
-      ...product, 
-      supplier_id: e.target.value, 
+  const handleChangeProductId = (e: ChangeEvent<HTMLSelectElement>): void => {
+    setProductDetail({
+      ...productDetail, 
+      product_id: e.target.value, 
     });
-  }
-
-  const handleDeleteImage = (index: number): void => {
-    const newImages: string[] = product.image_links.filter(
-      (_image: string, imageIndex: number) => imageIndex !== index
-    );
-    const newImageFiles: File[] = imageFiles.filter(
-      (_imageFile: File, imageFileIndex: number) => imageFileIndex !== index
-    );
-    setProduct({
-      ...product, 
-      image_links: newImages, 
-    });
-    setImageFiles([...newImageFiles]);
   }
 
   const gridColumns: string = `200px 1fr`;
@@ -300,60 +215,58 @@ export default function Product() {
     <ManagerPage<collectionType>
       columns={columns}
       collectionName={collectionName}
-      defaultCollection={DEFAULT_PROCDUCT}
-      collection={product}
-      setCollection={setProduct}
+      defaultCollection={DEFAULT_PROCDUCT_DETAIL}
+      collection={productDetail}
+      setCollection={setProductDetail}
       isModalReadonly={isModalReadOnly} 
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
     >
       <Tabs>
-        <TabItem label={`Nhà cung cấp`}>
-          <InputSection label={`Cho nhà cung cấp`}>
+        <TabItem label={`${translateCollectionName(collectionName)}`}>
+          <InputSection label={`Cho sản phẩm`}>
             <SelectDropdown
               isLoading={isLoading}
               isDisable={isModalReadOnly}
-              options={supplierOptions}
+              options={productOptions}
               defaultOptionIndex={getSelectedOptionIndex(
-                supplierOptions, product.supplier_id
+                productOptions, productDetail.product_id
               )}
-              onInputChange={handleChangeSupplierId}
+              onInputChange={handleChangeProductId}
             >
             </SelectDropdown>
           </InputSection>
 
-        </TabItem>
-
-        <TabItem label={`${translateCollectionName(collectionName)}`}>
-          <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>
-            <TextInput
-              name={`name`}
+          <InputSection label={`Ngày sản xuất`} gridColumns={gridColumns}>
+            <DateInput
+              name={`date_of_manufacture`}
               isDisable={isModalReadOnly}
-              value={product.name}
-              onInputChange={handleChangeProduct}
+              value={productDetail.date_of_manufacture}
+              onInputChange={handleChangeProductDetail}
             >
-            </TextInput>
+            </DateInput>
           </InputSection>
 
-          <InputSection label={`Mô tả`} gridColumns={gridColumns}>
-            <TextInput
-              name={`description`}
+          <InputSection label={`Hạn sử dụng`} gridColumns={gridColumns}>
+            <DateInput
+              name={`expiry_date`}
               isDisable={isModalReadOnly}
-              value={product.description}
-              onInputChange={handleChangeProduct}
+              value={productDetail.expiry_date}
+              onInputChange={handleChangeProductDetail}
             >
-            </TextInput>
+            </DateInput>
           </InputSection>
         </TabItem>
 
         <TabItem label={`Giá`}>
           <InputSection label={`Giá nhập (VNĐ)`} gridColumns={gridColumns}>
             <NumberInput
+              step={VND_UNIT}
               name={`input_price`}
               isDisable={isModalReadOnly}
-              value={product.input_price + ``}
-              onInputChange={handleChangeProduct}
+              value={productDetail.input_price + ``}
+              onInputChange={handleChangeProductDetail}
               max={MAX_PRICE}
             >
             </NumberInput>
@@ -361,59 +274,14 @@ export default function Product() {
 
           <InputSection label={`Giá bán (VNĐ)`} gridColumns={gridColumns}>
             <NumberInput
+              step={VND_UNIT}
               name={`output_price`}
               isDisable={isModalReadOnly}
-              value={product.output_price + ``}
-              onInputChange={handleChangeProduct}
+              value={productDetail.output_price + ``}
+              onInputChange={handleChangeProductDetail}
               max={MAX_PRICE}
             >
             </NumberInput>
-          </InputSection>
-        </TabItem>
-
-        <TabItem label={`Hình ảnh`}>
-          <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>
-            <div>
-              <input
-                type={`file`}
-                accept={`image/*`}
-                multiple={true}
-                onChange={handleChangeImage}
-                disabled={isModalReadOnly}
-              >
-              </input>
-
-              <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
-                {
-                  product.image_links.map((image: string, index: number) => 
-                    <div 
-                      key={index} 
-                      className={`relative ${styles[`image-container`]}`}
-                    >
-                      <Image 
-                        className={`w-full max-w-full max-h-full`}
-                        src={image} 
-                        alt={``}
-                        width={0}
-                        height={0}
-                        quality={10}
-                      >
-                      </Image>
-
-                      <div className={`absolute top-0 right-0`}>
-                        <Button 
-                          className={`absolute top-0 right-0`} 
-                          onClick={() => handleDeleteImage(index)}
-                        >
-                          <IconContainer iconLink={trashIcon}>
-                          </IconContainer>
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                }
-              </div> 
-            </div>
           </InputSection>
         </TabItem>
 
@@ -421,7 +289,7 @@ export default function Product() {
           <InputSection label={`Số lượng trong kho`} gridColumns={gridColumns}>
             <NumberInput
               isDisable={true}
-              value={product.input_quantity + ``}
+              value={productDetail.input_quantity + ``}
               max={MAX_PRICE}
             >
             </NumberInput>
@@ -430,7 +298,7 @@ export default function Product() {
           <InputSection label={`Số lượng đang bán`} gridColumns={gridColumns}>
             <NumberInput
               isDisable={true}
-              value={product.output_quantity + ``}
+              value={productDetail.output_quantity + ``}
               max={MAX_PRICE}
             >
             </NumberInput>
@@ -438,7 +306,7 @@ export default function Product() {
         </TabItem>
 
         <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
-          <TimestampTabItem<collectionType> collection={product}>
+          <TimestampTabItem<collectionType> collection={productDetail}>
           </TimestampTabItem>
         </TabItem>
 

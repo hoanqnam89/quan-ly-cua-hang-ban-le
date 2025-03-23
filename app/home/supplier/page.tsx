@@ -94,12 +94,12 @@ export default function Product() {
       ref: useRef(null), 
       title: `Hình ảnh`,
       size: `3fr`, 
-      render: (product: collectionType): ReactElement => product.logo ? <div 
+      render: (collection: collectionType): ReactElement => collection.logo ? <div 
         className={`relative ${styles[`image-container`]}`}
       >
         <Image 
           className={`w-full max-w-full max-h-full`}
-          src={product.logo} 
+          src={collection.logo} 
           alt={``}
           width={0}
           height={0}
@@ -114,8 +114,8 @@ export default function Product() {
       title: `Địa chỉ`,
       size: `5fr`, 
       isVisible: false, 
-      render: (user: collectionType): ReactElement => {
-        const address: string = `${user.address.number} ${user.address.street}, ${user.address.ward}, ${user.address.district}, ${user.address.city}, ${user.address.country}`;
+      render: (collection: collectionType): ReactElement => {
+        const address: string = `${collection.address.number} ${collection.address.street}, ${collection.address.ward}, ${collection.address.district}, ${collection.address.city}, ${collection.address.country}`;
         return <Text isEllipsis={true} tooltip={address}>{address}</Text>
       }
     },
@@ -125,8 +125,8 @@ export default function Product() {
       title: `Ngày tạo`,
       size: `4fr`, 
       isVisible: false, 
-      render: (account: collectionType): ReactElement => {
-        const date: string = new Date(account.created_at).toLocaleString();
+      render: (collection: collectionType): ReactElement => {
+        const date: string = new Date(collection.created_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
@@ -135,8 +135,8 @@ export default function Product() {
       ref: useRef(null), 
       title: `Ngày cập nhật`,
       size: `4fr`, 
-      render: (account: collectionType): ReactElement => {
-        const date: string = new Date(account.updated_at).toLocaleString();
+      render: (collection: collectionType): ReactElement => {
+        const date: string = new Date(collection.updated_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },

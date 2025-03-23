@@ -11,6 +11,7 @@ export interface IInputProps<T> {
   max?: number | string
   isRequire?: boolean
   pattern?: string
+  step?: number
   onInputChange?: (e: ChangeEvent<HTMLInputElement>) => void
   onInputBlur?: (e: ChangeEvent<HTMLInputElement>) => void
   onInputKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void, 

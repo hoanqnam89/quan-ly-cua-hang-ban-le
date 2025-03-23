@@ -18,11 +18,11 @@ const ProductDetailSchema = new Schema({
     required: [true, `Supplier is required!`], 
   }, 
   input_price: {
-    type: String, 
+    type: Number, 
     required: [true, `Input Price is required!`], 
   }, 
   output_price: {
-    type: String, 
+    type: Number, 
     required: [true, `Output Price is required!`], 
   }, 
   input_quantity: {

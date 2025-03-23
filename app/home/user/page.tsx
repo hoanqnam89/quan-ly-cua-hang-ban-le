@@ -21,6 +21,8 @@ import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import DateInput from '@/components/date-input/date-input';
 import styles from './style.module.css';
+import { getDate } from '@/utils/get-date';
+import { getSameDayOfYear } from '@/utils/get-same-date-of-year';
 
 type collectionType = IUser;
 const collectionName: ECollectionNames = ECollectionNames.USER;
@@ -138,8 +140,8 @@ export default function User() {
       title: `Địa chỉ`,
       size: `3fr`, 
       isVisible: false, 
-      render: (user: collectionType): ReactElement => {
-        const address: string = `${user.address.number} ${user.address.street}, ${user.address.ward}, ${user.address.district}, ${user.address.city}, ${user.address.country}`;
+      render: (collection: collectionType): ReactElement => {
+        const address: string = `${collection.address.number} ${collection.address.street}, ${collection.address.ward}, ${collection.address.district}, ${collection.address.city}, ${collection.address.country}`;
         return <Text isEllipsis={true} tooltip={address}>{address}</Text>
       }
     },
@@ -156,11 +158,11 @@ export default function User() {
       title: `Ngày sinh`,
       size: `3fr`, 
       isVisible: false, 
-      render: (user: collectionType): ReactElement => {
-        if ( !user.birthday )
+      render: (collection: collectionType): ReactElement => {
+        if ( !collection.birthday )
           return <Text isEllipsis={true}>NaN</Text>
 
-        const date: string = new Date(user.birthday).toLocaleString();
+        const date: string = new Date(collection.birthday).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
@@ -196,8 +198,8 @@ export default function User() {
       title: `Ngày tạo`,
       size: `4fr`, 
       isVisible: false, 
-      render: (user: collectionType): ReactElement => {
-        const date: string = new Date(user.created_at).toLocaleString();
+      render: (collection: collectionType): ReactElement => {
+        const date: string = new Date(collection.created_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
@@ -206,8 +208,8 @@ export default function User() {
       ref: useRef(null), 
       title: `Ngày cập nhật`,
       size: `4fr`, 
-      render: (user: collectionType): ReactElement => {
-        const date: string = new Date(user.updated_at).toLocaleString();
+      render: (collection: collectionType): ReactElement => {
+        const date: string = new Date(collection.updated_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
@@ -215,11 +217,11 @@ export default function User() {
       title: `Xem thêm`,
       ref: useRef(null), 
       size: `2fr`, 
-      render: (user: collectionType): ReactElement => <Button 
+      render: (collection: collectionType): ReactElement => <Button 
         title={createMoreInfoTooltip(collectionName)}
         onClick={(): void => {
           setIsClickShowMore({
-            id: user._id, 
+            id: collection._id, 
             isClicked: !isClickShowMore.isClicked, 
           });
         }}
@@ -235,11 +237,11 @@ export default function User() {
       title: `Xóa`,
       ref: useRef(null), 
       size: `2fr`, 
-      render: (user: collectionType): ReactElement => <Button 
+      render: (collection: collectionType): ReactElement => <Button 
         title={createDeleteTooltip(collectionName)}
         onClick={(): void => {
           setIsClickDelete({
-            id: user._id, 
+            id: collection._id, 
             isClicked: !isClickDelete.isClicked, 
           });
         }}
@@ -462,6 +464,8 @@ export default function User() {
             {user.birthday ? 
               <InputSection label={`Ngày sinh`}>
                 <DateInput
+                  min={getDate(getSameDayOfYear(new Date(), -65))}
+                  max={getDate(getSameDayOfYear(new Date(), -18))}
                   name={`birthday`}
                   isDisable={isModalReadOnly}
                   value={user.birthday}
