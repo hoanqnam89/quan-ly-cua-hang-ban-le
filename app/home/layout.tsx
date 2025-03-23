@@ -45,6 +45,11 @@ export default function RootLayout({
       icon: boxIcon, 
     },
     {
+      link: `${currentPath}/product-detail`,
+      label: `Chi tiết sản phẩm`,
+      icon: boxIcon, 
+    },
+    {
       link: `${currentPath}/user`,
       label: `Nhân viên`,
       icon: userIcon, 
