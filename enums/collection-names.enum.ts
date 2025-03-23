@@ -1,6 +1,6 @@
 export enum ECollectionNames {
   ACCOUNT = `Account`, 
-  GOOD_RECEIPT = `Good Receipt`, 
+  ORDER_FORM = `Order Form`, 
   PRODUCT = `Product`, 
   SUPPLIER = `Supplier`, 
   WAREHOUSE_RECEIPT = `Warehouse Receipt`,

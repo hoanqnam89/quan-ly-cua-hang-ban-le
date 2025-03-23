@@ -12,8 +12,6 @@ import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
-import { IGoodReceipt, IGoodReceiptProduct } from '@/interfaces/good-receipt.interface';
-import { DEFAULT_GOOD_RECEIPT } from '@/constants/good-receipt.constant';
 import { IProduct } from '@/interfaces/product.interface';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
@@ -21,13 +19,15 @@ import styles from './style.module.css';
 import { getCollectionCount } from '@/services/api-service';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '@/components/notify/notification/notification';
+import { IOrderForm, IOrderFormProduct } from '@/interfaces/order-form.interface';
+import { DEFAULT_ORDER_FORM } from '@/constants/order-form.constant';
 
-type collectionType = IGoodReceipt;
-const collectionName: ECollectionNames = ECollectionNames.GOOD_RECEIPT;
+type collectionType = IOrderForm;
+const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
 
 export default function Product() {
-  const [goodReceipt, setGoodReceipt] = useState<collectionType>(
-    DEFAULT_GOOD_RECEIPT
+  const [orderForm, setOrderForm] = useState<collectionType>(
+    DEFAULT_ORDER_FORM 
   );
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
@@ -101,8 +101,8 @@ export default function Product() {
       size: `6fr`, 
       render: (collection: collectionType): ReactElement => {
         return <Text>{collection.products.map((
-          goodReceiptProduct: IGoodReceiptProduct
-        ) => goodReceiptProduct._id).join(`, `)}</Text>
+          orderFormProduct: IOrderFormProduct
+        ) => orderFormProduct._id).join(`, `)}</Text>
       }
     },
     {
@@ -171,7 +171,7 @@ export default function Product() {
   ];
 
   const handleAddGoodReceiptProduct = () => {
-    if (goodReceipt.products.length >= productCount) {
+    if (orderForm.products.length >= productCount) {
       createNotification({
         id: 0,
         children: <Text>Đã hết sản phẩm trong cơ sở dữ liệu để thêm vào phiếu nhập hàng</Text>,
@@ -181,10 +181,10 @@ export default function Product() {
       return;
     }
 
-    setGoodReceipt({
-      ...goodReceipt, 
+    setOrderForm({
+      ...orderForm, 
       products: [
-        ...goodReceipt.products, 
+        ...orderForm.products, 
         {
           _id: productOptions[0].value,
           quantity: 0, 
@@ -194,11 +194,11 @@ export default function Product() {
   }
 
   const handleDeleteGoodReceiptProduct = (deleteIndex: number) => {
-    setGoodReceipt({
-      ...goodReceipt, 
+    setOrderForm({
+      ...orderForm, 
       products: [
-        ...goodReceipt.products.filter((
-          _: IGoodReceiptProduct, 
+        ...orderForm.products.filter((
+          _: IOrderFormProduct, 
           index: number
         ) => index !== deleteIndex), 
       ], 
@@ -209,20 +209,20 @@ export default function Product() {
     e: ChangeEvent<HTMLSelectElement>, 
     changeIndex: number, 
   ): void => {
-    setGoodReceipt({
-      ...goodReceipt, 
+    setOrderForm({
+      ...orderForm, 
       products: [
-        ...goodReceipt.products.map((
-          goodReceiptProduct: IGoodReceiptProduct, 
+        ...orderForm.products.map((
+          orderFormProduct: IOrderFormProduct, 
           index: number
-        ): IGoodReceiptProduct => {
+        ): IOrderFormProduct => {
           if (index === changeIndex)
             return {
-              ...goodReceiptProduct, 
+              ...orderFormProduct, 
               _id: e.target.value
             }
           else
-            return goodReceiptProduct;
+            return orderFormProduct;
         }), 
       ], 
     });
@@ -232,20 +232,20 @@ export default function Product() {
     e: ChangeEvent<HTMLInputElement>, 
     changeIndex: number, 
   ): void => {
-    setGoodReceipt({
-      ...goodReceipt, 
+    setOrderForm({
+      ...orderForm, 
       products: [
-        ...goodReceipt.products.map((
-          goodReceiptProduct: IGoodReceiptProduct, 
+        ...orderForm.products.map((
+          orderFormProduct: IOrderFormProduct, 
           index: number
-        ): IGoodReceiptProduct => {
+        ): IOrderFormProduct => {
           if (index === changeIndex)
             return {
-              ...goodReceiptProduct, 
+              ...orderFormProduct, 
               quantity: +e.target.value
             }
           else
-            return goodReceiptProduct;
+            return orderFormProduct;
         }), 
       ], 
     });
@@ -255,9 +255,9 @@ export default function Product() {
     <ManagerPage<collectionType>
       columns={columns}
       collectionName={collectionName}
-      defaultCollection={DEFAULT_GOOD_RECEIPT}
-      collection={goodReceipt}
-      setCollection={setGoodReceipt}
+      defaultCollection={DEFAULT_ORDER_FORM}
+      collection={orderForm}
+      setCollection={setOrderForm}
       isModalReadonly={isModalReadOnly} 
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
@@ -273,8 +273,8 @@ export default function Product() {
               <Text>Xóa</Text>
             </div>
 
-            {goodReceipt.products.map((
-              goodReceiptProduct: IGoodReceiptProduct, 
+            {orderForm.products.map((
+              orderFormProduct: IOrderFormProduct, 
               index: number
             ) => {
               return <div 
@@ -289,8 +289,8 @@ export default function Product() {
                   options={productOptions}
                   defaultOptionIndex={getSelectedOptionIndex(
                     productOptions, 
-                    (goodReceiptProduct._id
-                      ? goodReceiptProduct._id
+                    (orderFormProduct._id
+                      ? orderFormProduct._id
                       : 0
                     ) as unknown as string
                   )}
@@ -301,7 +301,7 @@ export default function Product() {
                 <NumberInput
                   name={`quantity`}
                   isDisable={isModalReadOnly}
-                  value={goodReceiptProduct.quantity + ``}
+                  value={orderFormProduct.quantity + ``}
                   onInputChange={(e) => 
                     handleChangeGoodReceiptProductQuantity(e, index)
                   }
@@ -331,7 +331,7 @@ export default function Product() {
           </TabItem>
 
           <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
-            <TimestampTabItem<collectionType> collection={goodReceipt}>
+            <TimestampTabItem<collectionType> collection={orderForm}>
             </TimestampTabItem>
           </TabItem>
 

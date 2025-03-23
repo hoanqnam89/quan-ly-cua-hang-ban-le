@@ -1,15 +1,15 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { IGoodReceipt } from "@/interfaces/good-receipt.interface";
-import { GoodReceiptModel } from "@/models/GoodReceipt";
+import { IOrderForm } from "@/interfaces/order-form.interface";
+import { OrderFormModel } from "@/models/OrderForm";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { print } from "@/utils/print";
 import { NextResponse } from "next/server";
 
-type collectionType = IGoodReceipt;
-const collectionName: ECollectionNames = ECollectionNames.GOOD_RECEIPT;
-const collectionModel = GoodReceiptModel;
+type collectionType = IOrderForm;
+const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
+const collectionModel = OrderFormModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}/count`;
 
 export const GET = async (): Promise<NextResponse> => {

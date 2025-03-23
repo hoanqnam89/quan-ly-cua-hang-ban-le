@@ -1,9 +1,9 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { IGoodReceipt, IGoodReceiptProduct } from "@/interfaces/good-receipt.interface";
+import { IOrderForm, IOrderFormProduct } from "@/interfaces/order-form.interface";
 import { IProduct } from "@/interfaces/product.interface";
 import { ProductModel } from "@/models";
-import { GoodReceiptModel } from "@/models/GoodReceipt";
+import { OrderFormModel } from "@/models/OrderForm";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
@@ -12,9 +12,9 @@ import { isIdsValid } from "@/utils/is-ids-valid";
 import { print } from "@/utils/print";
 import { NextRequest, NextResponse } from "next/server";
 
-type collectionType = IGoodReceipt;
-const collectionName: ECollectionNames = ECollectionNames.GOOD_RECEIPT;
-const collectionModel = GoodReceiptModel;
+type collectionType = IOrderForm;
+const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
+const collectionModel = OrderFormModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
@@ -38,17 +38,17 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   //     { status: EStatusCode.UNAUTHORIZED }
   //   );
 
-  const goodReceipt: collectionType = await req.json();
+  const orderForm: collectionType = await req.json();
 
   try {
     connectToDatabase();
 
-    const goodReceiptProductIds: string[] = 
-      goodReceipt.products.map(
-        (goodReceiptProduct: IGoodReceiptProduct) => goodReceiptProduct._id
+    const orderFormProductIds: string[] = 
+      orderForm.products.map(
+        (orderFormProduct: IOrderFormProduct) => orderFormProduct._id
       );
 
-    if ( !isIdsValid(goodReceiptProductIds) ) 
+    if ( !isIdsValid(orderFormProductIds) ) 
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
@@ -60,7 +60,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       );
 
     const isRoleIdsExist: boolean = 
-      await isIdsExist<IProduct>(goodReceiptProductIds, ProductModel);
+      await isIdsExist<IProduct>(orderFormProductIds, ProductModel);
 
     if ( !isRoleIdsExist ) 
       return NextResponse.json(
@@ -76,7 +76,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     const newGoodReceipt = new collectionModel({
       created_at: new Date(), 
       updated_at: new Date(), 
-      products: goodReceipt.products, 
+      products: orderForm.products, 
     });
 
     const savedGoodReceipt: collectionType = await newGoodReceipt.save();

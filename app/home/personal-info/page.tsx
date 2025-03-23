@@ -153,7 +153,7 @@ export default function PersonalInfo(): ReactElement {
   }
 
   const handleLogOut = async (): Promise<void> => {
-    if ( !confirm(`Are you sure you want to log out?`) ) 
+    if ( !confirm(`Bạn có chắc bạn muốn đăng xuất?`) ) 
       return;
 
     await me();

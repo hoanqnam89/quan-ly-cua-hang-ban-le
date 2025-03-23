@@ -8,7 +8,7 @@ import { getCollectionCount } from "@/services/api-service";
 
 export default function Home(): ReactElement {
   const [productCount, setProductCount] = useState<number>(-1);
-  const [goodReceiptCount, setGoodReceiptCount] = useState<number>(-1);
+  const [orderFormCount, setOrderFormCount] = useState<number>(-1);
   const [supplierCount, setSupplierCount] = useState<number>(-1);
   const [warehouseReceiptCount, setWarehouseReceiptCount] = useState<number>(-1);
   const [userCount, setUserCount] = useState<number>(-1);
@@ -27,7 +27,7 @@ export default function Home(): ReactElement {
 
   useEffect((): void => {
     setCollectionCount(ECollectionNames.PRODUCT, setProductCount);
-    setCollectionCount(ECollectionNames.GOOD_RECEIPT, setGoodReceiptCount);
+    setCollectionCount(ECollectionNames.ORDER_FORM, setOrderFormCount);
     setCollectionCount(ECollectionNames.SUPPLIER, setSupplierCount);
     setCollectionCount(
       ECollectionNames.WAREHOUSE_RECEIPT, 
@@ -51,7 +51,7 @@ export default function Home(): ReactElement {
 
         <div className={`p-4 ${styles.box}`}>
           <Text>Số lượng phiếu nhập hàng:</Text>
-          <Text size={32}>{collectionCount(goodReceiptCount)}</Text>
+          <Text size={32}>{collectionCount(orderFormCount)}</Text>
         </div>
 
         <div className={`p-4 ${styles.box}`}>
