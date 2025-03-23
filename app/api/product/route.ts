@@ -72,7 +72,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       supplier_id: product.supplier_id,
       name: product.name,
       description: product.description,
-      price: product.price,
       image_links: product.image_links,
       input_price: product.input_price, 
       output_price: product.output_price, 

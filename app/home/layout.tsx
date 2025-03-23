@@ -2,7 +2,7 @@
 
 import { CSSProperties, ReactElement, useState } from 'react';
 import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
-import { boxIcon, chevronLeftIcon, chevronRightIcon, circleUserRoundIcon, homeIcon, truckIcon, userIcon, warehouseIcon } from '@/public';
+import { boxIcon, chevronLeftIcon, chevronRightIcon, circleUserRoundIcon, homeIcon, scrollIcon, truckIcon, userIcon, warehouseIcon } from '@/public';
 import { IRootLayout } from '@/app/interfaces/root-layout.interface';
 import styles from './style.module.css';
 
@@ -62,7 +62,7 @@ export default function RootLayout({
     {
       link: `${currentPath}/warehouse-receipt`,
       label: `Phiếu nhập kho`,
-      icon: warehouseIcon, 
+      icon: scrollIcon, 
     },
     {
       link: `${currentPath}/personal-info`,
