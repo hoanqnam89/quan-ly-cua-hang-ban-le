@@ -112,20 +112,20 @@ export default function User() {
     {
       key: `_id`,
       ref: useRef(null), 
-      title: `ID`,
+      title: `Mã`,
       size: `6fr`,
       isVisible: false, 
     },
     {
       key: `account_id`,
       ref: useRef(null), 
-      title: `Account`,
+      title: `Tài khoản`,
       size: `3fr`, 
     },
     {
       key: `name`,
       ref: useRef(null), 
-      title: `Full Name`,
+      title: `Họ tên`,
       size: `3fr`, 
       render: (user: collectionType): ReactElement => {
         const name: string = `${user.name.first} ${user.name.middle + ` `}${user.name.last}`;
@@ -135,11 +135,11 @@ export default function User() {
     {
       key: `address`,
       ref: useRef(null), 
-      title: `Address`,
+      title: `Địa chỉ`,
       size: `3fr`, 
       isVisible: false, 
       render: (user: collectionType): ReactElement => {
-        const address: string = `${user.address.number} ${user.address.street} ${user.address.ward} ${user.address.district} ${user.address.city} ${user.address.country}`;
+        const address: string = `${user.address.number} ${user.address.street}, ${user.address.ward}, ${user.address.district}, ${user.address.city}, ${user.address.country}`;
         return <Text isEllipsis={true} tooltip={address}>{address}</Text>
       }
     },
@@ -153,7 +153,7 @@ export default function User() {
     {
       key: `birthday`,
       ref: useRef(null), 
-      title: `Birthday`,
+      title: `Ngày sinh`,
       size: `3fr`, 
       isVisible: false, 
       render: (user: collectionType): ReactElement => {
@@ -167,7 +167,7 @@ export default function User() {
     {
       key: `gender`,
       ref: useRef(null), 
-      title: `Gender`,
+      title: `Giới tính`,
       size: `3fr`, 
       isVisible: false, 
     },
@@ -193,7 +193,7 @@ export default function User() {
     {
       key: `created_at`,
       ref: useRef(null), 
-      title: `Created At`,
+      title: `Ngày tạo`,
       size: `4fr`, 
       isVisible: false, 
       render: (user: collectionType): ReactElement => {
@@ -204,7 +204,7 @@ export default function User() {
     {
       key: `updated_at`,
       ref: useRef(null), 
-      title: `Updated At`,
+      title: `Ngày cập nhật`,
       size: `4fr`, 
       render: (user: collectionType): ReactElement => {
         const date: string = new Date(user.updated_at).toLocaleString();
@@ -212,7 +212,7 @@ export default function User() {
       }
     },
     {
-      title: `More`,
+      title: `Xem thêm`,
       ref: useRef(null), 
       size: `2fr`, 
       render: (user: collectionType): ReactElement => <Button 
@@ -232,7 +232,7 @@ export default function User() {
       </Button>
     },
     {
-      title: `Delete`,
+      title: `Xóa`,
       ref: useRef(null), 
       size: `2fr`, 
       render: (user: collectionType): ReactElement => <Button 

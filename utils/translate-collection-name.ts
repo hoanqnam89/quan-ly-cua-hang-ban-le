@@ -9,6 +9,8 @@ export const translateCollectionName = (
       switch (collectionName) {
         case ECollectionNames.ACCOUNT:
           return `Tài khoản`;
+        case ECollectionNames.GOOD_RECEIPT:
+          return `Phiếu nhập hàng`;
         case ECollectionNames.PRODUCT:
           return `Sản phẩm`;
         case ECollectionNames.SUPPLIER:
