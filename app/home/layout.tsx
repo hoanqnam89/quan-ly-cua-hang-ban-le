@@ -25,7 +25,7 @@ export default function RootLayout({
   const currentPath: string = `/home`;
   const navbarItems: CNavbarItem[] = [
     {
-      label: isExpand ? `Collapse` : `Expand`,
+      label: isExpand ? `Thu gọn` : `Mở rộng`,
       icon: isExpand ? chevronLeftIcon : chevronRightIcon, 
       onClick: toggleNavbar, 
     },
@@ -53,6 +53,11 @@ export default function RootLayout({
       link: `${currentPath}/supplier`,
       label: `Nhà cung cấp`,
       icon: truckIcon, 
+    },
+    {
+      link: `${currentPath}/good-receipt`,
+      label: `Phiếu nhập hàng`,
+      icon: warehouseIcon, 
     },
     {
       link: `${currentPath}/warehouse-receipt`,

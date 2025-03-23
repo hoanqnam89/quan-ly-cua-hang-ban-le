@@ -252,7 +252,7 @@ export default function Table<T extends {_id: string, index?: number}>({
 
   const rowElements: ReactElement = datas.length === 0 ? (
     <div className={`flex justify-center items-center p-1`}>
-      <Text isItalic={true}>No Data</Text>
+      <Text isItalic={true}>Không có dữ liệu</Text>
     </div>
   ) : isAllTableColumnInvisible() ? 
     <></> : (
