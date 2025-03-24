@@ -21,6 +21,8 @@ import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
 import { IBusiness } from '@/interfaces/business.interface';
 import { EBusinessType } from '@/enums/business-type.enum';
+import { VND_UNIT } from '@/constants/vnd-unit.constant';
+import { translateCollectionName } from '@/utils/translate-collection-name';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -305,7 +307,7 @@ export default function Product() {
       isLoaded={isLoading}
     >
       <Tabs>
-        <TabItem label={`Sản xuất`}>
+        <TabItem label={`${translateCollectionName(collectionName)}`}>
           <InputSection label={`Cho nhà sản xuất`}>
             <SelectDropdown
               isLoading={isLoading}
@@ -346,6 +348,7 @@ export default function Product() {
               value={product.input_price + ``}
               onInputChange={handleChangeProduct}
               max={MAX_PRICE}
+              step={VND_UNIT}
             >
             </NumberInput>
           </InputSection>
@@ -357,6 +360,7 @@ export default function Product() {
               value={product.output_price + ``}
               onInputChange={handleChangeProduct}
               max={MAX_PRICE}
+              step={VND_UNIT}
             >
             </NumberInput>
           </InputSection>
