@@ -13,7 +13,7 @@ export const DEFAULT_BUSINESS: IBusiness = {
     city: `Hồ Chí Minh`,
     ward: `Đa Kao`,
     district: `1`,
-    country: `Quận 1`
+    country: `Việt Nam`
   }, 
   email: `vinshop@gmail.com`, 
   type: EBusinessType.MANUFACTURER, 

@@ -23,6 +23,8 @@ import DateInput from '@/components/date-input/date-input';
 import styles from './style.module.css';
 import { getDate } from '@/utils/get-date';
 import { getSameDayOfYear } from '@/utils/get-same-date-of-year';
+import { MINIMUM_WORKING_AGE } from '@/constants/minimum-working-age.constant';
+import { MAXIMUM_WORKING_AGE } from '@/constants/maximum-working-age.constant';
 
 type collectionType = IUser;
 const collectionName: ECollectionNames = ECollectionNames.USER;
@@ -396,41 +398,11 @@ export default function User() {
 
         <TabItem label={`Địa chỉ`}>
           <div className={`flex flex-col gap-2`}>
-            <InputSection label={`Quốc gia`}>
+            <InputSection label={`Số nhà`}>
               <TextInput
-                name={`country`}
+                name={`number`}
                 isDisable={isModalReadOnly}
-                value={user.address.country}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Thành phố`}>
-              <TextInput
-                name={`city`}
-                isDisable={isModalReadOnly}
-                value={user.address.city}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Quận`}>
-              <TextInput
-                name={`district`}
-                isDisable={isModalReadOnly}
-                value={user.address.district}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Phường`}>
-              <TextInput
-                name={`ward`}
-                isDisable={isModalReadOnly}
-                value={user.address.ward}
+                value={user.address.number}
                 onInputChange={handleChangeAddress}
               >
               </TextInput>
@@ -446,11 +418,41 @@ export default function User() {
               </TextInput>
             </InputSection>
 
-            <InputSection label={`Số nhà`}>
+            <InputSection label={`Phường`}>
               <TextInput
-                name={`number`}
+                name={`ward`}
                 isDisable={isModalReadOnly}
-                value={user.address.number}
+                value={user.address.ward}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Quận`}>
+              <TextInput
+                name={`district`}
+                isDisable={isModalReadOnly}
+                value={user.address.district}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Thành phố`}>
+              <TextInput
+                name={`city`}
+                isDisable={isModalReadOnly}
+                value={user.address.city}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Quốc gia`}>
+              <TextInput
+                name={`country`}
+                isDisable={isModalReadOnly}
+                value={user.address.country}
                 onInputChange={handleChangeAddress}
               >
               </TextInput>
@@ -475,8 +477,12 @@ export default function User() {
             {user.birthday ? 
               <InputSection label={`Ngày sinh`}>
                 <DateInput
-                  min={getDate(getSameDayOfYear(new Date(), -65))}
-                  max={getDate(getSameDayOfYear(new Date(), -18))}
+                  min={getDate(getSameDayOfYear(
+                    new Date(), -MAXIMUM_WORKING_AGE
+                  ))}
+                  max={getDate(getSameDayOfYear(
+                    new Date(), -MINIMUM_WORKING_AGE
+                  ))}
                   name={`birthday`}
                   isDisable={isModalReadOnly}
                   value={user.birthday}
