@@ -12,8 +12,18 @@
   --brightness-different-scale: 1 / 10;
   --gradient-background: linear-gradient(
     to right, 
-    lch(from var(--background) calc(l - var(--brightness-different) * var(--brightness-different-scale)) c h), 
-    lch(from var(--background) calc(l + var(--brightness-different) * var(--brightness-different-scale)) c h)
+    lch(
+      from var(--background) 
+      calc(l - var(--brightness-different) * var(--brightness-different-scale)) 
+      c 
+      h
+    ), 
+    lch(
+      from var(--background) 
+      calc(l + var(--brightness-different) * var(--brightness-different-scale)) 
+      c 
+      h
+    )
   );
 }
 
