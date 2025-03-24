@@ -23,6 +23,7 @@ import { IBusiness } from '@/interfaces/business.interface';
 import { EBusinessType } from '@/enums/business-type.enum';
 import { VND_UNIT } from '@/constants/vnd-unit.constant';
 import { translateCollectionName } from '@/utils/translate-collection-name';
+import { formatCurrency } from '@/utils/format-currency';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -164,14 +165,18 @@ export default function Product() {
     {
       key: `input_price`,
       ref: useRef(null), 
-      title: `Giá nhập (VNĐ)`,
+      title: `Giá nhập`,
       size: `3fr`, 
+      render: (collection: collectionType): ReactElement => 
+        <Text>{formatCurrency(collection.input_price)}</Text>
     },
     {
       key: `output_price`,
       ref: useRef(null), 
-      title: `Giá bán (VNĐ)`,
+      title: `Giá bán`,
       size: `3fr`, 
+      render: (collection: collectionType): ReactElement => 
+        <Text>{formatCurrency(collection.output_price)}</Text>
     },
     {
       key: `image_links`,
@@ -179,10 +184,10 @@ export default function Product() {
       title: `Hình ảnh`,
       size: `3fr`, 
       isVisible: false, 
-      render: (product: collectionType): ReactElement => 
+      render: (collection: collectionType): ReactElement => 
         <div className={`flex flex-wrap gap-2`}>
           {
-            product.image_links.map((image: string, index: number) => 
+            collection.image_links.map((image: string, index: number) => 
               <div 
                 key={index} 
                 className={`relative ${styles[`image-container`]}`}
