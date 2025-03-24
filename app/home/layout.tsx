@@ -2,7 +2,7 @@
 
 import { CSSProperties, ReactElement, useState } from 'react';
 import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
-import { boxIcon, chevronLeftIcon, chevronRightIcon, circleUserRoundIcon, homeIcon, scrollIcon, settingIcon, truckIcon, userIcon } from '@/public';
+import { boxesIcon, boxIcon, chevronLeftIcon, chevronRightIcon, circleUserRoundIcon, factoryIcon, homeIcon, scrollIcon, settingIcon, userIcon } from '@/public';
 import { IRootLayout } from '@/app/interfaces/root-layout.interface';
 import styles from './style.module.css';
 
@@ -40,16 +40,6 @@ export default function RootLayout({
       icon: circleUserRoundIcon, 
     },
     {
-      link: `${currentPath}/product`,
-      label: `Sản phẩm`,
-      icon: boxIcon, 
-    },
-    {
-      link: `${currentPath}/product-detail`,
-      label: `Chi tiết sản phẩm`,
-      icon: boxIcon, 
-    },
-    {
       link: `${currentPath}/user`,
       label: `Nhân viên`,
       icon: userIcon, 
@@ -57,7 +47,17 @@ export default function RootLayout({
     {
       link: `${currentPath}/business`,
       label: `Doanh nghiệp`,
-      icon: truckIcon, 
+      icon: factoryIcon, 
+    },
+    {
+      link: `${currentPath}/product`,
+      label: `Sản phẩm`,
+      icon: boxIcon, 
+    },
+    {
+      link: `${currentPath}/product-detail`,
+      label: `Chi tiết sản phẩm`,
+      icon: boxesIcon, 
     },
     {
       link: `${currentPath}/warehouse-receipt`,
@@ -77,10 +77,10 @@ export default function RootLayout({
   ];
 
   const pageStyle: CSSProperties = {
-    gridTemplateColumns: `${isExpand ?
-      'max-content' :
-      'calc(24px + 16px * 2 + 8px * 2)'
-      } auto`,
+    gridTemplateColumns: `${isExpand 
+      ? `max-content` 
+      : `calc(24px + 16px * 2 + 8px * 2)`
+    } auto`,
   }
 
   return (

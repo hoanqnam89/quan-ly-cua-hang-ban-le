@@ -5,6 +5,7 @@ import arrowUpNarrowWideIcon from '@/public/arrow-up-narrow-wide.svg?url';
 import arrowUpWideNarrowIcon from '@/public/arrow-up-wide-narrow.svg?url';
 import blocksIcon from '@/public/blocks.svg?url';
 import boxIcon from '@/public/box.svg?url';
+import boxesIcon from '@/public/boxes.svg?url';
 import chartBarIcon from '@/public/chart-bar.svg?url';
 import checkIcon from '@/public/check.svg?url';
 import chevronLeftIcon from '@/public/chevron-left.svg?url';
@@ -16,6 +17,7 @@ import copyIcon from '@/public/copy.svg?url';
 import dollarSignIcon from '@/public/dollar-sign.svg?url';
 import homeIcon from '@/public/home.svg?url';
 import emptyIcon from '@/public/empty.svg?url';
+import factoryIcon from '@/public/factory.svg?url';
 import infoIcon from '@/public/info.svg?url';
 import listCollapseIcon from '@/public/list-collapse.svg?url';
 import listRestartIcon from '@/public/list-restart.svg?url';
@@ -44,6 +46,7 @@ export {
   arrowUpWideNarrowIcon,
   blocksIcon,  
   boxIcon,  
+  boxesIcon,  
   chartBarIcon,  
   checkIcon,  
   chevronLeftIcon, 
@@ -55,6 +58,7 @@ export {
   dollarSignIcon, 
   homeIcon, 
   emptyIcon, 
+  factoryIcon, 
   infoIcon, 
   listCollapseIcon, 
   listRestartIcon, 
