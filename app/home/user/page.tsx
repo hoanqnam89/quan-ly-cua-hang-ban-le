@@ -186,19 +186,19 @@ export default function User() {
       ref: useRef(null), 
       title: `Hình ảnh`,
       size: `3fr`, 
-      render: (collection: collectionType): ReactElement => collection.avatar ? <div 
-        className={`relative ${styles[`image-container`]}`}
-      >
-        <Image 
-          className={`w-full max-w-full max-h-full`}
-          src={collection.avatar} 
-          alt={``}
-          width={0}
-          height={0}
-          quality={10}
-        >
-        </Image>
-      </div> : <></>
+      render: (collection: collectionType): ReactElement => collection.avatar 
+        ? <div className={`relative ${styles[`image-container`]}`}>
+            <Image 
+              className={`w-full max-w-full max-h-full`}
+              src={collection.avatar} 
+              alt={``}
+              width={0}
+              height={0}
+              quality={10}
+            >
+            </Image>
+          </div> 
+        : <Text isItalic={true}>Không có hình ảnh</Text>
     }, 
     {
       key: `created_at`,

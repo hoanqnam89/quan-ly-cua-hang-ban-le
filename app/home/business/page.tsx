@@ -98,19 +98,19 @@ export default function Product() {
       ref: useRef(null), 
       title: `Hình ảnh`,
       size: `3fr`, 
-      render: (collection: collectionType): ReactElement => collection.logo ? <div 
-        className={`relative ${styles[`image-container`]}`}
-      >
-        <Image 
-          className={`w-full max-w-full max-h-full`}
-          src={collection.logo} 
-          alt={``}
-          width={0}
-          height={0}
-          quality={10}
-        >
-        </Image>
-      </div> : <Text isItalic={true}>Không có hình ảnh</Text>
+      render: (collection: collectionType): ReactElement => collection.logo 
+        ? <div className={`relative ${styles[`image-container`]}`}>
+            <Image 
+              className={`w-full max-w-full max-h-full`}
+              src={collection.logo} 
+              alt={``}
+              width={0}
+              height={0}
+              quality={10}
+            >
+            </Image>
+          </div> 
+        : <Text isItalic={true}>Không có hình ảnh</Text>
     }, 
     {
       key: `address`,
