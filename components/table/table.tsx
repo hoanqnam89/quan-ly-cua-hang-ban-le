@@ -26,6 +26,7 @@ interface ITableProps<T> {
   columnMinWidth?: number, 
   canDeleteCollection?: boolean
   canCreateCollection?: boolean
+  showToggleColumns?: boolean
 }
 
 export default function Table<T extends {_id: string, index?: number}>({
@@ -38,6 +39,7 @@ export default function Table<T extends {_id: string, index?: number}>({
   columnMinWidth = 20, 
   canDeleteCollection = false, 
   canCreateCollection = true, 
+  showToggleColumns = false, 
 }: Readonly<ITableProps<T>>): ReactElement {
   const [searchValue, setSearchValue] = useState<string>(``);
   const [isClicks, setIsClicks] = useState<ESortStatus[]>(
@@ -355,7 +357,7 @@ export default function Table<T extends {_id: string, index?: number}>({
         {headerButtonElements}
       </div>
 
-      <div className={`flex gap-2 items-center`}>
+      {showToggleColumns ? <div className={`flex gap-2 items-center`}>
         <Checkboxes 
           title={`Hiện các cột:`}
           options={visibleColumns}
@@ -373,7 +375,7 @@ export default function Table<T extends {_id: string, index?: number}>({
             </IconContainer>
           </Button>
         </div>
-      </div>
+      </div> : null}
 
       <div
         className={`grid items-center justify-between gap-1`}

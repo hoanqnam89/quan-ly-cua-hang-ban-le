@@ -26,6 +26,7 @@ import paintRollerIcon from '@/public/paint-roller.svg?url';
 import pencilIcon from '@/public/pencil.svg?url';
 import plusIcon from '@/public/plus.svg?url';
 import scrollIcon from '@/public/scroll.svg?url';
+import settingIcon from '@/public/setting.svg?url';
 import textIcon from '@/public/text.svg?url';
 import toyBrickIcon from '@/public/toy-brick.svg?url';
 import trashIcon from '@/public/trash.svg?url';
@@ -63,6 +64,7 @@ export {
   pencilIcon, 
   plusIcon, 
   scrollIcon, 
+  settingIcon, 
   textIcon, 
   toyBrickIcon, 
   trashIcon, 
