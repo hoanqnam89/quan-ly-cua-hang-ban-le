@@ -236,14 +236,14 @@ export default function Product() {
 
           <InputSection label={`Hình ảnh`} gridColumns={gridColumns}>
             <div>
-              <input
+              {!isModalReadOnly ? <input
                 type={`file`}
                 accept={`image/*`}
                 multiple={true}
                 onChange={handleChangeImage}
                 disabled={isModalReadOnly}
               >
-              </input>
+              </input> : null}
 
               <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
                 {
@@ -260,7 +260,7 @@ export default function Product() {
                     >
                     </Image>
 
-                    <div className={`absolute top-0 right-0`}>
+                    {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
                       <Button 
                         className={`absolute top-0 right-0`} 
                         onClick={() => handleDeleteImage()}
@@ -268,7 +268,7 @@ export default function Product() {
                         <IconContainer iconLink={trashIcon}>
                         </IconContainer>
                       </Button>
-                    </div>
+                    </div> : null}
                   </div> : <></>
                 }
               </div> 

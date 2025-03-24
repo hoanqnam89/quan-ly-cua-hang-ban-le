@@ -496,14 +496,14 @@ export default function User() {
         <TabItem label={`Hình ảnh`}>
           <InputSection label={`Hình đại diện của nhân viên`}>
             <div>
-              <input
+              {!isModalReadOnly ? <input
                 type={`file`}
                 accept={`image/*`}
                 multiple={true}
                 onChange={handleChangeImage}
                 disabled={isModalReadOnly}
               >
-              </input>
+              </input> : null}
 
               <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
                 {
@@ -520,7 +520,7 @@ export default function User() {
                     >
                     </Image>
 
-                    <div className={`absolute top-0 right-0`}>
+                    {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
                       <Button 
                         className={`absolute top-0 right-0`} 
                         onClick={() => handleDeleteImage()}
@@ -528,7 +528,7 @@ export default function User() {
                         <IconContainer iconLink={trashIcon}>
                         </IconContainer>
                       </Button>
-                    </div>
+                    </div> : null}
                   </div> : <></>
                 }
               </div> 
