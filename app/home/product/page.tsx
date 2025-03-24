@@ -17,9 +17,10 @@ import Image from 'next/image';
 import styles from './style.module.css';
 import { MAX_PRICE } from '@/constants/max-price.constant';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
-import { ISupplier } from '@/interfaces/business.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
+import { IBusiness } from '@/interfaces/business.interface';
+import { EBusinessType } from '@/enums/business-type.enum';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -41,16 +42,23 @@ export default function Product() {
 
   const getSuppliers: () => Promise<void> = useCallback(
     async (): Promise<void> => {
-      const newSuppliers: ISupplier[] = await fetchGetCollections<ISupplier>(
-        ECollectionNames.SUPPLIER, 
+      const newBusinesses: IBusiness[] = await fetchGetCollections<IBusiness>(
+        ECollectionNames.BUSINESS, 
+      );
+      const newSuppliers: IBusiness[] = newBusinesses.filter((
+        business: IBusiness
+      ): boolean => 
+        business.type !== EBusinessType.SUPPLIER 
       );
 
-      setProduct({
-        ...product, 
-        supplier_id: newSuppliers[0]._id, 
-      });
+      if (newSuppliers.length > 0) {
+        setProduct({
+          ...product, 
+          supplier_id: newSuppliers[0]._id, 
+        });
+      }
       setSupplierOptions([
-        ...newSuppliers.map((supplier: ISupplier): ISelectOption => ({
+        ...newSuppliers.map((supplier: IBusiness): ISelectOption => ({
           label: `${supplier.name}`,
           value: supplier._id,
         }))
@@ -294,6 +302,7 @@ export default function Product() {
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
+      isLoaded={isLoading}
     >
       <Tabs>
         <TabItem label={`Nhà cung cấp`}>

@@ -262,7 +262,7 @@ export default function Table<T extends {_id: string, index?: number}>({
         (row: T, rowIndex: number): ReactElement => isVisibles[rowIndex] ? 
           <div
             key={`${row._id}`}
-            className={`grid justify-between items-center gap-0 p-1 pt-2 border-t-2 border-t-solid ${styles.row}`}
+            className={`grid justify-between items-center gap-0 pb-1 pt-2 border-t-2 border-t-solid ${styles.row}`}
             style={gridStyle}
           >
             {columns.map((

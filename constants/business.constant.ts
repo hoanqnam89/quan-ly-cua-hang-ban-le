@@ -1,9 +1,8 @@
 import { EBusinessType } from "@/enums/business-type.enum";
 import { IBusiness } from "@/interfaces/business.interface";
-import { createId } from "@/utils/create-id";
 
 export const DEFAULT_BUSINESS: IBusiness = {
-  _id: createId(`Business`),
+  _id: ``,
   created_at: new Date(),
   updated_at: new Date(),
 

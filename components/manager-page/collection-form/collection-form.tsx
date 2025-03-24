@@ -12,6 +12,7 @@ interface ICollectionFormProps<T> {
   okAction?: (collection: T) => void
   isReadOnly?: boolean
   isUpdateCollection?: boolean
+  isLoading?: boolean
 }
 
 export default function CollectionForm<T extends {_id: string, index?: number}>({
@@ -23,6 +24,7 @@ export default function CollectionForm<T extends {_id: string, index?: number}>(
   okAction = () => {}, 
   isReadOnly = false, 
   isUpdateCollection = false,
+  isLoading = true, 
 }: Readonly<ICollectionFormProps<T>>): ReactElement {
   const getActionName: string = isReadOnly 
     ? `Xem` 
@@ -37,6 +39,7 @@ export default function CollectionForm<T extends {_id: string, index?: number}>(
       title={`${getActionName} ${translateCollectionName(collectionName)}`}
       isOpen={isModalOpen} 
       setIsOpen={setIsModalOpen}
+      isOkDisable={isLoading}
     >
       <div className={`flex flex-col gap-2`}>
         {children}

@@ -262,6 +262,7 @@ export default function Product() {
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
+      isLoaded={isLoading}
     >
       <>
         <Tabs>

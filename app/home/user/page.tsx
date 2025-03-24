@@ -328,6 +328,7 @@ export default function User() {
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
+      isLoaded={isLoading}
     >
       <Tabs>
 

@@ -1,8 +1,7 @@
 import { IAccount } from "@/interfaces";
-import { createId } from "@/utils/create-id";
 
 export const DEFAULT_ACCOUNT: IAccount = {
-  _id: createId(`Account`),
+  _id: ``,
   created_at: new Date(),
   updated_at: new Date(),
 

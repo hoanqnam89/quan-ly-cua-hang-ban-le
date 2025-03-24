@@ -28,6 +28,7 @@ interface IManagerPageProps<T> {
   setIsModalReadonly: Dispatch<SetStateAction<boolean>>
   isClickShowMore: ICollectionIdNotify
   isClickDelete: ICollectionIdNotify
+  isLoaded?: boolean
   onExitModalForm?: () => void
 }
 
@@ -42,6 +43,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   setIsModalReadonly, 
   isClickShowMore,
   isClickDelete, 
+  isLoaded = false, 
   onExitModalForm = () => {}
 }: Readonly<IManagerPageProps<T>>): ReactElement {
   const translatedCollectionName: string = 
@@ -332,6 +334,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
         }
         isReadOnly={isModalReadonly}
         isUpdateCollection={isUpdateCollection}
+        isLoading={isLoading || isLoaded}
       >
         {children}
       </CollectionForm>

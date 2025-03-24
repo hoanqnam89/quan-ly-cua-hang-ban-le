@@ -30,11 +30,11 @@ const ProductSchema = new Schema({
     required: [true, `Image Links is required!`], 
   }, 
   input_price: {
-    type: String, 
+    type: Number, 
     required: [true, `Input Price is required!`], 
   }, 
   output_price: {
-    type: String, 
+    type: Number, 
     required: [true, `Output Price is required!`], 
   }, 
 });

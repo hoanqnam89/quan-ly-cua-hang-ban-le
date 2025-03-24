@@ -32,7 +32,8 @@ export default function Button({
       title={title}
       className={`p-2 rounded-lg relative flex items-center justify-center w-full cursor-pointer ${styles.button} ${styles[type]} ${isLoading ? styles.loading : ``} ${className}`}
       style={buttonStyle}
-      onClick={!isDisable ? onClick : () => {}}
+      onClick={onClick}
+      disabled={isDisable}
     >
       {children}
     </button>
