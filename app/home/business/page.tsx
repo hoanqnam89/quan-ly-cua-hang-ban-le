@@ -90,7 +90,7 @@ export default function Product() {
     {
       key: `name`,
       ref: useRef(null), 
-      title: `Tên nhà cung cấp`,
+      title: `Tên doanh nghiệp`,
       size: `3fr`, 
     },
     {
@@ -127,6 +127,12 @@ export default function Product() {
       ref: useRef(null), 
       title: `Loại`,
       size: `3fr`, 
+      render: (collection: collectionType): ReactElement => {
+        const type: string = collection.type === EBusinessType.MANUFACTURER 
+          ? `Nhà sản xuất`
+          : `Nhà cung cấp`;
+        return <Text isEllipsis={true} tooltip={type}>{type}</Text>
+      }
     },
     {
       key: `created_at`,

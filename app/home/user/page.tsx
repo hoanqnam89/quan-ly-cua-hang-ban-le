@@ -172,6 +172,14 @@ export default function User() {
       title: `Giới tính`,
       size: `3fr`, 
       isVisible: false, 
+      render: (collection: collectionType): ReactElement => {
+        const gender: string = collection.gender === EUserGender.MALE 
+          ? `Nam`
+          : collection.gender === EUserGender.FEMALE
+            ? `Nữ`
+            : `Không rõ`;
+        return <Text isEllipsis={true} tooltip={gender}>{gender}</Text>
+      }
     },
     {
       key: `avatar`,
