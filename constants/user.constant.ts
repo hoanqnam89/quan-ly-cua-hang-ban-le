@@ -14,13 +14,13 @@ export const DEFAULT_USER: IUser = {
   }, 
   address: {
     number: `45/1`,
-    street: `Dinh Bo Linh`,
-    city: `Ho Chi Minh`,
+    street: `Đinh Bộ Lĩnh`,
+    city: `Hồ Chí Minh`,
     ward: `24`,
-    district: `Binh Thanh`,
-    country: `Viet Nam`
+    district: `Bình Thạnh`,
+    country: `Việt Nam`
   }, 
-  email: `namnguyen@gmail.com `, 
+  email: `namnguyen@gmail.com`, 
   birthday: new Date(`2002-03-07`), 
   gender: EUserGender.MALE, 
   avatar: ``, 

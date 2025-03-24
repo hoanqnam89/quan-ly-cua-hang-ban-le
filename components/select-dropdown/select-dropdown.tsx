@@ -20,7 +20,7 @@ export default function SelectDropdown({
   options = [], 
   defaultOptionIndex = 0, 
   isSelectMultiple = false, 
-  onInputChange = () => {}
+  onInputChange = () => {}, 
 }: Readonly<ISelectDropdownProps>): ReactElement {
   return (
     isLoading ? 

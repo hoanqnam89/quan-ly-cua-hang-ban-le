@@ -10,10 +10,10 @@ export const DEFAULT_BUSINESS: IBusiness = {
   address: {
     number: `28`,
     street: `Bis Mạc Đĩnh Chi`,
-    city: `Ho Chi Minh`,
+    city: `Hồ Chí Minh`,
     ward: `Đa Kao`,
     district: `1`,
-    country: `Viet Nam`
+    country: `Quận 1`
   }, 
   email: `vinshop@gmail.com`, 
   type: EBusinessType.MANUFACTURER, 

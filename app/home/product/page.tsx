@@ -73,7 +73,8 @@ export default function Product() {
   
   useEffect((): void => {
     getSuppliers();
-  }, [getSuppliers]);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
 
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
     const { files } = e.target;
@@ -310,6 +311,7 @@ export default function Product() {
         <TabItem label={`${translateCollectionName(collectionName)}`}>
           <InputSection label={`Cho nhà sản xuất`}>
             <SelectDropdown
+              name={`supplier_id`}
               isLoading={isLoading}
               isDisable={isModalReadOnly}
               options={supplierOptions}

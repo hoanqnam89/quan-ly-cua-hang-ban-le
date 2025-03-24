@@ -102,7 +102,8 @@ export default function User() {
 
   useEffect((): void => {
     getAccounts();
-  }, [getAccounts]);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
   
   const columns: Array<IColumnProps<collectionType>> = [
     {
@@ -344,6 +345,7 @@ export default function User() {
 
           <InputSection label={`Cho tài khoản`}>
             <SelectDropdown
+              name={`account_id`}
               isLoading={isLoading}
               isDisable={isModalReadOnly}
               options={accountOptions}

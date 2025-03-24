@@ -64,7 +64,8 @@ export default function Product() {
   
   useEffect((): void => {
     getProducts();
-  }, [getProducts]);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
 
   const columns: Array<IColumnProps<collectionType>> = [
     {

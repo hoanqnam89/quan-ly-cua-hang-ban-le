@@ -94,6 +94,12 @@ export default function Product() {
       size: `3fr`, 
     },
     {
+      key: `email`,
+      ref: useRef(null), 
+      title: `Email`,
+      size: `3fr`, 
+    },
+    {
       key: `logo`,
       ref: useRef(null), 
       title: `Hình ảnh`,
@@ -252,11 +258,21 @@ export default function Product() {
       <Tabs>
 
         <TabItem label={`${translateCollectionName(collectionName)}`}>
-          <InputSection label={`Tên nhà cung cấp`} gridColumns={gridColumns}>
+          <InputSection label={`Tên doanh nghiệp`} gridColumns={gridColumns}>
             <TextInput
               name={`name`}
               isDisable={isModalReadOnly}
               value={business.name}
+              onInputChange={handleChangeBusiness}
+            >
+            </TextInput>
+          </InputSection>
+
+          <InputSection label={`Email`} gridColumns={gridColumns}>
+            <TextInput
+              name={`email`}
+              isDisable={isModalReadOnly}
+              value={business.email}
               onInputChange={handleChangeBusiness}
             >
             </TextInput>
