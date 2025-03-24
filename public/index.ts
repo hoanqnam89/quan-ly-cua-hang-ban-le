@@ -17,6 +17,7 @@ import dollarSignIcon from '@/public/dollar-sign.svg?url';
 import homeIcon from '@/public/home.svg?url';
 import emptyIcon from '@/public/empty.svg?url';
 import infoIcon from '@/public/info.svg?url';
+import listCollapseIcon from '@/public/list-collapse.svg?url';
 import listRestartIcon from '@/public/list-restart.svg?url';
 import logInIcon from '@/public/log-in.svg?url';
 import logOutIcon from '@/public/log-out.svg?url';
@@ -55,6 +56,7 @@ export {
   homeIcon, 
   emptyIcon, 
   infoIcon, 
+  listCollapseIcon, 
   listRestartIcon, 
   logInIcon, 
   logOutIcon, 

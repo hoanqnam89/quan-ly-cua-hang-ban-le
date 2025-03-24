@@ -1,7 +1,7 @@
 import React, { ChangeEvent, CSSProperties, Fragment, MouseEvent, ReactElement, useCallback, useEffect, useState } from 'react';
 import { Button, Text, IconContainer, LoadingIcon, TextInput } from '@/components';
 import { IColumnProps } from './interfaces/column-props.interface';
-import { arrowDownWideNarrowIcon, arrowUpNarrowWideIcon, columns4Icon, emptyIcon, listRestartIcon, plusIcon, trashIcon } from '@/public';
+import { arrowDownWideNarrowIcon, arrowUpNarrowWideIcon, columns4Icon, emptyIcon, listCollapseIcon, listRestartIcon, plusIcon, trashIcon } from '@/public';
 import { ESortStatus } from '@/enums/sort-status.enum';
 import { enumToArray } from '@/utils/enum-to-array';
 import { countVisibleElements } from '@/utils/count-visible-elements';
@@ -26,7 +26,6 @@ interface ITableProps<T> {
   columnMinWidth?: number, 
   canDeleteCollection?: boolean
   canCreateCollection?: boolean
-  showToggleColumns?: boolean
 }
 
 export default function Table<T extends {_id: string, index?: number}>({
@@ -39,8 +38,8 @@ export default function Table<T extends {_id: string, index?: number}>({
   columnMinWidth = 20, 
   canDeleteCollection = false, 
   canCreateCollection = true, 
-  showToggleColumns = false, 
 }: Readonly<ITableProps<T>>): ReactElement {
+  const [isShowToggleColumns, setIsShowToggleColumns] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>(``);
   const [isClicks, setIsClicks] = useState<ESortStatus[]>(
     new Array(columns.length).fill(ESortStatus.UNSORT)
@@ -298,6 +297,10 @@ export default function Table<T extends {_id: string, index?: number}>({
     </>
   );
 
+  const handleShowToggleColumns = (): void => {
+    setIsShowToggleColumns(!isShowToggleColumns);
+  }
+
   const headerButtons: IHeaderButtons[] = [
     {
       className: ``, 
@@ -305,6 +308,13 @@ export default function Table<T extends {_id: string, index?: number}>({
       iconLink: listRestartIcon, 
       size: 32, 
       tooltip: `Khôi phục toàn bộ chiều dài cột`, 
+    }, 
+    {
+      className: ``, 
+      onClick: handleShowToggleColumns, 
+      iconLink: listCollapseIcon, 
+      size: 32, 
+      tooltip: `Hiển thị hiện/ẩn các cột`, 
     }, 
     ...canDeleteCollection ? [{
       className: ``, 
@@ -357,7 +367,7 @@ export default function Table<T extends {_id: string, index?: number}>({
         {headerButtonElements}
       </div>
 
-      {showToggleColumns ? <div className={`flex gap-2 items-center`}>
+      {isShowToggleColumns ? <div className={`flex gap-2 items-center`}>
         <Checkboxes 
           title={`Hiện các cột:`}
           options={visibleColumns}
