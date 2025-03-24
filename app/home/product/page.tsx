@@ -142,7 +142,7 @@ export default function Product() {
     {
       key: `supplier_id`,
       ref: useRef(null), 
-      title: `Nhà cung cấp`,
+      title: `Nhà sản xuất`,
       size: `6fr`, 
     },
     {
@@ -305,8 +305,8 @@ export default function Product() {
       isLoaded={isLoading}
     >
       <Tabs>
-        <TabItem label={`Nhà cung cấp`}>
-          <InputSection label={`Cho nhà cung cấp`}>
+        <TabItem label={`Sản xuất`}>
+          <InputSection label={`Cho nhà sản xuất`}>
             <SelectDropdown
               isLoading={isLoading}
               isDisable={isModalReadOnly}
