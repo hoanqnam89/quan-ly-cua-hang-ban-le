@@ -17,7 +17,7 @@ import Image from 'next/image';
 import styles from './style.module.css';
 import { MAX_PRICE } from '@/constants/max-price.constant';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
-import { ISupplier } from '@/interfaces/supplier.interface';
+import { ISupplier } from '@/interfaces/business.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
 

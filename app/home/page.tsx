@@ -10,7 +10,7 @@ export default function Home(): ReactElement {
   const [productCount, setProductCount] = useState<number>(-1);
   const [productDetailCount, setProductDetailCount] = useState<number>(-1);
   const [orderFormCount, setOrderFormCount] = useState<number>(-1);
-  const [supplierCount, setSupplierCount] = useState<number>(-1);
+  const [businessCount, setBusinessCount] = useState<number>(-1);
   const [warehouseReceiptCount, setWarehouseReceiptCount] = useState<number>(-1);
   const [userCount, setUserCount] = useState<number>(-1);
 
@@ -30,7 +30,7 @@ export default function Home(): ReactElement {
     setCollectionCount(ECollectionNames.PRODUCT, setProductCount);
     setCollectionCount(ECollectionNames.PRODUCT_DETAIL, setProductDetailCount);
     setCollectionCount(ECollectionNames.ORDER_FORM, setOrderFormCount);
-    setCollectionCount(ECollectionNames.SUPPLIER, setSupplierCount);
+    setCollectionCount(ECollectionNames.BUSINESS, setBusinessCount);
     setCollectionCount(
       ECollectionNames.WAREHOUSE_RECEIPT, 
       setWarehouseReceiptCount
@@ -67,8 +67,8 @@ export default function Home(): ReactElement {
         </div>
 
         <div className={`p-4 ${styles.box}`}>
-          <Text>Số lượng nhà cung cấp:</Text>
-          <Text size={32}>{collectionCount(supplierCount)}</Text>
+          <Text>Số lượng doanh nghiệp:</Text>
+          <Text size={32}>{collectionCount(businessCount)}</Text>
         </div>
 
         <div className={`p-4 ${styles.box}`}>

@@ -1,6 +1,6 @@
 import { IUserAddress } from "./user-address.interface"
 
-export interface ISupplier {
+export interface IManufacturer {
   _id: string
   created_at: Date
   updated_at: Date

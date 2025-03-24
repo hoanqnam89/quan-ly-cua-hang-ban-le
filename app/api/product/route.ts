@@ -1,8 +1,9 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
+import { IBusiness } from "@/interfaces/business.interface";
 import { IProduct } from "@/interfaces/product.interface";
-import { ISupplier } from "@/interfaces/supplier.interface";
-import { ProductModel, SupplierModel } from "@/models";
+import { ProductModel } from "@/models";
+import { BusinessModel } from "@/models/Business";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
@@ -52,10 +53,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
-    const foundSupplier: ISupplier | null = 
-      await SupplierModel.findById(product.supplier_id);
+    const foundBusiness: IBusiness | null = 
+      await BusinessModel.findById(product.supplier_id);
 
-    if (!foundSupplier) 
+    if (!foundBusiness) 
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,

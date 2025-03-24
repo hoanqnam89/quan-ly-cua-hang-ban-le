@@ -3,7 +3,8 @@ export enum ECollectionNames {
   ORDER_FORM = `Order Form`, 
   PRODUCT = `Product`, 
   PRODUCT_DETAIL = `Product Detail`, 
-  SUPPLIER = `Supplier`, 
+  BUSINESS = `Business`, 
+  MANUFACTURER = `Manufacturer`, 
   WAREHOUSE_RECEIPT = `Warehouse Receipt`,
   USER = `User`, 
 }

@@ -15,8 +15,8 @@ export const translateCollectionName = (
           return `Sản phẩm`;
         case ECollectionNames.PRODUCT_DETAIL:
           return `Chi tiết sản phẩm`;
-        case ECollectionNames.SUPPLIER:
-          return `Nhà cung cấp`;
+        case ECollectionNames.BUSINESS:
+          return `Doanh nghiệp`;
         case ECollectionNames.USER:
           return `Nhân viên`;
         case ECollectionNames.WAREHOUSE_RECEIPT:

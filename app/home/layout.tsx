@@ -55,8 +55,8 @@ export default function RootLayout({
       icon: userIcon, 
     },
     {
-      link: `${currentPath}/supplier`,
-      label: `Nhà cung cấp`,
+      link: `${currentPath}/business`,
+      label: `Doanh nghiệp`,
       icon: truckIcon, 
     },
     {

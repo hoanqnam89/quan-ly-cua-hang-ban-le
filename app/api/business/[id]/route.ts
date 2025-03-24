@@ -6,12 +6,12 @@ import { print } from "@/utils/print";
 import { connectToDatabase } from "@/utils/database";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { ROOT } from "@/constants/root.constant";
-import { SupplierModel } from "@/models";
-import { ISupplier } from "@/interfaces/supplier.interface";
+import { IBusiness } from "@/interfaces/business.interface";
+import { BusinessModel } from "@/models/Business";
 
-type collectionType = ISupplier;
-const collectionName: ECollectionNames = ECollectionNames.SUPPLIER;
-const collectionModel = SupplierModel;
+type collectionType = IBusiness;
+const collectionName: ECollectionNames = ECollectionNames.BUSINESS;
+const collectionModel = BusinessModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}/[id]`;
 
 export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
@@ -35,39 +35,39 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
   //     { status: EStatusCode.UNAUTHORIZED }
   //   );
 
-  const supplier: collectionType = await req.json();
+  const business: collectionType = await req.json();
 
   try {
     connectToDatabase();
 
-    const foundSupplier: collectionType | null = 
-      await collectionModel.findById(supplier._id);
+    const foundBusiness: collectionType | null = 
+      await collectionModel.findById(business._id);
 
-    if (!foundSupplier) 
+    if (!foundBusiness) 
       return NextResponse.json(
         createErrorMessage(
           `Failed to update ${collectionName}.`,
-          `The ${collectionName} with the ID '${supplier._id}' does not exist in our records.`,
+          `The ${collectionName} with the ID '${business._id}' does not exist in our records.`,
           path, 
           `Please check if the ${collectionName} ID is correct.`
         ),          
         { status: EStatusCode.NOT_FOUND }
       );
     
-    const updatedSupplier = await collectionModel.findOneAndUpdate(
-      { _id: supplier._id }, 
+    const updatedBusiness = await collectionModel.findOneAndUpdate(
+      { _id: business._id }, 
       {
         $set: {
-          name: supplier.name,
-          logo: supplier.logo,
-          address: supplier.address,
-          email: supplier.email,
+          name: business.name,
+          logo: business.logo,
+          address: business.address,
+          email: business.email,
           updated_at: new Date(), 
         }
       }
     );
 
-    if (!updatedSupplier)
+    if (!updatedBusiness)
       return NextResponse.json(
         createErrorMessage(
           `Failed to update ${collectionName}.`,
@@ -78,7 +78,7 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
 
-    return NextResponse.json(updatedSupplier, { status: EStatusCode.CREATED });
+    return NextResponse.json(updatedBusiness, { status: EStatusCode.CREATED });
   } catch (error: unknown) {
     console.error(error);
 

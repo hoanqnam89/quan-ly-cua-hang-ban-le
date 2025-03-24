@@ -1,16 +1,16 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { ISupplier } from "@/interfaces/supplier.interface";
-import { SupplierModel } from "@/models";
+import { IBusiness } from "@/interfaces/business.interface";
+import { BusinessModel } from "@/models/Business";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { print } from "@/utils/print";
 import { NextRequest, NextResponse } from "next/server";
 
-type collectionType = ISupplier;
-const collectionName: ECollectionNames = ECollectionNames.SUPPLIER;
-const collectionModel = SupplierModel;
+type collectionType = IBusiness;
+const collectionName: ECollectionNames = ECollectionNames.BUSINESS;
+const collectionModel = BusinessModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
@@ -34,23 +34,24 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   //     { status: EStatusCode.UNAUTHORIZED }
   //   );
 
-  const supplier: collectionType = await req.json();
+  const business: collectionType = await req.json();
 
   try {
     connectToDatabase();
     
-    const newSupplier = new collectionModel({
+    const newBusiness = new collectionModel({
       created_at: new Date(), 
       updated_at: new Date(), 
-      name: supplier.name,
-      logo: supplier.logo,
-      address: supplier.address,
-      email: supplier.email,
+      name: business.name,
+      logo: business.logo,
+      address: business.address,
+      email: business.email,
+      type: business.type, 
     });
 
-    const savedSupplier: collectionType = await newSupplier.save();
+    const savedBusiness: collectionType = await newBusiness.save();
 
-    if (!savedSupplier)
+    if (!savedBusiness)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
@@ -61,7 +62,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
 
-    return NextResponse.json(savedSupplier, { status: EStatusCode.CREATED });
+    return NextResponse.json(savedBusiness, { status: EStatusCode.CREATED });
   } catch (error: unknown) {
     console.error(error);
 

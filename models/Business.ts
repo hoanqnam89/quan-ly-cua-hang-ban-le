@@ -1,7 +1,9 @@
+import { EBusinessType } from '@/enums/business-type.enum';
+import { enumToArray } from '@/utils/enum-to-array';
 import { ObjectId } from 'mongodb';
 import { models, model, Schema } from 'mongoose';
 
-const SupplierSchema = new Schema({
+const BusinessSchema = new Schema({
   id: { type: ObjectId, }, 
   created_at: { 
     type: Date, 
@@ -30,6 +32,11 @@ const SupplierSchema = new Schema({
     country: { type: String, }
   }, 
   email: { type: String, }, 
+  type: {
+    type: String, 
+    enum: enumToArray(EBusinessType), 
+  }, 
 });
 
-export const SupplierModel = models.Supplier || model(`Supplier`, SupplierSchema);
+export const BusinessModel = 
+  models.Business || model(`Business`, BusinessSchema);

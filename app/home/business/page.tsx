@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, IconContainer, Text, TextInput } from '@/components'
+import { Button, IconContainer, SelectDropdown, Text, TextInput } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
@@ -13,16 +13,20 @@ import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import Image from 'next/image';
 import styles from './style.module.css';
-import { ISupplier } from '@/interfaces/supplier.interface';
-import { DEFAULT_SUPPLIER } from '@/constants/supplier.constant';
 import { translateCollectionName } from '@/utils/translate-collection-name';
+import { IBusiness } from '@/interfaces/business.interface';
+import { DEFAULT_BUSINESS } from '@/constants/business.constant';
+import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
+import { enumToKeyValueArray } from '@/utils/enum-to-array';
+import { EBusinessType } from '@/enums/business-type.enum';
+import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
 
-type collectionType = ISupplier;
-const collectionName: ECollectionNames = ECollectionNames.SUPPLIER;
+type collectionType = IBusiness;
+const collectionName: ECollectionNames = ECollectionNames.BUSINESS;
 
 export default function Product() {
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [supplier, setSupplier] = useState<collectionType>(DEFAULT_SUPPLIER);
+  const [business, setBusiness] = useState<collectionType>(DEFAULT_BUSINESS);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
     id: ``, 
@@ -52,8 +56,8 @@ export default function Product() {
       fileReader.onload = (e: ProgressEvent<FileReader>) => {
         const result = e.target?.result;
         if (result && !isCancel) {
-          setSupplier({
-            ...supplier, 
+          setBusiness({
+            ...business, 
             logo: result.toString(), 
           });
         }
@@ -67,7 +71,7 @@ export default function Product() {
         fileReader.abort();
       }
     }
-  }, [imageFile, supplier]);
+  }, [imageFile, business]);
 
   const columns: Array<IColumnProps<collectionType>> = [
     {
@@ -106,18 +110,23 @@ export default function Product() {
           quality={10}
         >
         </Image>
-      </div> : <></>
+      </div> : <Text isItalic={true}>Không có hình ảnh</Text>
     }, 
     {
       key: `address`,
       ref: useRef(null), 
       title: `Địa chỉ`,
       size: `5fr`, 
-      isVisible: false, 
       render: (collection: collectionType): ReactElement => {
         const address: string = `${collection.address.number} ${collection.address.street}, ${collection.address.ward}, ${collection.address.district}, ${collection.address.city}, ${collection.address.country}`;
         return <Text isEllipsis={true} tooltip={address}>{address}</Text>
       }
+    },
+    {
+      key: `type`,
+      ref: useRef(null), 
+      title: `Loại`,
+      size: `3fr`, 
     },
     {
       key: `created_at`,
@@ -182,26 +191,33 @@ export default function Product() {
     },
   ];
 
-  const handleChangeSupplier = (e: ChangeEvent<HTMLInputElement>): void => {
-    setSupplier({
-      ...supplier, 
+  const handleChangeBusiness = (e: ChangeEvent<HTMLInputElement>): void => {
+    setBusiness({
+      ...business, 
       [e.target.name]: e.target.value, 
     });
   }
 
   const handleChangeAddress = (e: ChangeEvent<HTMLInputElement>): void => {
-    setSupplier({
-      ...supplier, 
+    setBusiness({
+      ...business, 
       address: {
-        ...supplier.address, 
+        ...business.address, 
         [e.target.name]: e.target.value, 
       }
     });
   }
 
+  const handleChangeBusinessType = (e: ChangeEvent<HTMLSelectElement>): void => {
+    setBusiness({
+      ...business, 
+      type: e.target.value, 
+    });
+  }
+
   const handleDeleteImage = (): void => {
-    setSupplier({
-      ...supplier, 
+    setBusiness({
+      ...business, 
       logo: undefined, 
     });
     setImageFile(null);
@@ -209,13 +225,19 @@ export default function Product() {
 
   const gridColumns: string = `200px 1fr`;
 
+  const businessTypeOptions: ISelectOption[] = enumToKeyValueArray(EBusinessType)
+    .map((array: string[]): ISelectOption => ({
+      label: array[0], 
+      value: array[1], 
+    }));
+
   return (
     <ManagerPage<collectionType>
       columns={columns}
       collectionName={collectionName}
-      defaultCollection={DEFAULT_SUPPLIER}
-      collection={supplier}
-      setCollection={setSupplier}
+      defaultCollection={DEFAULT_BUSINESS}
+      collection={business}
+      setCollection={setBusiness}
       isModalReadonly={isModalReadOnly} 
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
@@ -228,10 +250,26 @@ export default function Product() {
             <TextInput
               name={`name`}
               isDisable={isModalReadOnly}
-              value={supplier.name}
-              onInputChange={handleChangeSupplier}
+              value={business.name}
+              onInputChange={handleChangeBusiness}
             >
             </TextInput>
+          </InputSection>
+
+          <InputSection label={`Loại`}>
+            <SelectDropdown
+              isDisable={isModalReadOnly}
+              options={businessTypeOptions}
+              defaultOptionIndex={getSelectedOptionIndex(
+                businessTypeOptions, 
+                (business.type 
+                  ? business.type
+                  : EBusinessType.MANUFACTURER
+                ) as unknown as string
+              )}
+              onInputChange={handleChangeBusinessType}
+            >
+            </SelectDropdown>
           </InputSection>
 
           <InputSection label={`Hình ảnh`} gridColumns={gridColumns}>
@@ -247,12 +285,12 @@ export default function Product() {
 
               <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
                 {
-                  supplier.logo ? <div 
+                  business.logo ? <div 
                     className={`relative ${styles[`image-container`]}`}
                   >
                     <Image 
                       className={`w-full max-w-full max-h-full`}
-                      src={supplier.logo} 
+                      src={business.logo} 
                       alt={``}
                       width={0}
                       height={0}
@@ -282,7 +320,7 @@ export default function Product() {
               <TextInput
                 name={`country`}
                 isDisable={isModalReadOnly}
-                value={supplier.address.country}
+                value={business.address.country}
                 onInputChange={handleChangeAddress}
               >
               </TextInput>
@@ -292,7 +330,7 @@ export default function Product() {
               <TextInput
                 name={`city`}
                 isDisable={isModalReadOnly}
-                value={supplier.address.city}
+                value={business.address.city}
                 onInputChange={handleChangeAddress}
               >
               </TextInput>
@@ -302,7 +340,7 @@ export default function Product() {
               <TextInput
                 name={`district`}
                 isDisable={isModalReadOnly}
-                value={supplier.address.district}
+                value={business.address.district}
                 onInputChange={handleChangeAddress}
               >
               </TextInput>
@@ -312,7 +350,7 @@ export default function Product() {
               <TextInput
                 name={`ward`}
                 isDisable={isModalReadOnly}
-                value={supplier.address.ward}
+                value={business.address.ward}
                 onInputChange={handleChangeAddress}
               >
               </TextInput>
@@ -322,7 +360,7 @@ export default function Product() {
               <TextInput
                 name={`street`}
                 isDisable={isModalReadOnly}
-                value={supplier.address.street}
+                value={business.address.street}
                 onInputChange={handleChangeAddress}
               >
               </TextInput>
@@ -332,7 +370,7 @@ export default function Product() {
               <TextInput
                 name={`number`}
                 isDisable={isModalReadOnly}
-                value={supplier.address.number}
+                value={business.address.number}
                 onInputChange={handleChangeAddress}
               >
               </TextInput>
@@ -342,7 +380,7 @@ export default function Product() {
         </TabItem>
 
         <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
-          <TimestampTabItem<collectionType> collection={supplier}>
+          <TimestampTabItem<collectionType> collection={business}>
           </TimestampTabItem>
         </TabItem>
 
