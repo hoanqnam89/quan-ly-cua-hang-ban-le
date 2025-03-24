@@ -1,5 +1,4 @@
 import React, { ChangeEvent, CSSProperties, Fragment, MouseEvent, ReactElement, useCallback, useEffect, useState } from 'react';
-import "./style.css";
 import { Button, Text, IconContainer, LoadingIcon, TextInput } from '@/components';
 import { IColumnProps } from './interfaces/column-props.interface';
 import { arrowDownWideNarrowIcon, arrowUpNarrowWideIcon, columns4Icon, emptyIcon, listRestartIcon, plusIcon, trashIcon } from '@/public';
@@ -7,6 +6,7 @@ import { ESortStatus } from '@/enums/sort-status.enum';
 import { enumToArray } from '@/utils/enum-to-array';
 import { countVisibleElements } from '@/utils/count-visible-elements';
 import Checkboxes, { ICheckbox } from '../checkboxes/checkboxes';
+import styles from './style.module.css';
 
 interface IHeaderButtons {
   className: string
@@ -238,8 +238,8 @@ export default function Table<T extends {_id: string, index?: number}>({
           <div
             onMouseDown={(): void => handleMouseDown(columnIndex)}
             className={`${ 
-              activeIndex === columnIndex && 'active' 
-            } h-full resize-handle block ml-auto cursor-col-resize border-white`}
+              activeIndex === columnIndex && styles.active
+            } ${styles[`resize-handle`]} h-full block ml-auto cursor-col-resize border-white`}
             title={`Click and drag to resize '${column.title}' column\nDouble click to reset this '${column.title}' column size`}
             onClick={
               (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>): void => 
@@ -263,7 +263,7 @@ export default function Table<T extends {_id: string, index?: number}>({
         (row: T, rowIndex: number): ReactElement => isVisibles[rowIndex] ? 
           <div
             key={`${row._id}`}
-            className={`grid justify-between items-center gap-0 p-1 pt-2 border-t-2 border-t-solid border-t-gray-700`}
+            className={`grid justify-between items-center gap-0 p-1 pt-2 border-t-2 border-t-solid ${styles.row}`}
             style={gridStyle}
           >
             {columns.map((
@@ -304,21 +304,21 @@ export default function Table<T extends {_id: string, index?: number}>({
       onClick: handleResetColumns, 
       iconLink: listRestartIcon, 
       size: 32, 
-      tooltip: `Reset Table Columns`, 
+      tooltip: `Khôi phục toàn bộ chiều dài cột`, 
     }, 
     ...canDeleteCollection ? [{
       className: ``, 
       onClick: onClickDelete, 
       iconLink: trashIcon, 
       size: 32, 
-      tooltip: `Delete all ${name}s`, 
+      tooltip: `Xóa tất cả ${name}s`, 
     }] : [], 
     ...canCreateCollection ? [{
       className: ``, 
       onClick: onClickAdd, 
       iconLink: plusIcon, 
       size: 32, 
-      tooltip: `Add new ${name}`, 
+      tooltip: `Thêm mới ${name}`, 
     }] : [], 
   ];
 
