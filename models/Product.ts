@@ -37,14 +37,6 @@ const ProductSchema = new Schema({
     type: String, 
     required: [true, `Output Price is required!`], 
   }, 
-  input_quantity: {
-    type: Number, 
-    required: [true, `Input Quantity is required!`], 
-  }, 
-  output_quantity: {
-    type: Number, 
-    required: [true, `Output Quantity is required!`], 
-  }, 
 });
 
 export const ProductModel = models.Product || model(`Product`, ProductSchema);

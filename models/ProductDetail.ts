@@ -17,14 +17,6 @@ const ProductDetailSchema = new Schema({
     type: ObjectId, 
     required: [true, `Supplier is required!`], 
   }, 
-  input_price: {
-    type: Number, 
-    required: [true, `Input Price is required!`], 
-  }, 
-  output_price: {
-    type: Number, 
-    required: [true, `Output Price is required!`], 
-  }, 
   input_quantity: {
     type: Number, 
     required: [true, `Input Quantity is required!`], 

@@ -20,7 +20,6 @@ import { ISelectOption } from '@/components/select-dropdown/interfaces/select-op
 import { ISupplier } from '@/interfaces/supplier.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
-import { translateCollectionName } from '@/utils/translate-collection-name';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -161,18 +160,6 @@ export default function Product() {
       key: `output_price`,
       ref: useRef(null), 
       title: `Giá bán (VNĐ)`,
-      size: `3fr`, 
-    },
-    {
-      key: `input_quantity`,
-      ref: useRef(null), 
-      title: `Số lượng trong kho`,
-      size: `3fr`, 
-    },
-    {
-      key: `output_quantity`,
-      ref: useRef(null), 
-      title: `Số lượng đang bán`,
       size: `3fr`, 
     },
     {
@@ -323,9 +310,6 @@ export default function Product() {
             </SelectDropdown>
           </InputSection>
 
-        </TabItem>
-
-        <TabItem label={`${translateCollectionName(collectionName)}`}>
           <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>
             <TextInput
               name={`name`}
@@ -345,9 +329,7 @@ export default function Product() {
             >
             </TextInput>
           </InputSection>
-        </TabItem>
 
-        <TabItem label={`Giá`}>
           <InputSection label={`Giá nhập (VNĐ)`} gridColumns={gridColumns}>
             <NumberInput
               name={`input_price`}
@@ -369,19 +351,17 @@ export default function Product() {
             >
             </NumberInput>
           </InputSection>
-        </TabItem>
 
-        <TabItem label={`Hình ảnh`}>
           <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>
             <div>
-              <input
+              {!isModalReadOnly ? <input
                 type={`file`}
                 accept={`image/*`}
                 multiple={true}
                 onChange={handleChangeImage}
                 disabled={isModalReadOnly}
               >
-              </input>
+              </input> : null}
 
               <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
                 {
@@ -400,7 +380,7 @@ export default function Product() {
                       >
                       </Image>
 
-                      <div className={`absolute top-0 right-0`}>
+                      {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
                         <Button 
                           className={`absolute top-0 right-0`} 
                           onClick={() => handleDeleteImage(index)}
@@ -408,32 +388,12 @@ export default function Product() {
                           <IconContainer iconLink={trashIcon}>
                           </IconContainer>
                         </Button>
-                      </div>
+                      </div> : null}
                     </div>
                   )
                 }
               </div> 
             </div>
-          </InputSection>
-        </TabItem>
-
-        <TabItem label={`Số lượng`} isDisable={!isModalReadOnly}>
-          <InputSection label={`Số lượng trong kho`} gridColumns={gridColumns}>
-            <NumberInput
-              isDisable={true}
-              value={product.input_quantity + ``}
-              max={MAX_PRICE}
-            >
-            </NumberInput>
-          </InputSection>
-
-          <InputSection label={`Số lượng đang bán`} gridColumns={gridColumns}>
-            <NumberInput
-              isDisable={true}
-              value={product.output_quantity + ``}
-              max={MAX_PRICE}
-            >
-            </NumberInput>
           </InputSection>
         </TabItem>
 

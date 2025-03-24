@@ -74,8 +74,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       product_id: productDetail.product_id,
       date_of_manufature: productDetail.date_of_manufacture, 
       expiry_date: productDetail.expiry_date, 
-      input_price: productDetail.input_price, 
-      output_price: productDetail.output_price, 
       input_quantity: 0, 
       output_quantity: 0, 
     });

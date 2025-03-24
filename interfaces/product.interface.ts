@@ -9,6 +9,4 @@ export interface IProduct {
   image_links: string[]
   input_price: number
   output_price: number
-  input_quantity: number
-  output_quantity: number
 }

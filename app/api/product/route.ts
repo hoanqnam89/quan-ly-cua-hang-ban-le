@@ -75,8 +75,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       image_links: product.image_links,
       input_price: product.input_price, 
       output_price: product.output_price, 
-      input_quantity: 0, 
-      output_quantity: 0, 
     });
 
     const savedProduct: collectionType = await newProduct.save();

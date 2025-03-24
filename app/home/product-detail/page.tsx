@@ -20,7 +20,6 @@ import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { DEFAULT_PROCDUCT_DETAIL } from '@/constants/product-detail.constant';
 import DateInput from '@/components/date-input/date-input';
-import { VND_UNIT } from '@/constants/vnd-unit.constant';
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
@@ -107,18 +106,6 @@ export default function Product() {
         const date: string = new Date(collection.expiry_date).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
-    },
-    {
-      key: `input_price`,
-      ref: useRef(null), 
-      title: `Giá nhập (VNĐ)`,
-      size: `3fr`, 
-    },
-    {
-      key: `output_price`,
-      ref: useRef(null), 
-      title: `Giá bán (VNĐ)`,
-      size: `3fr`, 
     },
     {
       key: `input_quantity`,
@@ -256,32 +243,6 @@ export default function Product() {
               onInputChange={handleChangeProductDetail}
             >
             </DateInput>
-          </InputSection>
-        </TabItem>
-
-        <TabItem label={`Giá`}>
-          <InputSection label={`Giá nhập (VNĐ)`} gridColumns={gridColumns}>
-            <NumberInput
-              step={VND_UNIT}
-              name={`input_price`}
-              isDisable={isModalReadOnly}
-              value={productDetail.input_price + ``}
-              onInputChange={handleChangeProductDetail}
-              max={MAX_PRICE}
-            >
-            </NumberInput>
-          </InputSection>
-
-          <InputSection label={`Giá bán (VNĐ)`} gridColumns={gridColumns}>
-            <NumberInput
-              step={VND_UNIT}
-              name={`output_price`}
-              isDisable={isModalReadOnly}
-              value={productDetail.output_price + ``}
-              onInputChange={handleChangeProductDetail}
-              max={MAX_PRICE}
-            >
-            </NumberInput>
           </InputSection>
         </TabItem>
 
