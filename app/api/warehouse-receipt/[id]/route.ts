@@ -7,7 +7,7 @@ import { connectToDatabase } from "@/utils/database";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { ROOT } from "@/constants/root.constant";
 import { IWarehouseReceipt } from "@/interfaces/warehouse-receipt.interface";
-import { WarehouseReceiptModel } from "@/models/WarehouseReceipt";
+import { WarehouseReceiptModel } from "@/models/SupplierReceipt";
 
 type collectionType = IWarehouseReceipt;
 const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;

@@ -1,7 +1,7 @@
 import { ObjectId } from 'mongodb';
 import { models, model, Schema } from 'mongoose';
 
-const OrderFormSchema = new Schema({
+const MarketReceiptSchema = new Schema({
   id: { type: ObjectId, }, 
   created_at: { 
     type: Date, 
@@ -16,7 +16,6 @@ const OrderFormSchema = new Schema({
   product_details: [
     {
       id: { type: ObjectId, }, 
-      supplier_id: { type: ObjectId, }, 
       quantity: {
         type: Number, 
         require: [true, `Product quantity is required!`], 
@@ -25,5 +24,5 @@ const OrderFormSchema = new Schema({
   ], 
 });
 
-export const OrderFormModel = 
-  models.OrderForm || model(`OrderForm`, OrderFormSchema);
+export const MarketReceiptModel = 
+  models.MarketReceipt|| model(`MarketReceipt`, MarketReceiptSchema);

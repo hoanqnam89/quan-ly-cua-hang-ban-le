@@ -1,8 +1,9 @@
 import { ObjectId } from 'mongodb';
 import { models, model, Schema } from 'mongoose';
 
-const OrderFormSchema = new Schema({
+const SupplierReceiptSchema = new Schema({
   id: { type: ObjectId, }, 
+  order_form_id: { type: ObjectId, }, 
   created_at: { 
     type: Date, 
     default: () => Date.now(),
@@ -25,5 +26,5 @@ const OrderFormSchema = new Schema({
   ], 
 });
 
-export const OrderFormModel = 
-  models.OrderForm || model(`OrderForm`, OrderFormSchema);
+export const SupplierReceiptModel = 
+  models.SupplierReceipt|| model(`SupplierReceipt`, SupplierReceiptSchema);

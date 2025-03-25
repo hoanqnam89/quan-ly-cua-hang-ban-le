@@ -1,7 +1,7 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { IWarehouseReceipt } from "@/interfaces/warehouse-receipt.interface";
-import { WarehouseReceiptModel } from "@/models/WarehouseReceipt";
+import { WarehouseReceiptModel } from "@/models/SupplierReceipt";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";

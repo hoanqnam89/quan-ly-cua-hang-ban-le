@@ -3,6 +3,7 @@ import { models, model, Schema } from 'mongoose';
 
 const WarehouseReceiptSchema = new Schema({
   id: { type: ObjectId, }, 
+  supplier_receipt_id: { type: ObjectId, }, 
   created_at: { 
     type: Date, 
     default: () => Date.now(),
@@ -13,10 +14,15 @@ const WarehouseReceiptSchema = new Schema({
     type: Date, 
   }, 
 
-  product_ids: {
-    type: [String], 
-    required: [true, `Products is required!`], 
-  }
+  product_details: [
+    {
+      id: { type: ObjectId, }, 
+      quantity: {
+        type: Number, 
+        require: [true, `Product quantity is required!`], 
+      }, 
+    }
+  ], 
 });
 
 export const WarehouseReceiptModel = 
