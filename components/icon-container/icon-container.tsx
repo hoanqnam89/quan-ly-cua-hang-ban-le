@@ -1,5 +1,5 @@
 import React, { CSSProperties, ReactElement } from 'react';
-import Image from 'next/image';
+import { default as Image } from 'next/legacy/image';
 import { xIcon } from '@/public';
 
 interface IIconContainerProps {
@@ -12,23 +12,23 @@ interface IIconContainerProps {
 }
 
 export default function IconContainer({
-  iconLink = xIcon, 
-  size = 24, 
-  tooltip = ``, 
-  color = `#ff0000`, 
-  style = {}, 
-  className = ``, 
+  iconLink = xIcon,
+  size = 24,
+  tooltip = ``,
+  color = `#ff0000`,
+  style = {},
+  className = ``,
 }: Readonly<IIconContainerProps>): ReactElement {
   const divStyle: CSSProperties = {
-    width: size, 
-    color: color, 
-    ...style, 
+    width: size,
+    color: color,
+    ...style,
   }
 
   const imageStyle: CSSProperties = {
-    width: size, 
-    height: size, 
-    color: color, 
+    width: size,
+    height: size,
+    color: color,
   }
 
   return (

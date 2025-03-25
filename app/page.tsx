@@ -33,7 +33,8 @@ export default function Login(): ReactElement {
 
     switch (loginApiResponse.status) {
       case EStatusCode.OK:
-        redirect(`/home`);
+        window.location.href = '/home';
+        return;
       case EStatusCode.UNAUTHORIZED:
         errorText = `Đăng nhập thất bại! Tên đăng nhập hoặc mật khẩu không đúng.`;
         break;
@@ -46,35 +47,35 @@ export default function Login(): ReactElement {
       id: 0,
       children: <Text>{errorText}</Text>,
       type: ENotificationType.ERROR,
-      isAutoClose: true, 
+      isAutoClose: true,
     });
   }
 
   return (
     <div className={`h-lvh flex items-center justify-center`}>
-      <div 
-        className={`p-10 flex flex-col gap-2 rounded-xl ${styles[`login-section`]}`} 
+      <div
+        className={`p-10 flex flex-col gap-2 rounded-xl ${styles[`login-section`]}`}
       >
         <Text weight={600} size={24}>Đăng nhập vào hệ thống quản lý bán lẻ</Text>
 
         <Text weight={600}>Tên đăng nhập:</Text>
-        <TextInput 
-          value={username} 
+        <TextInput
+          value={username}
           onInputChange={handleChangeUsername}
         >
         </TextInput>
 
         <Text weight={600}>Mật khẩu:</Text>
-        <TextInput 
+        <TextInput
           value={password}
           textType={`password`}
           onInputChange={handleChangePassword}
         >
         </TextInput>
 
-        <Button 
-          onClick={handleLogin} 
-          type={EButtonType.SUCCESS} 
+        <Button
+          onClick={handleLogin}
+          type={EButtonType.SUCCESS}
           isLoading={isLoading}
         >
           <Text weight={600}>Đăng nhập</Text>
