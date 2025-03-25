@@ -5,5 +5,5 @@ export const DEFAULT_ORDER_FORM: IOrderForm = {
   created_at: new Date(),
   updated_at: new Date(),
 
-  products: [], 
+  product_details: [], 
 }

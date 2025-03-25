@@ -11,7 +11,7 @@ import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-toolt
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
-import { IWarehouseReceipt } from '@/interfaces/warehouse-receipt.interface';
+import { IReceiptProduct, IWarehouseReceipt } from '@/interfaces/warehouse-receipt.interface';
 import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import Checkboxes, { ICheckbox } from '@/components/checkboxes/checkboxes';
 import { IProduct } from '@/interfaces/product.interface';
@@ -47,14 +47,14 @@ export default function Product() {
         ...newProducts.map((product: IProduct): ICheckbox => ({
           label: `${product.name}`,
           value: product._id,
-          isChecked: warehouseReceipt.product_ids.filter((
-            candidateProductId: string, 
-          ): boolean => candidateProductId === product._id).length > 0, 
+          isChecked: warehouseReceipt.product_details.filter((
+            candidateProductDetail: IReceiptProduct, 
+          ): boolean => candidateProductDetail._id === product._id).length > 0, 
         }))
       ]);
       setIsLoading(false);
     }, 
-    [warehouseReceipt.product_ids],
+    [warehouseReceipt.product_details],
   );
 
   useEffect((): void => {
@@ -76,15 +76,15 @@ export default function Product() {
       isVisible: false, 
     },
     {
-      key: `product_ids`,
+      key: `product_details`,
       ref: useRef(null), 
       title: `Danh sách sản phẩm`,
       size: `3fr`, 
       render: (collection: collectionType): ReactElement => <div>
         {
-          collection.product_ids.map(
-            (productId: string, index: number): ReactElement => 
-              <Text key={index}>{productId}</Text>
+          collection.product_details.map(
+            (productDetail: IReceiptProduct, index: number): ReactElement => 
+              <Text key={index}>{productDetail._id}</Text>
           )
         }
       </div>
@@ -168,16 +168,16 @@ export default function Product() {
 
     setProductOptions(newProductOptions);
     
-    const newWarehouseReceipt: collectionType = {
-      ...warehouseReceipt, 
-      product_ids: newProductOptions.filter((
-        productOption: ICheckbox
-      ): boolean => productOption.isChecked).map((
-        productOption: ICheckbox
-      ): string => productOption.value), 
-    };
+    // const newWarehouseReceipt: collectionType = {
+    //   ...warehouseReceipt, 
+    //   product_ids: newProductOptions.filter((
+    //     productOption: ICheckbox
+    //   ): boolean => productOption.isChecked).map((
+    //     productOption: ICheckbox
+    //   ): string => productOption.value), 
+    // };
 
-    setWarehouseReceipt({...newWarehouseReceipt});
+    // setWarehouseReceipt({...newWarehouseReceipt});
   }
 
   const gridColumns: string = `200px 1fr`;

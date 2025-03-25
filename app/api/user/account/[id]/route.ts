@@ -4,14 +4,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { EStatusCode } from "@/enums";
 import { UserModel } from "@/models/User";
 import { isValidObjectId } from "mongoose";
+import { IQueryString } from "@/app/api/interfaces/query-string.interface";
 
-export async function GET(
-  request: NextRequest,
-  context: { params: { id: string } }
-): Promise<NextResponse> {
+export const GET = async(
+  _request: NextRequest,
+  query: IQueryString, 
+): Promise<NextResponse> => {
   try {
     // Đảm bảo rằng params được await trước khi sử dụng
-    const params = await Promise.resolve(context.params);
+    const params = await query.params;
     const { id } = params;
 
     await connectToDatabase();
@@ -45,7 +46,8 @@ export async function GET(
     return NextResponse.json(user, { status: EStatusCode.OK });
   } catch (error) {
     // Nếu có lỗi với params, xử lý an toàn
-    const id = context.params?.id || 'unknown';
+    const params = await query.params;
+    const { id } = params;
     console.error('Lỗi khi lấy thông tin người dùng:', error);
     return NextResponse.json(
       createErrorMessage(
