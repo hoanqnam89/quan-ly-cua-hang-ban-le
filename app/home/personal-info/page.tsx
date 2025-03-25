@@ -103,7 +103,6 @@ const ChangePasswordModal = React.memo(({
       handleClose();
       alert('Đổi mật khẩu thành công!');
     } catch (error) {
-      console.error('Lỗi khi đổi mật khẩu:', error);
       setError(`Lỗi: ${error instanceof Error ? error.message : 'Không xác định'}`);
     } finally {
       setIsSubmitting(false);
@@ -373,8 +372,6 @@ export default function PersonalInfo(): ReactElement {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Lỗi khi lưu thông tin:', errorText);
         throw new Error(`Lưu thông tin không thành công: ${response.status} ${response.statusText}`);
       }
 
