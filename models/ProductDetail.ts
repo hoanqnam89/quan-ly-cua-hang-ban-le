@@ -28,12 +28,10 @@ const ProductDetailSchema = new Schema({
   date_of_manufacture: { 
     type: Date, 
     default: () => Date.now(),
-    immutable: true,
   }, 
   expiry_date: { 
     default: () => Date.now(),
     type: Date, 
-    immutable: true,
   }, 
 });
 

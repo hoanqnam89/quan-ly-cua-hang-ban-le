@@ -11,6 +11,8 @@ export const translateCollectionName = (
           return `Tài khoản`;
         case ECollectionNames.ORDER_FORM:
           return `Phiếu đặt hàng`;
+        case ECollectionNames.SUPPLIER_RECEIPT:
+          return `Phiếu nhập kho của nhà cung cấp`;
         case ECollectionNames.PRODUCT:
           return `Sản phẩm`;
         case ECollectionNames.PRODUCT_DETAIL:
@@ -21,6 +23,8 @@ export const translateCollectionName = (
           return `Nhân viên`;
         case ECollectionNames.WAREHOUSE_RECEIPT:
           return `Phiếu nhập kho`;
+        case ECollectionNames.MARKET_RECEIPT:
+          return `Phiếu xuất kho`;
         default:
           return ``;
       }

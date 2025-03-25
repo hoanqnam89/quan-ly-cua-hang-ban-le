@@ -60,6 +60,8 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
         $set: {
           input_quantity: productDetail.input_quantity, 
           output_quantity: productDetail.output_quantity, 
+          date_of_manufacture: productDetail.date_of_manufacture, 
+          expiry_date: productDetail.expiry_date, 
           updated_at: new Date(), 
         }
       }

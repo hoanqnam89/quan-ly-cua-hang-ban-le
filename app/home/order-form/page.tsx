@@ -19,8 +19,10 @@ import styles from './style.module.css';
 import { getCollectionCount } from '@/services/api-service';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '@/components/notify/notification/notification';
-import { IOrderForm } from '@/interfaces/order-form.interface';
+import { IOrderForm, IOrderFormProductDetail } from '@/interfaces/order-form.interface';
 import { DEFAULT_ORDER_FORM } from '@/constants/order-form.constant';
+import { IBusiness } from '@/interfaces/business.interface';
+import { EBusinessType } from '@/enums/business-type.enum';
 
 type collectionType = IOrderForm;
 const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
@@ -40,6 +42,7 @@ export default function Product() {
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [productOptions, setProductOptions] = useState<ISelectOption[]>([]);
+  const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
   const [productCount, setProductCount] = useState<number>(-1);
   const { createNotification, notificationElements } = useNotificationsHook();
 
@@ -80,6 +83,33 @@ export default function Product() {
     getProducts();
   }, [getProducts]);
 
+  const getSuppliers: () => Promise<void> = useCallback(
+    async (): Promise<void> => {
+      const newBusinesses: IBusiness[] = await fetchGetCollections<IBusiness>(
+        ECollectionNames.BUSINESS, 
+      );
+      const newSuppliers: IBusiness[] = newBusinesses.filter((
+        business: IBusiness
+      ): boolean => 
+        business.type !== EBusinessType.SUPPLIER 
+      );
+
+      setSupplierOptions([
+        ...newSuppliers.map((supplier: IBusiness): ISelectOption => ({
+          label: `${supplier.name}`,
+          value: supplier._id,
+        }))
+      ]);
+      setIsLoading(false);
+    }, 
+    [],
+  );
+  
+  useEffect((): void => {
+    getSuppliers();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
+
   const columns: Array<IColumnProps<collectionType>> = [
     {
       key: `index`,
@@ -100,8 +130,8 @@ export default function Product() {
       title: `Danh sách sản phẩm`,
       size: `6fr`, 
       render: (collection: collectionType): ReactElement => {
-        return <Text>{collection.products.map((
-          orderFormProduct: IOrderFormProduct
+        return <Text>{collection.product_details.map((
+          orderFormProduct: IOrderFormProductDetail
         ) => orderFormProduct._id).join(`, `)}</Text>
       }
     },
@@ -170,8 +200,8 @@ export default function Product() {
     },
   ];
 
-  const handleAddGoodReceiptProduct = () => {
-    if (orderForm.products.length >= productCount) {
+  const handleAddOrderFormProduct = () => {
+    if (orderForm.product_details.length >= productCount) {
       createNotification({
         id: 0,
         children: <Text>Đã hết sản phẩm trong cơ sở dữ liệu để thêm vào phiếu nhập hàng</Text>,
@@ -183,69 +213,93 @@ export default function Product() {
 
     setOrderForm({
       ...orderForm, 
-      products: [
-        ...orderForm.products, 
+      product_details: [
+        ...orderForm.product_details, 
         {
           _id: productOptions[0].value,
+          supplier_id: ``, 
           quantity: 0, 
         }
       ], 
     });
   }
 
-  const handleDeleteGoodReceiptProduct = (deleteIndex: number) => {
+  const handleDeleteOrderFormProduct = (deleteIndex: number) => {
     setOrderForm({
       ...orderForm, 
-      products: [
-        ...orderForm.products.filter((
-          _: IOrderFormProduct, 
+      product_details: [
+        ...orderForm.product_details.filter((
+          _orderFormProductDetail: IOrderFormProductDetail, 
           index: number
-        ) => index !== deleteIndex), 
+        ): boolean => index !== deleteIndex), 
       ], 
     });
   }
 
-  const handleChangeGoodReceiptProductId = (
+  const handleChangeOrderFormProductId = (
     e: ChangeEvent<HTMLSelectElement>, 
     changeIndex: number, 
   ): void => {
     setOrderForm({
       ...orderForm, 
-      products: [
-        ...orderForm.products.map((
-          orderFormProduct: IOrderFormProduct, 
+      product_details: [
+        ...orderForm.product_details.map((
+          orderFormProductDetail: IOrderFormProductDetail, 
           index: number
-        ): IOrderFormProduct => {
+        ): IOrderFormProductDetail => {
           if (index === changeIndex)
             return {
-              ...orderFormProduct, 
+              ...orderFormProductDetail, 
               _id: e.target.value
             }
           else
-            return orderFormProduct;
+            return orderFormProductDetail;
         }), 
       ], 
     });
   }
 
-  const handleChangeGoodReceiptProductQuantity = (
+  const handleChangeOrderFormSupplierId = (
+    e: ChangeEvent<HTMLSelectElement>, 
+    changeIndex: number, 
+  ): void => {
+    setOrderForm({
+      ...orderForm, 
+      product_details: [
+        ...orderForm.product_details.map((
+          orderFormProductDetail: IOrderFormProductDetail, 
+          index: number
+        ): IOrderFormProductDetail => {
+          if (index === changeIndex)
+            return {
+              ...orderFormProductDetail, 
+              supplier_id: e.target.value
+            }
+          else
+            return orderFormProductDetail;
+        }), 
+      ], 
+    });
+  }
+
+  const handleChangeOrderFormProductQuantity = (
     e: ChangeEvent<HTMLInputElement>, 
     changeIndex: number, 
   ): void => {
     setOrderForm({
       ...orderForm, 
-      products: [
-        ...orderForm.products.map((
-          orderFormProduct: IOrderFormProduct, 
+      product_details: [
+        ...orderForm.product_details.map((
+          orderFormProductDetail: IOrderFormProductDetail, 
           index: number
-        ): IOrderFormProduct => {
+        ): IOrderFormProductDetail => {
           if (index === changeIndex)
             return {
-              ...orderFormProduct, 
+              ...orderFormProductDetail, 
               quantity: +e.target.value
             }
           else
-            return orderFormProduct;
+            return orderFormProductDetail;
         }), 
       ], 
     });
@@ -270,12 +324,13 @@ export default function Product() {
             <div className={`grid items-center ${styles[`good-receipt-product-table`]}`}>
               <Text>#</Text>
               <Text>Sản phẩm</Text>
+              <Text>Nhà cung cấp</Text>
               <Text>Số lượng</Text>
               <Text>Xóa</Text>
             </div>
 
-            {orderForm.products.map((
-              orderFormProduct: IOrderFormProduct, 
+            {orderForm.product_details.map((
+              orderFormProductDetail: IOrderFormProductDetail, 
               index: number
             ) => {
               return <div 
@@ -290,21 +345,36 @@ export default function Product() {
                   options={productOptions}
                   defaultOptionIndex={getSelectedOptionIndex(
                     productOptions, 
-                    (orderFormProduct._id
-                      ? orderFormProduct._id
+                    (orderFormProductDetail._id
+                      ? orderFormProductDetail._id
                       : 0
                     ) as unknown as string
                   )}
-                  onInputChange={(e) => handleChangeGoodReceiptProductId(e, index)}
+                  onInputChange={(e) => handleChangeOrderFormProductId(e, index)}
+                >
+                </SelectDropdown>
+                
+                <SelectDropdown
+                  isLoading={isLoading}
+                  isDisable={isModalReadOnly}
+                  options={supplierOptions}
+                  defaultOptionIndex={getSelectedOptionIndex(
+                    supplierOptions, 
+                    (orderFormProductDetail.supplier_id
+                      ? orderFormProductDetail.supplier_id
+                      : 0
+                    ) as unknown as string
+                  )}
+                  onInputChange={(e) => handleChangeOrderFormSupplierId(e, index)}
                 >
                 </SelectDropdown>
                 
                 <NumberInput
                   name={`quantity`}
                   isDisable={isModalReadOnly}
-                  value={orderFormProduct.quantity + ``}
+                  value={orderFormProductDetail.quantity + ``}
                   onInputChange={(e) => 
-                    handleChangeGoodReceiptProductQuantity(e, index)
+                    handleChangeOrderFormProductQuantity(e, index)
                   }
                 >
                 </NumberInput>
@@ -312,7 +382,7 @@ export default function Product() {
                 <div>
                   <Button 
                     isDisable={isModalReadOnly}  
-                    onClick={() => handleDeleteGoodReceiptProduct(index)}
+                    onClick={() => handleDeleteOrderFormProduct(index)}
                   >
                     <IconContainer></IconContainer>
                   </Button>
@@ -322,7 +392,7 @@ export default function Product() {
 
             <Button 
               isDisable={isModalReadOnly}  
-              onClick={handleAddGoodReceiptProduct}
+              onClick={handleAddOrderFormProduct}
               className={`flex gap-2`} 
               type={EButtonType.SUCCESS}
             >
