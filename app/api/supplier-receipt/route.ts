@@ -1,11 +1,12 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { IBusiness } from "@/interfaces/business.interface";
-import { IOrderForm, IOrderFormProductDetail } from "@/interfaces/order-form.interface";
+import { IOrderFormProductDetail } from "@/interfaces/order-form.interface";
 import { IProductDetail } from "@/interfaces/product-detail.interface";
+import { ISupplierReceipt } from "@/interfaces/supplier-receipt.interface";
 import { BusinessModel } from "@/models/Business";
-import { OrderFormModel } from "@/models/OrderForm";
 import { ProductDetailModel } from "@/models/ProductDetail";
+import { SupplierReceiptModel } from "@/models/SupplierReceipt";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
@@ -14,9 +15,9 @@ import { isIdsValid } from "@/utils/is-ids-valid";
 import { print } from "@/utils/print";
 import { NextRequest, NextResponse } from "next/server";
 
-type collectionType = IOrderForm;
-const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
-const collectionModel = OrderFormModel;
+type collectionType = ISupplierReceipt;
+const collectionName: ECollectionNames = ECollectionNames.SUPPLIER_RECEIPT;
+const collectionModel = SupplierReceiptModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
@@ -40,28 +41,28 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   //     { status: EStatusCode.UNAUTHORIZED }
   //   );
 
-  const orderForm: collectionType = await req.json();
+  const supplierReceipt: collectionType = await req.json();
 
   try {
     connectToDatabase();
 
-    const orderFormProductDetailIds: string[] = 
-      orderForm.product_details.map(
-        (orderFormProductDetail: IOrderFormProductDetail) => 
-          orderFormProductDetail._id
+    const supplierReceiptProductDetailIds: string[] = 
+      supplierReceipt.product_details.map(
+        (supplierReceiptProductDetail: IOrderFormProductDetail) => 
+          supplierReceiptProductDetail._id
       );
 
-    const orderFormSupplierIds: string[] = 
-      orderForm.product_details.map(
-        (orderFormProductDetail: IOrderFormProductDetail) => 
-          orderFormProductDetail.supplier_id
+    const supplierReceiptSupplierIds: string[] = 
+      supplierReceipt.product_details.map(
+        (supplierReceiptProductDetail: IOrderFormProductDetail) => 
+          supplierReceiptProductDetail.supplier_id
       );
 
-    if ( !isIdsValid(orderFormProductDetailIds) ) 
+    if ( !isIdsValid(supplierReceiptProductDetailIds) ) 
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `Some of the ID in order form's product details is not valid.`,
+          `Some of the ID in supplier receipt's product details is not valid.`,
           path, 
           `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`, 
         ),
@@ -69,7 +70,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       );
 
     const isProductDetailIdsExist: boolean = await isIdsExist<IProductDetail>(
-      orderFormProductDetailIds, 
+      supplierReceiptProductDetailIds, 
       ProductDetailModel
     );
 
@@ -77,18 +78,18 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `Some of the ${ECollectionNames.PRODUCT_DETAIL} in order form's product details does not exist in our records.`,
+          `Some of the ${ECollectionNames.PRODUCT_DETAIL} in supplier receipt's product details does not exist in our records.`,
           path, 
           `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`, 
         ),          
         { status: EStatusCode.NOT_FOUND }
       );
     
-    if ( !isIdsValid(orderFormSupplierIds) ) 
+    if ( !isIdsValid(supplierReceiptSupplierIds) ) 
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `Some of the ID in order form's products is not valid.`,
+          `Some of the ID in supplier receipt's products is not valid.`,
           path, 
           `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`, 
         ),
@@ -96,7 +97,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       );
 
     const isSupplierIdsExist: boolean = await isIdsExist<IBusiness>(
-      orderFormSupplierIds, 
+      supplierReceiptSupplierIds, 
       BusinessModel
     );
 
@@ -104,22 +105,23 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `Some of the ${ECollectionNames.BUSINESS} in order form's products does not exist in our records.`,
+          `Some of the ${ECollectionNames.BUSINESS} in supplier receipt's products does not exist in our records.`,
           path, 
           `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`, 
         ),          
         { status: EStatusCode.NOT_FOUND }
       );
     
-    const newOrderForm = new collectionModel({
+    const newSupplierReceipt = new collectionModel({
       created_at: new Date(), 
       updated_at: new Date(), 
-      product_details: orderForm.product_details, 
+      product_details: supplierReceipt.product_details, 
     });
 
-    const savedOrderForm: collectionType = await newOrderForm.save();
+    const savedSupplierReceipt: collectionType = 
+      await newSupplierReceipt.save();
 
-    if (!savedOrderForm)
+    if (!savedSupplierReceipt)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
@@ -130,7 +132,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
 
-    return NextResponse.json(savedOrderForm, { status: EStatusCode.CREATED });
+    return NextResponse.json(savedSupplierReceipt, { status: EStatusCode.CREATED });
   } catch (error: unknown) {
     console.error(error);
 

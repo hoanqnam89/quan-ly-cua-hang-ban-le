@@ -19,7 +19,7 @@ import styles from './style.module.css';
 import { getCollectionCount } from '@/services/api-service';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '@/components/notify/notification/notification';
-import { IOrderForm, IOrderFormProduct } from '@/interfaces/order-form.interface';
+import { IOrderForm } from '@/interfaces/order-form.interface';
 import { DEFAULT_ORDER_FORM } from '@/constants/order-form.constant';
 
 type collectionType = IOrderForm;
@@ -95,7 +95,7 @@ export default function Product() {
       isVisible: false, 
     },
     {
-      key: `products`,
+      key: `product_details`,
       ref: useRef(null), 
       title: `Danh sách sản phẩm`,
       size: `6fr`, 

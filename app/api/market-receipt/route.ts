@@ -1,10 +1,9 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { IBusiness } from "@/interfaces/business.interface";
-import { IOrderForm, IOrderFormProductDetail } from "@/interfaces/order-form.interface";
+import { IMarketReceipt } from "@/interfaces/market-receipt.interface";
 import { IProductDetail } from "@/interfaces/product-detail.interface";
-import { BusinessModel } from "@/models/Business";
-import { OrderFormModel } from "@/models/OrderForm";
+import { IReceiptProduct } from "@/interfaces/warehouse-receipt.interface";
+import { MarketReceiptModel } from "@/models/MarketReceipt";
 import { ProductDetailModel } from "@/models/ProductDetail";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
@@ -14,9 +13,9 @@ import { isIdsValid } from "@/utils/is-ids-valid";
 import { print } from "@/utils/print";
 import { NextRequest, NextResponse } from "next/server";
 
-type collectionType = IOrderForm;
-const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
-const collectionModel = OrderFormModel;
+type collectionType = IMarketReceipt;
+const collectionName: ECollectionNames = ECollectionNames.MARKET_RECEIPT;
+const collectionModel = MarketReceiptModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
@@ -40,86 +39,54 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   //     { status: EStatusCode.UNAUTHORIZED }
   //   );
 
-  const orderForm: collectionType = await req.json();
+  const marketReceipt: collectionType = await req.json();
 
   try {
     connectToDatabase();
-
-    const orderFormProductDetailIds: string[] = 
-      orderForm.product_details.map(
-        (orderFormProductDetail: IOrderFormProductDetail) => 
-          orderFormProductDetail._id
+    
+    const marketReceiptProductDetailIds: string[] = 
+      marketReceipt.product_details.map(
+        (marketReceiptProductDetail: IReceiptProduct) => 
+          marketReceiptProductDetail._id
       );
 
-    const orderFormSupplierIds: string[] = 
-      orderForm.product_details.map(
-        (orderFormProductDetail: IOrderFormProductDetail) => 
-          orderFormProductDetail.supplier_id
-      );
-
-    if ( !isIdsValid(orderFormProductDetailIds) ) 
+    if ( !isIdsValid(marketReceiptProductDetailIds) ) 
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `Some of the ID in order form's product details is not valid.`,
+          `Some of the ID in market receipt's product details is not valid.`,
           path, 
           `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`, 
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
-    const isProductDetailIdsExist: boolean = await isIdsExist<IProductDetail>(
-      orderFormProductDetailIds, 
-      ProductDetailModel
-    );
+    const isProductDetailIdsExist: boolean = 
+      await isIdsExist<IProductDetail>(
+        marketReceiptProductDetailIds, 
+        ProductDetailModel
+      );
 
     if ( !isProductDetailIdsExist ) 
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `Some of the ${ECollectionNames.PRODUCT_DETAIL} in order form's product details does not exist in our records.`,
+          `Some of the ${ECollectionNames.PRODUCT_DETAIL} in market receipt's product details does not exist in our records.`,
           path, 
           `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`, 
         ),          
         { status: EStatusCode.NOT_FOUND }
       );
-    
-    if ( !isIdsValid(orderFormSupplierIds) ) 
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `Some of the ID in order form's products is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`, 
-        ),
-        { status: EStatusCode.UNPROCESSABLE_ENTITY }
-      );
 
-    const isSupplierIdsExist: boolean = await isIdsExist<IBusiness>(
-      orderFormSupplierIds, 
-      BusinessModel
-    );
-
-    if ( !isSupplierIdsExist) 
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `Some of the ${ECollectionNames.BUSINESS} in order form's products does not exist in our records.`,
-          path, 
-          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`, 
-        ),          
-        { status: EStatusCode.NOT_FOUND }
-      );
-    
-    const newOrderForm = new collectionModel({
+    const newMarketReceipt = new collectionModel({
       created_at: new Date(), 
       updated_at: new Date(), 
-      product_details: orderForm.product_details, 
+      product_details: marketReceipt.product_details,
     });
 
-    const savedOrderForm: collectionType = await newOrderForm.save();
+    const savedMarketReceipt: collectionType = await newMarketReceipt.save();
 
-    if (!savedOrderForm)
+    if (!savedMarketReceipt)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
@@ -130,7 +97,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
 
-    return NextResponse.json(savedOrderForm, { status: EStatusCode.CREATED });
+    return NextResponse.json(
+      savedMarketReceipt, 
+      { status: EStatusCode.CREATED }
+    );
   } catch (error: unknown) {
     console.error(error);
 

@@ -3,12 +3,12 @@ import { deleteCollectionByIdApi, getCollectionByIdApi } from "@/utils/api-helpe
 import { IQueryString } from "../../interfaces/query-string.interface";
 import { ECollectionNames } from "@/enums";
 import { ROOT } from "@/constants/root.constant";
-import { IWarehouseReceipt } from "@/interfaces/warehouse-receipt.interface";
-import { WarehouseReceiptModel } from "@/models/WarehouseReceipt";
+import { IOrderForm } from "@/interfaces/order-form.interface";
+import { OrderFormModel } from "@/models/OrderForm";
 
-type collectionType = IWarehouseReceipt;
-const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;
-const collectionModel = WarehouseReceiptModel;
+type collectionType = IOrderForm;
+const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
+const collectionModel = OrderFormModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}/[id]`;
 
 export const GET = async (

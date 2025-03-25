@@ -1,10 +1,12 @@
 export enum ECollectionNames {
   ACCOUNT = `Account`, 
+  BUSINESS = `Business`, 
+  MANUFACTURER = `Manufacturer`, 
+  MARKET_RECEIPT = `Market Receipt`, 
   ORDER_FORM = `Order Form`, 
   PRODUCT = `Product`, 
   PRODUCT_DETAIL = `Product Detail`, 
-  BUSINESS = `Business`, 
-  MANUFACTURER = `Manufacturer`, 
-  WAREHOUSE_RECEIPT = `Warehouse Receipt`,
+  SUPPLIER_RECEIPT = `Supplier Receipt`, 
   USER = `User`, 
+  WAREHOUSE_RECEIPT = `Warehouse Receipt`,
 }

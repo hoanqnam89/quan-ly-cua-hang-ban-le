@@ -1,15 +1,15 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { IWarehouseReceipt } from "@/interfaces/warehouse-receipt.interface";
-import { WarehouseReceiptModel } from "@/models/WarehouseReceipt";
+import { IMarketReceipt } from "@/interfaces/market-receipt.interface";
+import { MarketReceiptModel } from "@/models/MarketReceipt";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { print } from "@/utils/print";
 import { NextResponse } from "next/server";
 
-type collectionType = IWarehouseReceipt;
-const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;
-const collectionModel = WarehouseReceiptModel;
+type collectionType = IMarketReceipt;
+const collectionName: ECollectionNames = ECollectionNames.MARKET_RECEIPT;
+const collectionModel = MarketReceiptModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}/count`;
 
 export const GET = async (): Promise<NextResponse> => {
