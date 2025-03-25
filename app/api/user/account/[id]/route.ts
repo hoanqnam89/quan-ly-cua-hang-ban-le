@@ -1,67 +1,58 @@
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { NextRequest, NextResponse } from "next/server";
-import { print } from "@/utils/print";
-import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { IUser} from "@/interfaces";
+import { EStatusCode } from "@/enums";
 import { UserModel } from "@/models/User";
 import { isValidObjectId } from "mongoose";
-import { ROOT } from "@/constants/root.constant";
-import { IQueryString } from "@/app/api/interfaces/query-string.interface";
-import { EApiAction } from "@/app/api/enums/api-action.enum";
 
-type collectionType = IUser;
-const collectionName: ECollectionNames = ECollectionNames.USER;
-const collectionModel = UserModel;
-const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
-
-export const GET = async (
-  _req: NextRequest, 
-  query: IQueryString
-): Promise<NextResponse> => {
-  print(`${collectionName} API - GET ${collectionName}`, ETerminal.FgGreen);
-
-  const params = await query.params;
-  const id = params.id;
-
+export async function GET(
+  request: NextRequest,
+  context: { params: { id: string } }
+): Promise<NextResponse> {
   try {
-    connectToDatabase();
+    // Đảm bảo rằng params được await trước khi sử dụng
+    const params = await Promise.resolve(context.params);
+    const { id } = params;
 
-    if ( !isValidObjectId(id) )
+    await connectToDatabase();
+
+    if (!isValidObjectId(id)) {
       return NextResponse.json(
         createErrorMessage(
-          `Failed to ${EApiAction.READ} ${collectionName} by ID ${id}.`,
-          `The ID '${id}' is not valid.`,
-          path, 
-          `Please check if the ${collectionName} ID is valid.`, 
+          `Không thể lấy thông tin người dùng.`,
+          `ID '${id}' không hợp lệ.`,
+          `/api/user/account/${id}`,
+          `Vui lòng kiểm tra lại ID người dùng.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
+    }
 
-    const foundCollection: collectionType | null = 
-      await collectionModel.findOne({ account_id: id });
+    const user = await UserModel.findOne({ account_id: id });
 
-    if ( !foundCollection )
+    if (!user) {
       return NextResponse.json(
         createErrorMessage(
-          `Failed to ${EApiAction.READ} ${collectionName} by ID ${id}.`,
-          `The ${collectionName} with the account_id '${id}' does not exist in our records.`,
-          path, 
-          `Please check if the ${collectionName} account_id ID is correct.`, 
+          `Không thể lấy thông tin người dùng.`,
+          `Không tìm thấy người dùng với account_id '${id}'.`,
+          `/api/user/account/${id}`,
+          `Vui lòng kiểm tra lại ID tài khoản.`,
         ),
         { status: EStatusCode.NOT_FOUND }
       );
+    }
 
-    return NextResponse.json(foundCollection, { status: EStatusCode.OK });
-  } catch (error: unknown) {
-    console.error(error);
-
+    return NextResponse.json(user, { status: EStatusCode.OK });
+  } catch (error) {
+    // Nếu có lỗi với params, xử lý an toàn
+    const id = context.params?.id || 'unknown';
+    console.error('Lỗi khi lấy thông tin người dùng:', error);
     return NextResponse.json(
       createErrorMessage(
-        `Failed to create ${collectionName}.`,
+        `Không thể lấy thông tin người dùng.`,
         error as string,
-        path, 
-        `Please contact for more information.`, 
+        `/api/user/account/${id}`,
+        `Vui lòng liên hệ để được hỗ trợ.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );

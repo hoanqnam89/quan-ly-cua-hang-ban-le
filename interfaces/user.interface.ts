@@ -5,7 +5,7 @@ export interface IUser {
   _id: string
   created_at: Date
   updated_at: Date
-  
+
   account_id: string
   name: IUserName
   address: IUserAddress
@@ -13,4 +13,5 @@ export interface IUser {
   birthday?: Date
   gender?: string
   avatar?: string
+  position?: string
 }

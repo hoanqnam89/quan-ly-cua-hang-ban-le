@@ -6,12 +6,12 @@ export const DEFAULT_USER: IUser = {
   created_at: new Date(),
   updated_at: new Date(),
 
-  account_id: ``, 
+  account_id: ``,
   name: {
     first: `Trần`,
-    middle: `Nguyễn Hoàng`, 
+    middle: `Nguyễn Hoàng`,
     last: `Nam`
-  }, 
+  },
   address: {
     number: `45/1`,
     street: `Đinh Bộ Lĩnh`,
@@ -19,9 +19,10 @@ export const DEFAULT_USER: IUser = {
     ward: `24`,
     district: `Bình Thạnh`,
     country: `Việt Nam`
-  }, 
-  email: `namnguyen@gmail.com`, 
-  birthday: new Date(`2002-03-07`), 
-  gender: EUserGender.MALE, 
-  avatar: ``, 
+  },
+  email: `namnguyen@gmail.com`,
+  birthday: new Date(`2002-03-07`),
+  gender: EUserGender.MALE,
+  avatar: ``,
+  position: `Nhân viên`
 }

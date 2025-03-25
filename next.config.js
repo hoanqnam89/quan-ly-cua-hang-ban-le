@@ -1,5 +1,5 @@
 const nextConfig = {
-  reactStrictMode: false, 
+  reactStrictMode: false,
   /* config options here */
   webpack(config) {
     // Grab the existing rule that handles SVG imports
@@ -27,7 +27,7 @@ const nextConfig = {
     fileLoaderRule.exclude = /\.svg$/i
 
     return config
-  },  
+  },
 };
 
 export default nextConfig;
