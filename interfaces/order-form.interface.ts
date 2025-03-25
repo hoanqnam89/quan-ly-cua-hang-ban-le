@@ -1,5 +1,6 @@
-export interface IOrderFormProduct {
+export interface IOrderFormProductDetail {
   _id: string
+  supplier_id: string
   quantity: number
 } 
 
@@ -8,5 +9,5 @@ export interface IOrderForm {
   created_at: Date
   updated_at: Date
 
-  products: IOrderFormProduct[]
+  product_details: IOrderFormProductDetail[]
 }
