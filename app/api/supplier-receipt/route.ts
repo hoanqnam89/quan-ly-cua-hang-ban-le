@@ -1,10 +1,8 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { IBusiness } from "@/interfaces/business.interface";
 import { IOrderFormProductDetail } from "@/interfaces/order-form.interface";
 import { IProductDetail } from "@/interfaces/product-detail.interface";
 import { ISupplierReceipt } from "@/interfaces/supplier-receipt.interface";
-import { BusinessModel } from "@/models/Business";
 import { ProductDetailModel } from "@/models/ProductDetail";
 import { SupplierReceiptModel } from "@/models/SupplierReceipt";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
@@ -52,12 +50,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
           supplierReceiptProductDetail._id
       );
 
-    const supplierReceiptSupplierIds: string[] = 
-      supplierReceipt.product_details.map(
-        (supplierReceiptProductDetail: IOrderFormProductDetail) => 
-          supplierReceiptProductDetail.supplier_id
-      );
-
     if ( !isIdsValid(supplierReceiptProductDetailIds) ) 
       return NextResponse.json(
         createErrorMessage(
@@ -81,33 +73,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
           `Some of the ${ECollectionNames.PRODUCT_DETAIL} in supplier receipt's product details does not exist in our records.`,
           path, 
           `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`, 
-        ),          
-        { status: EStatusCode.NOT_FOUND }
-      );
-    
-    if ( !isIdsValid(supplierReceiptSupplierIds) ) 
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `Some of the ID in supplier receipt's products is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`, 
-        ),
-        { status: EStatusCode.UNPROCESSABLE_ENTITY }
-      );
-
-    const isSupplierIdsExist: boolean = await isIdsExist<IBusiness>(
-      supplierReceiptSupplierIds, 
-      BusinessModel
-    );
-
-    if ( !isSupplierIdsExist) 
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `Some of the ${ECollectionNames.BUSINESS} in supplier receipt's products does not exist in our records.`,
-          path, 
-          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`, 
         ),          
         { status: EStatusCode.NOT_FOUND }
       );
