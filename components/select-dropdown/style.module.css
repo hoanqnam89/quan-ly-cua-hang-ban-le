@@ -1,6 +1,7 @@
 .select {
 	background: var(--background);
 	outline-color: var(--foreground);
+  width: 100%;
 
   &:hover {
     filter: brightness(.9);

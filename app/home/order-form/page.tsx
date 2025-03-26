@@ -40,7 +40,8 @@ export default function Product() {
     id: ``, 
     isClicked: false
   });
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isProductLoading, setIsProductLoading] = useState<boolean>(true);
+  const [isSupplierLoading, setIsSupplierLoading] = useState<boolean>(true);
   const [productOptions, setProductOptions] = useState<ISelectOption[]>([]);
   const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
   const [productCount, setProductCount] = useState<number>(-1);
@@ -74,7 +75,7 @@ export default function Product() {
           value: product._id,
         }))
       ]);
-      setIsLoading(false);
+      setIsProductLoading(false);
     }, 
     [],
   );
@@ -100,7 +101,7 @@ export default function Product() {
           value: supplier._id,
         }))
       ]);
-      setIsLoading(false);
+      setIsSupplierLoading(false);
     }, 
     [],
   );
@@ -316,7 +317,7 @@ export default function Product() {
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
-      isLoaded={isLoading}
+      isLoaded={isProductLoading || isSupplierLoading}
     >
       <>
         <Tabs>
@@ -340,7 +341,7 @@ export default function Product() {
                 <Text>{index + 1}</Text>
 
                 <SelectDropdown
-                  isLoading={isLoading}
+                  isLoading={isSupplierLoading}
                   isDisable={isModalReadOnly}
                   options={productOptions}
                   defaultOptionIndex={getSelectedOptionIndex(
@@ -355,7 +356,7 @@ export default function Product() {
                 </SelectDropdown>
                 
                 <SelectDropdown
-                  isLoading={isLoading}
+                  isLoading={isSupplierLoading}
                   isDisable={isModalReadOnly}
                   options={supplierOptions}
                   defaultOptionIndex={getSelectedOptionIndex(
@@ -381,7 +382,7 @@ export default function Product() {
 
                 <div>
                   <Button 
-                    isDisable={isModalReadOnly}  
+                    isDisable={isModalReadOnly}
                     onClick={() => handleDeleteOrderFormProduct(index)}
                   >
                     <IconContainer></IconContainer>
@@ -391,7 +392,7 @@ export default function Product() {
             })}
 
             <Button 
-              isDisable={isModalReadOnly}  
+              isDisable={isModalReadOnly || isProductLoading || isSupplierLoading}  
               onClick={handleAddOrderFormProduct}
               className={`flex gap-2`} 
               type={EButtonType.SUCCESS}

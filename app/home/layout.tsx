@@ -60,6 +60,11 @@ export default function RootLayout({
       icon: boxesIcon, 
     },
     {
+      link: `${currentPath}/order-form`,
+      label: `Phiếu đặt hàng`,
+      icon: scrollIcon, 
+    },
+    {
       link: `${currentPath}/warehouse-receipt`,
       label: `Phiếu nhập kho`,
       icon: scrollIcon, 

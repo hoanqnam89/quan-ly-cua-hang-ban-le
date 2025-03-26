@@ -3,6 +3,6 @@
 }
 
 .good-receipt-product-table {
-  grid-template-columns: 1fr 8fr 2fr 1fr;
+  grid-template-columns: 1fr 6fr 6fr 2fr 1fr;
   gap: 12px;
 }
