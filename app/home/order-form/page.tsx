@@ -23,6 +23,8 @@ import { IOrderForm, IOrderFormProductDetail } from '@/interfaces/order-form.int
 import { DEFAULT_ORDER_FORM } from '@/constants/order-form.constant';
 import { IBusiness } from '@/interfaces/business.interface';
 import { EBusinessType } from '@/enums/business-type.enum';
+import InputSection from '../components/input-section/input-section';
+import { IProductDetail } from '@/interfaces/product-detail.interface';
 
 type collectionType = IOrderForm;
 const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
@@ -42,9 +44,10 @@ export default function Product() {
   });
   const [isProductLoading, setIsProductLoading] = useState<boolean>(true);
   const [isSupplierLoading, setIsSupplierLoading] = useState<boolean>(true);
-  const [productOptions, setProductOptions] = useState<ISelectOption[]>([]);
+  const [productDetailOptions, setProductDetailOptions] = 
+    useState<ISelectOption[]>([]);
   const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
-  const [productCount, setProductCount] = useState<number>(-1);
+  const [productDetailCount, setProductDetailCount] = useState<number>(-1);
   const { createNotification, notificationElements } = useNotificationsHook();
 
   const setCollectionCount = async (
@@ -60,20 +63,40 @@ export default function Product() {
   }
 
   useEffect((): void => {
-    setCollectionCount(ECollectionNames.PRODUCT, setProductCount);
+    setCollectionCount(ECollectionNames.PRODUCT_DETAIL, setProductDetailCount);
   }, []);
 
   const getProducts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
-      const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
-        ECollectionNames.PRODUCT, 
-      );
+      const newProductDetails: IProductDetail[] = 
+        await fetchGetCollections<IProductDetail>(
+          ECollectionNames.PRODUCT_DETAIL, 
+        );
 
-      setProductOptions([
-        ...newProducts.map((product: IProduct): ISelectOption => ({
-          label: `${product.name} - ${product.input_price}VNĐ - ${product.output_price}VNĐ`,
-          value: product._id,
-        }))
+      const newProducts: IProduct[] = 
+        await fetchGetCollections<IProduct>(
+          ECollectionNames.PRODUCT, 
+        );
+
+      setProductDetailOptions([
+        ...newProductDetails.map((
+          productDetail: IProductDetail
+        ): ISelectOption => {
+          const foundProduct: IProduct | undefined = newProducts.find((
+            product: IProduct
+          ): boolean => product._id === productDetail.product_id);
+
+          if (!foundProduct)
+            return {
+              label: `Không rõ`,
+              value: productDetail._id,
+            }
+
+          return {
+            label: `${foundProduct.name} - ${foundProduct.input_price}VNĐ - ${foundProduct.output_price}VNĐ`,
+            value: productDetail._id,
+          }
+        })
       ]);
       setIsProductLoading(false);
     }, 
@@ -183,7 +206,7 @@ export default function Product() {
       size: `2fr`, 
       isVisible: false, 
       render: (collection: collectionType): ReactElement => <Button 
-        isDisable={true}
+        // isDisable={true}
         title={createDeleteTooltip(collectionName)}
         onClick={(): void => {
           setIsClickDelete({
@@ -202,7 +225,7 @@ export default function Product() {
   ];
 
   const handleAddOrderFormProduct = () => {
-    if (orderForm.product_details.length >= productCount) {
+    if (orderForm.product_details.length >= productDetailCount) {
       createNotification({
         id: 0,
         children: <Text>Đã hết sản phẩm trong cơ sở dữ liệu để thêm vào phiếu nhập hàng</Text>,
@@ -217,9 +240,8 @@ export default function Product() {
       product_details: [
         ...orderForm.product_details, 
         {
-          _id: productOptions[0].value,
-          supplier_id: ``, 
-          quantity: 0, 
+          _id: productDetailOptions[0].value,
+          quantity: 1, 
         }
       ], 
     });
@@ -262,24 +284,10 @@ export default function Product() {
 
   const handleChangeOrderFormSupplierId = (
     e: ChangeEvent<HTMLSelectElement>, 
-    changeIndex: number, 
   ): void => {
     setOrderForm({
       ...orderForm, 
-      product_details: [
-        ...orderForm.product_details.map((
-          orderFormProductDetail: IOrderFormProductDetail, 
-          index: number
-        ): IOrderFormProductDetail => {
-          if (index === changeIndex)
-            return {
-              ...orderFormProductDetail, 
-              supplier_id: e.target.value
-            }
-          else
-            return orderFormProductDetail;
-        }), 
-      ], 
+      supplier_id: e.target.value, 
     });
   }
 
@@ -322,10 +330,26 @@ export default function Product() {
       <>
         <Tabs>
           <TabItem label={`Phiếu nhập hàng`}>
+            <InputSection label={`Nhà cung cấp`}>
+              <SelectDropdown
+                isLoading={isSupplierLoading}
+                isDisable={isModalReadOnly}
+                options={supplierOptions}
+                defaultOptionIndex={getSelectedOptionIndex(
+                  supplierOptions, 
+                  (orderForm.supplier_id
+                    ? orderForm.supplier_id
+                    : 0
+                  ) as unknown as string
+                )}
+                onInputChange={(e) => handleChangeOrderFormSupplierId(e)}
+              >
+              </SelectDropdown>
+            </InputSection>
+                
             <div className={`grid items-center ${styles[`good-receipt-product-table`]}`}>
               <Text>#</Text>
               <Text>Sản phẩm</Text>
-              <Text>Nhà cung cấp</Text>
               <Text>Số lượng</Text>
               <Text>Xóa</Text>
             </div>
@@ -343,9 +367,9 @@ export default function Product() {
                 <SelectDropdown
                   isLoading={isSupplierLoading}
                   isDisable={isModalReadOnly}
-                  options={productOptions}
+                  options={productDetailOptions}
                   defaultOptionIndex={getSelectedOptionIndex(
-                    productOptions, 
+                    productDetailOptions, 
                     (orderFormProductDetail._id
                       ? orderFormProductDetail._id
                       : 0
@@ -355,22 +379,9 @@ export default function Product() {
                 >
                 </SelectDropdown>
                 
-                <SelectDropdown
-                  isLoading={isSupplierLoading}
-                  isDisable={isModalReadOnly}
-                  options={supplierOptions}
-                  defaultOptionIndex={getSelectedOptionIndex(
-                    supplierOptions, 
-                    (orderFormProductDetail.supplier_id
-                      ? orderFormProductDetail.supplier_id
-                      : 0
-                    ) as unknown as string
-                  )}
-                  onInputChange={(e) => handleChangeOrderFormSupplierId(e, index)}
-                >
-                </SelectDropdown>
-                
                 <NumberInput
+                  min={1}
+                  max={100}
                   name={`quantity`}
                   isDisable={isModalReadOnly}
                   value={orderFormProductDetail.quantity + ``}
