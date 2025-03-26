@@ -8,7 +8,6 @@ import { me, logout, auth } from '@/services/Auth';
 import { IAccountPayload } from '@/app/api/interfaces/account-payload.interface';
 import { ERoleAction } from '@/interfaces/role.interface';
 import { ECollectionNames } from '@/enums';
-import { redirect } from 'next/navigation';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 import Image from 'next/legacy/image';
 import useNotificationsHook from '@/hooks/notifications-hook';
@@ -488,6 +487,7 @@ export default function PersonalInfo(): ReactElement {
     } finally {
       setIsLoading(false);
     }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
   /**
@@ -523,6 +523,7 @@ export default function PersonalInfo(): ReactElement {
     } catch (error) {
       alert(`Lỗi khi lấy thông tin người dùng: ${error instanceof Error ? error.message : 'Lỗi không xác định'}`);
     }
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
   /**
@@ -622,7 +623,7 @@ export default function PersonalInfo(): ReactElement {
 
     try {
       // Tạo bản sao để tránh thay đổi trực tiếp state
-      const userData: any = {
+      const userData: IUser = {
         ...editableUser,
         account_id: user.account_id,
         created_at: new Date(),
@@ -635,11 +636,11 @@ export default function PersonalInfo(): ReactElement {
       }
 
       // Xử lý ngày sinh nếu có
-      if (userData.birthday instanceof Date) {
-        userData.birthday = userData.birthday.toISOString();
-      } else if (userData.birthday) {
-        userData.birthday = new Date(userData.birthday).toISOString();
-      }
+      // if (userData.birthday instanceof Date) {
+      //   userData.birthday = userData.birthday.toISOString();
+      // } else if (userData.birthday) {
+      //   userData.birthday = new Date(userData.birthday).toISOString();
+      // }
 
       console.log("Dữ liệu người dùng mới gửi lên server:", userData);
 
@@ -722,7 +723,7 @@ export default function PersonalInfo(): ReactElement {
     try {
       // Chuẩn bị dữ liệu gửi lên
       // Tạo bản sao của editableUser để tránh thay đổi trực tiếp state
-      const userData: any = {
+      const userData: IUser = {
         ...editableUser,
         _id: user._id,
         account_id: user.account_id,
@@ -736,12 +737,12 @@ export default function PersonalInfo(): ReactElement {
 
       // Đảm bảo ngày sinh đúng định dạng khi gửi lên API
       // Chuyển đổi ngày sinh thành ISO string nếu có
-      if (userData.birthday instanceof Date) {
-        userData.birthday = userData.birthday.toISOString();
-      } else if (userData.birthday) {
-        // Nếu birthday không phải Date object nhưng có giá trị
-        userData.birthday = new Date(userData.birthday).toISOString();
-      }
+      // if (userData.birthday instanceof Date) {
+      //   userData.birthday = userData.birthday.toISOString();
+      // } else if (userData.birthday) {
+      //   // Nếu birthday không phải Date object nhưng có giá trị
+      //   userData.birthday = new Date(userData.birthday).toISOString();
+      // }
 
       console.log("Dữ liệu gửi lên server:", userData);
 

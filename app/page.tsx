@@ -1,7 +1,6 @@
 'use client';
 
 import React, { ChangeEvent, ReactElement, useState } from 'react';
-import { redirect } from 'next/navigation';
 import { EStatusCode } from '@/enums/status-code.enum';
 import { login } from '@/services/Auth';
 import { Button, LoadingScreen, Text, TextInput } from '@/components';
