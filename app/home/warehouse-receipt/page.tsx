@@ -27,11 +27,11 @@ export default function Product() {
   );
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
-    id: ``, 
+    id: ``,
     isClicked: false
   });
   const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({
-    id: ``, 
+    id: ``,
     isClicked: false
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -40,7 +40,7 @@ export default function Product() {
   const getProducts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
       const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
-        ECollectionNames.PRODUCT, 
+        ECollectionNames.PRODUCT,
       );
 
       setProductOptions([
@@ -48,42 +48,42 @@ export default function Product() {
           label: `${product.name}`,
           value: product._id,
           isChecked: warehouseReceipt.product_details.filter((
-            candidateProductDetail: IReceiptProduct, 
-          ): boolean => candidateProductDetail._id === product._id).length > 0, 
+            candidateProductDetail: IReceiptProduct,
+          ): boolean => candidateProductDetail._id === product._id).length > 0,
         }))
       ]);
       setIsLoading(false);
-    }, 
+    },
     [warehouseReceipt.product_details],
   );
 
   useEffect((): void => {
     getProducts();
   }, [getProducts]);
-  
+
   const columns: Array<IColumnProps<collectionType>> = [
     {
       key: `index`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `#`,
       size: `1fr`,
     },
     {
       key: `_id`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Mã`,
       size: `6fr`,
-      isVisible: false, 
+      isVisible: false,
     },
     {
       key: `product_details`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Danh sách sản phẩm`,
-      size: `3fr`, 
+      size: `3fr`,
       render: (collection: collectionType): ReactElement => <div>
         {
           collection.product_details.map(
-            (productDetail: IReceiptProduct, index: number): ReactElement => 
+            (productDetail: IReceiptProduct, index: number): ReactElement =>
               <Text key={index}>{productDetail._id}</Text>
           )
         }
@@ -91,10 +91,10 @@ export default function Product() {
     },
     {
       key: `created_at`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Ngày tạo`,
-      size: `4fr`, 
-      isVisible: false, 
+      size: `4fr`,
+      isVisible: false,
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.created_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
@@ -102,9 +102,9 @@ export default function Product() {
     },
     {
       key: `updated_at`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Ngày cập nhật`,
-      size: `4fr`, 
+      size: `4fr`,
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.updated_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
@@ -112,18 +112,18 @@ export default function Product() {
     },
     {
       title: `Xem thêm`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => <Button 
+      ref: useRef(null),
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement => <Button
         title={createMoreInfoTooltip(collectionName)}
         onClick={(): void => {
           setIsClickShowMore({
-            id: collection._id, 
-            isClicked: !isClickShowMore.isClicked, 
+            id: collection._id,
+            isClicked: !isClickShowMore.isClicked,
           });
         }}
       >
-        <IconContainer 
+        <IconContainer
           tooltip={createMoreInfoTooltip(collectionName)}
           iconLink={infoIcon}
         >
@@ -132,18 +132,18 @@ export default function Product() {
     },
     {
       title: `Xóa`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => <Button 
+      ref: useRef(null),
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement => <Button
         title={createDeleteTooltip(collectionName)}
         onClick={(): void => {
           setIsClickDelete({
-            id: collection._id, 
-            isClicked: !isClickShowMore.isClicked, 
+            id: collection._id,
+            isClicked: !isClickShowMore.isClicked,
           });
         }}
       >
-        <IconContainer 
+        <IconContainer
           tooltip={createDeleteTooltip(collectionName)}
           iconLink={trashIcon}
         >
@@ -153,21 +153,21 @@ export default function Product() {
   ];
 
   const handleChangeProducts = (
-    e: ChangeEvent<HTMLInputElement>, 
-    _option: ICheckbox, 
+    e: ChangeEvent<HTMLInputElement>,
+    _option: ICheckbox,
     index: number
   ): void => {
     const newProductOptions: ICheckbox[] = productOptions.map((
       productOption: ICheckbox, productOptionIndex: number
     ): ICheckbox => ({
-      ...productOption, 
-      isChecked: index === productOptionIndex 
+      ...productOption,
+      isChecked: index === productOptionIndex
         ? e.target.checked
         : productOption.isChecked
     }));
 
     setProductOptions(newProductOptions);
-    
+
     // const newWarehouseReceipt: collectionType = {
     //   ...warehouseReceipt, 
     //   product_ids: newProductOptions.filter((
@@ -189,7 +189,7 @@ export default function Product() {
       defaultCollection={DEFAULT_WAREHOUST_RECEIPT}
       collection={warehouseReceipt}
       setCollection={setWarehouseReceipt}
-      isModalReadonly={isModalReadOnly} 
+      isModalReadonly={isModalReadOnly}
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}

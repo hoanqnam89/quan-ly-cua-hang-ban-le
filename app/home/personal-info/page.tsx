@@ -974,7 +974,7 @@ export default function PersonalInfo(): ReactElement {
         ) : user.avatar ? (
           <Image src={user.avatar} alt="Avatar" width={150} height={150} className="object-cover w-full h-full" unoptimized={true} />
         ) : (
-          <Image src="/avatar.png" alt="Default avatar" width={150} height={150} className="object-cover w-full h-full" priority />
+          <Image src="/avatar.svg" alt="Default avatar" width={150} height={150} className="object-cover w-full h-full" priority />
         )}
         {isEditing && (
           <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity">

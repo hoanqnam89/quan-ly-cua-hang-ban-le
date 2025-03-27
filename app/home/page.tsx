@@ -7,7 +7,7 @@ import { getCollectionCount } from "@/services/api-service";
 import Script from 'next/script';
 import Image from 'next/image';
 
-// Khai báo kiểu cho đối tượng google của Google Charts
+// Kiểu cho Google Charts
 declare global {
   interface Window {
     google: any;
@@ -58,7 +58,6 @@ export default function Home(): ReactElement {
     endDate: '31/01/2023'
   });
 
-  // Thông số thống kê bổ sung
   const [statsCards, setStatsCards] = useState<IStatCardData[]>([]);
   const isInitialized = useRef(false);
 
@@ -83,11 +82,9 @@ export default function Home(): ReactElement {
       const response = await fetch('/api/order-form/revenue-stats');
       if (response.ok) {
         const data = await response.json();
-        // Giả sử API trả về object có daily, monthly, yearly
+
         setTotalRevenue(data.monthly || 0);
 
-        // Tính toán dữ liệu doanh thu theo ngày để vẽ biểu đồ
-        // Trong thực tế, bạn sẽ gọi API cụ thể cho dữ liệu này
         const today = new Date();
         const sampleData: IRevenueData[] = [];
         for (let i = 0; i < 7; i++) {
@@ -95,19 +92,18 @@ export default function Home(): ReactElement {
           date.setDate(today.getDate() - (6 - i));
           sampleData.push({
             date: `${date.getDate()}/${date.getMonth() + 1}`,
-            value: Math.floor(Math.random() * 5000000) + 1000000 // Giá trị ngẫu nhiên để minh họa
+            value: Math.floor(Math.random() * 5000000) + 1000000
           });
         }
         setRevenueData(sampleData);
 
-        // Tính toán % tăng trưởng (ví dụ)
         setRevenueGrowth(((data.monthly - (data.monthly / 1.2)) / (data.monthly / 1.2)) * 100);
       } else {
         throw new Error('Lỗi khi lấy dữ liệu doanh thu theo thời gian');
       }
     } catch (error) {
       console.error('Lỗi khi lấy dữ liệu doanh thu theo thời gian:', error);
-      // Dữ liệu mẫu
+      // Dữ liệu mẫu doanh thu
       setRevenueData([
         { date: '01/02', value: 2500000 },
         { date: '05/02', value: 2500000 },
@@ -123,12 +119,9 @@ export default function Home(): ReactElement {
   // Hàm lấy dữ liệu khách hàng theo thời gian
   const fetchCustomerData = async (): Promise<void> => {
     try {
-      // Lấy tổng số khách hàng từ API
       const userCountResponse = await getCollectionCount(ECollectionNames.USER);
       const userCount = await userCountResponse.json();
       setTotalCustomers(userCount);
-
-      // Tạo dữ liệu khách hàng theo thời gian (trong thực tế bạn sẽ gọi API cụ thể)
       const today = new Date();
       const sampleData: ICustomerData[] = [];
       for (let i = 0; i < 7; i++) {
@@ -136,16 +129,15 @@ export default function Home(): ReactElement {
         date.setDate(today.getDate() - (6 - i));
         sampleData.push({
           date: `${date.getDate()}/${date.getMonth() + 1}`,
-          value: Math.floor(Math.random() * 3) // Giá trị ngẫu nhiên 0-2 để minh họa
+          value: Math.floor(Math.random() * 3)
         });
       }
       setCustomerData(sampleData);
 
-      // Giả sử tăng trưởng khách hàng khoảng 5%
       setCustomerGrowth(5);
     } catch (error) {
       console.error('Lỗi khi lấy dữ liệu khách hàng theo thời gian:', error);
-      // Dữ liệu mẫu
+      // Dữ liệu mẫu khách hàng nhân viênviên
       setCustomerData([
         { date: '01/02', value: 2 },
         { date: '05/02', value: 0 },
@@ -196,10 +188,6 @@ export default function Home(): ReactElement {
   const fetchAllData = useCallback(async (startDate?: string, endDate?: string): Promise<void> => {
     setIsLoading(true);
     try {
-      console.log('Đang lấy dữ liệu từ API...');
-
-      // Lấy dữ liệu thực từ API cho tất cả thống kê chính
-      // Sử dụng trực tiếp kết quả API thay vì setState sau đó mới sử dụng
       const [
         productCount,
         productDetailCount,
@@ -212,7 +200,6 @@ export default function Home(): ReactElement {
         fetchCollectionCount(ECollectionNames.ORDER_FORM),
       ]);
 
-      // Cập nhật state sau khi đã có giá trị
       setTotalProducts(productCount);
       setTotalProductDetails(productDetailCount);
       setTotalEmployees(employeeCount);
@@ -225,7 +212,7 @@ export default function Home(): ReactElement {
         orders: orderCount
       });
 
-      // Cập nhật khoảng thời gian nếu có
+
       if (startDate && endDate) {
         setDateRange({
           startDate,
@@ -240,17 +227,14 @@ export default function Home(): ReactElement {
       setRevenueGrowth(15.7);
       setCustomerGrowth(5.2);
 
-      // Tạo mảng ngày dựa trên khoảng thời gian đã chọn
       const currentStartDate = startDate || dateRange.startDate;
       const currentEndDate = endDate || dateRange.endDate;
       const startDateObj = parseDate(currentStartDate);
       const endDateObj = parseDate(currentEndDate);
       const dateArray = generateDatesBetween(startDateObj, endDateObj, 7);
 
-      // Dữ liệu cho biểu đồ doanh thu - phân bổ tổng doanh thu theo khoảng thời gian thực
       const newRevenueData: IRevenueData[] = [];
 
-      // Tạo các hệ số để phân bổ doanh thu (tổng các hệ số = 1)
       const coefficients = generateRandomCoefficients(dateArray.length);
 
       dateArray.forEach((date, index) => {
@@ -266,8 +250,7 @@ export default function Home(): ReactElement {
       const newCustomerData: ICustomerData[] = [];
 
       dateArray.forEach((date, index) => {
-        // Số khách hàng mỗi ngày dựa trên số nhân viên
-        const customerFactor = (Math.sin(index * 0.9) + 1) / 2 + 0.1; // Hệ số dao động từ 0.1-1.1
+        const customerFactor = (Math.sin(index * 0.9) + 1) / 2 + 0.1;
         newCustomerData.push({
           date: `${date.getDate()}/${date.getMonth() + 1}`,
           value: Math.max(Math.round(customerPerDay * customerFactor), 0)
@@ -275,7 +258,6 @@ export default function Home(): ReactElement {
       });
       setCustomerData(newCustomerData);
 
-      // Cập nhật trực tiếp các thẻ thống kê sử dụng giá trị API
       setStatsCards([
         {
           title: 'Tổng sản phẩm',
@@ -316,13 +298,12 @@ export default function Home(): ReactElement {
       setTotalOrders(45);
 
       // Tính toán doanh thu dựa trên đơn hàng
-      const sampleRevenue = 45 * 500000; // 45 đơn hàng, trung bình 500,000 đ mỗi đơn
+      const sampleRevenue = 45 * 500000;
       setTotalRevenue(sampleRevenue);
-      setTotalCustomers(15); // Dùng số nhân viên mẫu
+      setTotalCustomers(15);
       setRevenueGrowth(15.7);
       setCustomerGrowth(5.2);
 
-      // Tạo khoảng thời gian cho dữ liệu mẫu
       const currentStartDate = startDate || dateRange.startDate;
       const currentEndDate = endDate || dateRange.endDate;
       const startDateObj = parseDate(currentStartDate);
@@ -347,14 +328,13 @@ export default function Home(): ReactElement {
         // Khách hàng
         newCustomerData.push({
           date: formattedDate,
-          value: Math.floor(Math.random() * 3) // Giá trị ngẫu nhiên 0-2
+          value: Math.floor(Math.random() * 3)
         });
       });
 
       setRevenueData(newRevenueData);
       setCustomerData(newCustomerData);
 
-      // Cập nhật các thẻ thống kê với dữ liệu mẫu
       setStatsCards([
         {
           title: 'Tổng sản phẩm',
@@ -400,9 +380,7 @@ export default function Home(): ReactElement {
   const generateDatesBetween = (startDate: Date, endDate: Date, pointCount: number): Date[] => {
     const result: Date[] = [];
 
-    // Nếu startDate và endDate là cùng một ngày
     if (startDate.getTime() === endDate.getTime()) {
-      // Trả về một mảng gồm 7 ngày, với startDate là ngày cuối cùng
       for (let i = 0; i < pointCount; i++) {
         const date = new Date(startDate);
         date.setDate(date.getDate() - (pointCount - i - 1));
@@ -424,13 +402,11 @@ export default function Home(): ReactElement {
 
   // Hàm tạo các hệ số ngẫu nhiên có tổng bằng 1
   const generateRandomCoefficients = (count: number): number[] => {
-    // Tạo mảng số ngẫu nhiên
     const randomNumbers: number[] = [];
     let sum = 0;
 
-    // Tạo các số ngẫu nhiên
     for (let i = 0; i < count; i++) {
-      const randomVal = 0.5 + Math.random(); // Giá trị từ 0.5 đến 1.5 để có sự dao động tốt
+      const randomVal = 0.5 + Math.random();
       randomNumbers.push(randomVal);
       sum += randomVal;
     }
