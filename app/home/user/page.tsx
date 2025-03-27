@@ -359,158 +359,141 @@ export default function User() {
             </SelectDropdown>
           </InputSection>
 
-        </TabItem>
+          <InputSection label={`Họ`}>
+            <TextInput
+              name={`first`}
+              isDisable={isModalReadOnly}
+              value={user.name.first}
+              onInputChange={handleChangeName}
+            >
+            </TextInput>
+          </InputSection>
 
-        <TabItem label={`Họ và Tên`}>
+          <InputSection label={`Tên đệm`}>
+            <TextInput
+              name={`middle`}
+              isDisable={isModalReadOnly}
+              value={user.name.middle}
+              onInputChange={handleChangeName}
+            >
+            </TextInput>
+          </InputSection>
 
-          <div className={`flex flex-col gap-2`}>
-            <InputSection label={`Họ`}>
-              <TextInput
-                name={`first`}
+          <InputSection label={`Tên`}>
+            <TextInput
+              name={`last`}
+              isDisable={isModalReadOnly}
+              value={user.name.last}
+              onInputChange={handleChangeName}
+            >
+            </TextInput>
+          </InputSection>
+
+          <InputSection label={`Số nhà`}>
+            <TextInput
+              name={`number`}
+              isDisable={isModalReadOnly}
+              value={user.address.number}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
+
+          <InputSection label={`Đường`}>
+            <TextInput
+              name={`street`}
+              isDisable={isModalReadOnly}
+              value={user.address.street}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
+
+          <InputSection label={`Phường`}>
+            <TextInput
+              name={`ward`}
+              isDisable={isModalReadOnly}
+              value={user.address.ward}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
+
+          <InputSection label={`Quận`}>
+            <TextInput
+              name={`district`}
+              isDisable={isModalReadOnly}
+              value={user.address.district}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
+
+          <InputSection label={`Thành phố`}>
+            <TextInput
+              name={`city`}
+              isDisable={isModalReadOnly}
+              value={user.address.city}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
+
+          <InputSection label={`Quốc gia`}>
+            <TextInput
+              name={`country`}
+              isDisable={isModalReadOnly}
+              value={user.address.country}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
+
+          <InputSection label={`Email`}>
+            <TextInput
+              textType={`email`}
+              name={`email`}
+              isDisable={isModalReadOnly}
+              value={user.email}
+              onInputChange={handleChangeEmail}
+            >
+            </TextInput>
+          </InputSection>
+
+          {user.birthday ? 
+            <InputSection label={`Ngày sinh`}>
+              <DateInput
+                min={getDate(getSameDayOfYear(
+                  new Date(), -MAXIMUM_WORKING_AGE
+                ))}
+                max={getDate(getSameDayOfYear(
+                  new Date(), -MINIMUM_WORKING_AGE
+                ))}
+                name={`birthday`}
                 isDisable={isModalReadOnly}
-                value={user.name.first}
-                onInputChange={handleChangeName}
+                value={user.birthday}
+                onInputChange={handleChangeBirthday}
               >
-              </TextInput>
-            </InputSection>
+              </DateInput>
+            </InputSection> : <Text>{user.birthday}</Text>
+          }
 
-            <InputSection label={`Tên đệm`}>
-              <TextInput
-                name={`middle`}
-                isDisable={isModalReadOnly}
-                value={user.name.middle}
-                onInputChange={handleChangeName}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Tên`}>
-              <TextInput
-                name={`last`}
-                isDisable={isModalReadOnly}
-                value={user.name.last}
-                onInputChange={handleChangeName}
-              >
-              </TextInput>
-            </InputSection>
-          </div>
-        </TabItem>
-
-        <TabItem label={`Địa chỉ`}>
-          <div className={`flex flex-col gap-2`}>
-            <InputSection label={`Số nhà`}>
-              <TextInput
-                name={`number`}
-                isDisable={isModalReadOnly}
-                value={user.address.number}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Đường`}>
-              <TextInput
-                name={`street`}
-                isDisable={isModalReadOnly}
-                value={user.address.street}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Phường`}>
-              <TextInput
-                name={`ward`}
-                isDisable={isModalReadOnly}
-                value={user.address.ward}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Quận`}>
-              <TextInput
-                name={`district`}
-                isDisable={isModalReadOnly}
-                value={user.address.district}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Thành phố`}>
-              <TextInput
-                name={`city`}
-                isDisable={isModalReadOnly}
-                value={user.address.city}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Quốc gia`}>
-              <TextInput
-                name={`country`}
-                isDisable={isModalReadOnly}
-                value={user.address.country}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-          </div>
-
-        </TabItem>
-
-        <TabItem label={`Thông tin khác`}>
-          <div className={`flex flex-col gap-2`}>
-            <InputSection label={`Email`}>
-              <TextInput
-                textType={`email`}
-                name={`email`}
-                isDisable={isModalReadOnly}
-                value={user.email}
-                onInputChange={handleChangeEmail}
-              >
-              </TextInput>
-            </InputSection>
-
-            {user.birthday ? 
-              <InputSection label={`Ngày sinh`}>
-                <DateInput
-                  min={getDate(getSameDayOfYear(
-                    new Date(), -MAXIMUM_WORKING_AGE
-                  ))}
-                  max={getDate(getSameDayOfYear(
-                    new Date(), -MINIMUM_WORKING_AGE
-                  ))}
-                  name={`birthday`}
-                  isDisable={isModalReadOnly}
-                  value={user.birthday}
-                  onInputChange={handleChangeBirthday}
-                >
-                </DateInput>
-              </InputSection> : <Text>{user.birthday}</Text>
-            }
-
-            <InputSection label={`Giới tính`}>
-              <SelectDropdown
-                isDisable={isModalReadOnly}
-                options={genderOptions}
-                defaultOptionIndex={getSelectedOptionIndex(
-                  genderOptions, 
-                  (user.gender 
-                    ? user.gender 
-                    : EUserGender.FEMALE
-                  ) as unknown as string
-                )}
-                onInputChange={handleChangeGender}
-              >
-              </SelectDropdown>
-            </InputSection>
-          </div>
-        </TabItem>
+          <InputSection label={`Giới tính`}>
+            <SelectDropdown
+              isDisable={isModalReadOnly}
+              options={genderOptions}
+              defaultOptionIndex={getSelectedOptionIndex(
+                genderOptions, 
+                (user.gender 
+                  ? user.gender 
+                  : EUserGender.FEMALE
+                ) as unknown as string
+              )}
+              onInputChange={handleChangeGender}
+            >
+            </SelectDropdown>
+          </InputSection>
         
-        <TabItem label={`Hình ảnh`}>
           <InputSection label={`Hình đại diện của nhân viên`}>
             <div>
               {!isModalReadOnly ? <input
@@ -557,7 +540,6 @@ export default function User() {
           <TimestampTabItem<collectionType> collection={user}>
           </TimestampTabItem>
         </TabItem>
-
       </Tabs>
 
     </ManagerPage>

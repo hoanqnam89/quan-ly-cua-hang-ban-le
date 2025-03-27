@@ -334,70 +334,66 @@ export default function Product() {
               </div> 
             </div>
           </InputSection>
-        </TabItem>
 
-        <TabItem label={`Địa chỉ`}>
-          <div className={`flex flex-col gap-2`}>
-            <InputSection label={`Số nhà`}>
-              <TextInput
-                name={`number`}
-                isDisable={isModalReadOnly}
-                value={business.address.number}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
+          <InputSection label={`Số nhà`}>
+            <TextInput
+              name={`number`}
+              isDisable={isModalReadOnly}
+              value={business.address.number}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
 
-            <InputSection label={`Đường`}>
-              <TextInput
-                name={`street`}
-                isDisable={isModalReadOnly}
-                value={business.address.street}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
+          <InputSection label={`Đường`}>
+            <TextInput
+              name={`street`}
+              isDisable={isModalReadOnly}
+              value={business.address.street}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
 
-            <InputSection label={`Phường`}>
-              <TextInput
-                name={`ward`}
-                isDisable={isModalReadOnly}
-                value={business.address.ward}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
+          <InputSection label={`Phường`}>
+            <TextInput
+              name={`ward`}
+              isDisable={isModalReadOnly}
+              value={business.address.ward}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
 
-            <InputSection label={`Quận`}>
-              <TextInput
-                name={`district`}
-                isDisable={isModalReadOnly}
-                value={business.address.district}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
+          <InputSection label={`Quận`}>
+            <TextInput
+              name={`district`}
+              isDisable={isModalReadOnly}
+              value={business.address.district}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
 
-            <InputSection label={`Thành phố`}>
-              <TextInput
-                name={`city`}
-                isDisable={isModalReadOnly}
-                value={business.address.city}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
+          <InputSection label={`Thành phố`}>
+            <TextInput
+              name={`city`}
+              isDisable={isModalReadOnly}
+              value={business.address.city}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
 
-            <InputSection label={`Quốc gia`}>
-              <TextInput
-                name={`country`}
-                isDisable={isModalReadOnly}
-                value={business.address.country}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-          </div>
+          <InputSection label={`Quốc gia`}>
+            <TextInput
+              name={`country`}
+              isDisable={isModalReadOnly}
+              value={business.address.country}
+              onInputChange={handleChangeAddress}
+            >
+            </TextInput>
+          </InputSection>
 
         </TabItem>
 
