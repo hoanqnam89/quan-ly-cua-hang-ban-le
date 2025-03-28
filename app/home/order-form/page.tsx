@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, IconContainer, Modal, NumberInput, SelectDropdown, Text } from '@/components'
+import { Button, IconContainer, NumberInput, SelectDropdown, Text } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
@@ -25,21 +25,15 @@ import { IBusiness } from '@/interfaces/business.interface';
 import { EBusinessType } from '@/enums/business-type.enum';
 import InputSection from '../components/input-section/input-section';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
-import { toPdf } from '@/utils/to-pdf';
-import { COMPANY } from '@/constants/company.constant';
-import { translateCollectionName } from '@/utils/translate-collection-name';
-import { formatCurrency } from '@/utils/format-currency';
 
 type collectionType = IOrderForm;
 const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
 
 export default function Product() {
-  const invoiceRef = useRef<HTMLDivElement>(null);
   const [orderForm, setOrderForm] = useState<collectionType>(
     DEFAULT_ORDER_FORM 
   );
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
-  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
     id: ``, 
     isClicked: false
@@ -184,9 +178,10 @@ export default function Product() {
       render: (collection: collectionType): ReactElement => {
         return (
           <Button
-            onClick={(): void => 
-              setIsPreviewModalOpen((prev: boolean): boolean => !prev)
-            }
+            onClick={(): void => {
+              window.location.href = `/home/order-form/${collection._id}`;
+              // setIsPreviewModalOpen((prev: boolean): boolean => !prev)
+            }}
           >
             <Text>In hóa đơn</Text>
           </Button>
@@ -337,12 +332,6 @@ export default function Product() {
     });
   }
 
-  const printInvoice = async () => {
-    await toPdf(invoiceRef);
-  }
-
-  const companyAddress: string = `${COMPANY.address.number} ${COMPANY.address.street} ${COMPANY.address.ward} ${COMPANY.address.district} ${COMPANY.address.city} ${COMPANY.address.country}`;
-
   return (
     <>
       <ManagerPage<collectionType>
@@ -453,97 +442,6 @@ export default function Product() {
           {notificationElements}
         </>
       </ManagerPage>
-
-      <Modal
-        title={`In ${translateCollectionName(collectionName)}`}
-        isOpen={isPreviewModalOpen} 
-        setIsOpen={setIsPreviewModalOpen}
-      >
-        <div 
-          ref={invoiceRef} 
-          className="bg-white p-4 rounded-xl shadow-xl border border-gray-100 pt-4"
-        >
-          <div className="w-full space-y-4 px-8">
-
-            <div className="flex justify-between items-start border-b-2 border-gray-300 pb-2">
-              <div className="space-y-1">
-                <p className="font-bold text-xl text-gray-900">{COMPANY.name}</p>
-                <p className="text-gray-700">{companyAddress}</p>
-                <p className="text-gray-700">Hotline: {COMPANY.phone}</p>
-              </div>
-              <div className="text-right space-y-1">
-                <p className="font-medium text-gray-700">Số phiếu: <span className="text-gray-900 font-bold">{COMPANY.number}</span></p>
-                <p className="text-gray-700">Ngày: {
-                  new Date(COMPANY.created_at).toLocaleString()
-                }</p>
-              </div>
-            </div>
-
-            <div className="text-center py-2 border-b-2 border-gray-300">
-              <h1 className="text-3xl font-bold text-gray-900">{
-                translateCollectionName(collectionName)
-              }</h1>
-            </div>
-
-            <div className="overflow-x-auto border-2 border-gray-300 rounded-lg">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[5%]">STT</th>
-                    <th className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[30%]">Tên sản phẩm</th>
-                    <th className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]">Đơn vị</th>
-                    <th className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]">Ngày hết hạn</th>
-                    <th className="py-2 px-3 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]">Giá</th>
-                    <th className="py-2 px-3 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]">Số lượng</th>
-                    <th className="py-2 px-3 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]">Tổng tiền</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* {products.map((item, index) => (
-                    <tr key={index} className="hover:bg-gray-50 transition-colors duration-150">
-                      <td className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium">{item.stt}</td>
-                      <td className="py-2 px-3 border-b-2 border-gray-300 text-gray-900 font-medium">{item.name}</td>
-                      <td className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium">{item.unit}</td>
-                      <td className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium">{item.expiryDate}</td>
-                      <td className="py-2 px-3 text-right border-b-2 border-gray-300 text-gray-700 font-medium">{item.price.toLocaleString()}</td>
-                      <td className="py-2 px-3 text-right border-b-2 border-gray-300 text-gray-700 font-medium">{item.quantity}</td>
-                      <td className="py-2 px-3 text-right border-b-2 border-gray-300 font-bold text-gray-900">{item.total.toLocaleString()} đ</td>
-                    </tr>
-                  ))} */}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-gray-100">
-                    <td colSpan={5} className="py-2 px-3 font-bold text-gray-900 border-t-2 border-gray-300">Tổng cộng</td>
-                    <td className="py-2 px-3 text-right font-bold text-gray-900 border-t-2 border-gray-300">30</td>
-                    <td className="py-2 px-3 text-right font-bold text-gray-900 border-t-2 border-gray-300">{formatCurrency(30)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-
-            <div className="grid grid-cols-2 gap-8 pt-8 mt-8 border-t-2 border-gray-300">
-              <div className="text-center">
-                <p className="font-bold text-gray-900 mb-2">NGƯỜI NHẬN</p>
-                <p className="text-sm text-gray-500">(Ký, ghi rõ họ tên)</p>
-                <div className="h-24"></div>
-              </div>
-              <div className="text-center">
-                <p className="font-bold text-gray-900 mb-2">NGƯỜI GIAO</p>
-                <p className="text-sm text-gray-500">(Ký, ghi rõ họ tên)</p>
-                <div className="h-24"></div>
-              </div>
-            </div>
-
-            <div className="text-right text-gray-700 pt-4">
-              <p className="font-bold">{companyAddress}, {new Date().toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
-
-        <Button type={EButtonType.INFO} onClick={printInvoice}>
-          <Text>In hóa đơn</Text>
-        </Button>
-      </Modal>
     </>
   );
 }
