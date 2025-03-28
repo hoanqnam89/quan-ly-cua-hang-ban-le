@@ -67,6 +67,28 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.NOT_FOUND }
       );
     
+    const orderFormProductDetailUnitIds: string[] = 
+      orderForm.product_details.map(
+        (orderFormProductDetail: IOrderFormProductDetail): string => 
+          orderFormProductDetail.unit_id
+      );
+
+    const isProductDetailUnitIdsExist: boolean = await isIdsExist<IProductDetail>(
+      orderFormProductDetailUnitIds, 
+      ProductDetailModel
+    );
+
+    if ( !isProductDetailUnitIdsExist ) 
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `Some of the ${ECollectionNames.UNIT} in order form's product details does not exist in our records.`,
+          path, 
+          `Please check if the ${ECollectionNames.UNIT} ID is correct.`, 
+        ),          
+        { status: EStatusCode.NOT_FOUND }
+      );
+    
     if ( !isValidObjectId(orderForm.supplier_id) ) 
       return NextResponse.json(
         createErrorMessage(

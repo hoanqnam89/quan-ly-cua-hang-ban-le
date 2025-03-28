@@ -25,6 +25,8 @@ import { IBusiness } from '@/interfaces/business.interface';
 import { EBusinessType } from '@/enums/business-type.enum';
 import InputSection from '../components/input-section/input-section';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
+import { IUnit } from '@/interfaces/unit.interface';
+import { formatCurrency } from '@/utils/format-currency';
 
 type collectionType = IOrderForm;
 const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
@@ -44,9 +46,11 @@ export default function Product() {
   });
   const [isProductLoading, setIsProductLoading] = useState<boolean>(true);
   const [isSupplierLoading, setIsSupplierLoading] = useState<boolean>(true);
+  const [isUnitLoading, setIsUnitLoading] = useState<boolean>(true);
   const [productDetailOptions, setProductDetailOptions] = 
     useState<ISelectOption[]>([]);
   const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
+  const [unitOptions, setUnitOptions] = useState<ISelectOption[]>([]);
   const [productDetailCount, setProductDetailCount] = useState<number>(-1);
   const { createNotification, notificationElements } = useNotificationsHook();
 
@@ -93,7 +97,7 @@ export default function Product() {
             }
 
           return {
-            label: `${foundProduct.name} - ${foundProduct.input_price}VNĐ - ${foundProduct.output_price}VNĐ`,
+            label: `${foundProduct.name} - ${formatCurrency(foundProduct.input_price)} - ${formatCurrency(foundProduct.output_price)}`,
             value: productDetail._id,
           }
         })
@@ -134,6 +138,27 @@ export default function Product() {
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
+  const getUnits: () => Promise<void> = useCallback(
+    async (): Promise<void> => {
+      const newUnits: IUnit[] = await fetchGetCollections<IUnit>(
+        ECollectionNames.UNIT, 
+      );
+
+      setUnitOptions([
+        ...newUnits.map((unit: IUnit): ISelectOption => ({
+          label: `${unit.name}`,
+          value: unit._id,
+        }))
+      ]);
+      setIsUnitLoading(false);
+    }, 
+    [],
+  );
+  
+  useEffect((): void => {
+    getUnits();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
   const columns: Array<IColumnProps<collectionType>> = [
     {
       key: `index`,
@@ -259,6 +284,7 @@ export default function Product() {
         ...orderForm.product_details, 
         {
           _id: productDetailOptions[0].value,
+          unit_id: unitOptions[0].value,
           quantity: 1, 
         }
       ], 
@@ -292,6 +318,29 @@ export default function Product() {
             return {
               ...orderFormProductDetail, 
               _id: e.target.value
+            }
+          else
+            return orderFormProductDetail;
+        }), 
+      ], 
+    });
+  }
+
+  const handleChangeOrderFormProductUnitId = (
+    e: ChangeEvent<HTMLSelectElement>, 
+    changeIndex: number, 
+  ): void => {
+    setOrderForm({
+      ...orderForm, 
+      product_details: [
+        ...orderForm.product_details.map((
+          orderFormProductDetail: IOrderFormProductDetail, 
+          index: number
+        ): IOrderFormProductDetail => {
+          if (index === changeIndex)
+            return {
+              ...orderFormProductDetail, 
+              unit_id: e.target.value
             }
           else
             return orderFormProductDetail;
@@ -344,7 +393,7 @@ export default function Product() {
         setIsModalReadonly={setIsModalReadOnly}
         isClickShowMore={isClickShowMore}
         isClickDelete={isClickDelete}
-        isLoaded={isProductLoading || isSupplierLoading}
+        isLoaded={isProductLoading || isSupplierLoading || isUnitLoading}
       >
         <>
           <Tabs>
@@ -361,7 +410,9 @@ export default function Product() {
                       : 0
                     ) as unknown as string
                   )}
-                  onInputChange={(e) => handleChangeOrderFormSupplierId(e)}
+                  onInputChange={(e): void => 
+                    handleChangeOrderFormSupplierId(e)
+                  }
                 >
                 </SelectDropdown>
               </InputSection>
@@ -369,6 +420,7 @@ export default function Product() {
               <div className={`grid items-center ${styles[`good-receipt-product-table`]}`}>
                 <Text>#</Text>
                 <Text>Sản phẩm</Text>
+                <Text>Đơn vị tính</Text>
                 <Text>Số lượng</Text>
                 <Text>Xóa</Text>
               </div>
@@ -376,7 +428,7 @@ export default function Product() {
               {orderForm.product_details.map((
                 orderFormProductDetail: IOrderFormProductDetail, 
                 index: number
-              ) => {
+              ): ReactElement => {
                 return <div 
                   key={index} 
                   className={`grid items-center ${styles[`good-receipt-product-table`]}`}
@@ -394,7 +446,26 @@ export default function Product() {
                         : 0
                       ) as unknown as string
                     )}
-                    onInputChange={(e) => handleChangeOrderFormProductId(e, index)}
+                    onInputChange={(e): void => 
+                      handleChangeOrderFormProductId(e, index)
+                    }
+                  >
+                  </SelectDropdown>
+                  
+                  <SelectDropdown
+                    isLoading={isUnitLoading}
+                    isDisable={isModalReadOnly}
+                    options={unitOptions}
+                    defaultOptionIndex={getSelectedOptionIndex(
+                      unitOptions, 
+                      (orderFormProductDetail.unit_id
+                        ? orderFormProductDetail.unit_id
+                        : 0
+                      ) as unknown as string
+                    )}
+                    onInputChange={(e): void => 
+                      handleChangeOrderFormProductUnitId(e, index)
+                    }
                   >
                   </SelectDropdown>
                   
@@ -404,7 +475,7 @@ export default function Product() {
                     name={`quantity`}
                     isDisable={isModalReadOnly}
                     value={orderFormProductDetail.quantity + ``}
-                    onInputChange={(e) => 
+                    onInputChange={(e): void => 
                       handleChangeOrderFormProductQuantity(e, index)
                     }
                   >
@@ -413,7 +484,7 @@ export default function Product() {
                   <div>
                     <Button 
                       isDisable={isModalReadOnly}
-                      onClick={() => handleDeleteOrderFormProduct(index)}
+                      onClick={(): void => handleDeleteOrderFormProduct(index)}
                     >
                       <IconContainer></IconContainer>
                     </Button>

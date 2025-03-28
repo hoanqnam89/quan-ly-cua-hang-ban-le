@@ -1,5 +1,6 @@
 export interface IOrderFormProductDetail {
   _id: string
+  unit_id: string
   quantity: number
 } 
 

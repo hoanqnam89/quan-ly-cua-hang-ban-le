@@ -3,6 +3,7 @@ import { models, model, Schema } from 'mongoose';
 
 const OrderFormSchema = new Schema({
   id: { type: ObjectId, }, 
+  supplier_id: { type: ObjectId, }, 
   created_at: { 
     type: Date, 
     default: () => Date.now(),
@@ -16,7 +17,7 @@ const OrderFormSchema = new Schema({
   product_details: [
     {
       id: { type: ObjectId, }, 
-      supplier_id: { type: ObjectId, }, 
+      unit_id: { type: ObjectId, }, 
       quantity: {
         type: Number, 
         require: [true, `Product quantity is required!`], 
