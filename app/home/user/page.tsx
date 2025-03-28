@@ -119,7 +119,6 @@ export default function User() {
       ref: useRef(null), 
       title: `Mã`,
       size: `6fr`,
-      isVisible: false, 
     },
     {
       key: `account_id`,
@@ -142,7 +141,6 @@ export default function User() {
       ref: useRef(null), 
       title: `Địa chỉ`,
       size: `3fr`, 
-      isVisible: false, 
       render: (collection: collectionType): ReactElement => {
         const address: string = `${collection.address.number} ${collection.address.street}, ${collection.address.ward}, ${collection.address.district}, ${collection.address.city}, ${collection.address.country}`;
         return <Text isEllipsis={true} tooltip={address}>{address}</Text>
@@ -153,14 +151,12 @@ export default function User() {
       ref: useRef(null), 
       title: `Email`,
       size: `3fr`, 
-      isVisible: false, 
     },
     {
       key: `birthday`,
       ref: useRef(null), 
       title: `Ngày sinh`,
       size: `3fr`, 
-      isVisible: false, 
       render: (collection: collectionType): ReactElement => {
         if ( !collection.birthday )
           return <Text isEllipsis={true}>NaN</Text>
@@ -174,7 +170,6 @@ export default function User() {
       ref: useRef(null), 
       title: `Giới tính`,
       size: `3fr`, 
-      isVisible: false, 
       render: (collection: collectionType): ReactElement => {
         const gender: string = collection.gender === EUserGender.MALE 
           ? `Nam`
@@ -208,7 +203,6 @@ export default function User() {
       ref: useRef(null), 
       title: `Ngày tạo`,
       size: `4fr`, 
-      isVisible: false, 
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.created_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>

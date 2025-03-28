@@ -141,7 +141,6 @@ export default function Product() {
       ref: useRef(null), 
       title: `Mã`,
       size: `6fr`,
-      isVisible: false, 
     },
     {
       key: `supplier_id`,
@@ -160,7 +159,6 @@ export default function Product() {
       ref: useRef(null), 
       title: `Mô tả`,
       size: `5fr`, 
-      isVisible: false
     },
     {
       key: `input_price`,
@@ -183,7 +181,6 @@ export default function Product() {
       ref: useRef(null), 
       title: `Hình ảnh`,
       size: `3fr`, 
-      isVisible: false, 
       render: (collection: collectionType): ReactElement => 
         <div className={`flex flex-wrap gap-2`}>
           {
@@ -211,7 +208,6 @@ export default function Product() {
       ref: useRef(null), 
       title: `Ngày tạo`,
       size: `4fr`, 
-      isVisible: false, 
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.created_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>

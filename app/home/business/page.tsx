@@ -85,7 +85,6 @@ export default function Product() {
       ref: useRef(null), 
       title: `Mã`,
       size: `6fr`,
-      isVisible: false, 
     },
     {
       key: `name`,
@@ -145,7 +144,6 @@ export default function Product() {
       ref: useRef(null), 
       title: `Ngày tạo`,
       size: `4fr`, 
-      isVisible: false, 
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.created_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
