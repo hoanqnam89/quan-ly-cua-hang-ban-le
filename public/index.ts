@@ -10,6 +10,7 @@ import chartBarIcon from '@/public/chart-bar.svg?url';
 import checkIcon from '@/public/check.svg?url';
 import chevronLeftIcon from '@/public/chevron-left.svg?url';
 import chevronRightIcon from '@/public/chevron-right.svg?url';
+import circleSmallIcon from '@/public/circle-small.svg?url';
 import circleUserRoundIcon from '@/public/circle-user-round.svg?url';
 import columns4Icon from '@/public/columns-4.svg?url';
 import contactIcon from '@/public/contact.svg?url';
@@ -51,6 +52,7 @@ export {
   checkIcon,  
   chevronLeftIcon, 
   chevronRightIcon, 
+  circleSmallIcon, 
   circleUserRoundIcon, 
   columns4Icon, 
   contactIcon, 

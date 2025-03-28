@@ -7,6 +7,7 @@ export enum ECollectionNames {
   PRODUCT = `Product`, 
   PRODUCT_DETAIL = `Product Detail`, 
   SUPPLIER_RECEIPT = `Supplier Receipt`, 
+  UNIT = `Unit`, 
   USER = `User`, 
   WAREHOUSE_RECEIPT = `Warehouse Receipt`,
 }
