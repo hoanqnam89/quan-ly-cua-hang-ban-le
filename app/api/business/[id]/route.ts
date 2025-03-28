@@ -59,7 +59,7 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
       {
         $set: {
           name: business.name,
-          logo: business.logo,
+          logo: business.logo ? business.logo : ``,
           address: business.address,
           email: business.email,
           updated_at: new Date(), 

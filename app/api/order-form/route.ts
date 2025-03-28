@@ -3,13 +3,16 @@ import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { IBusiness } from "@/interfaces/business.interface";
 import { IOrderForm, IOrderFormProductDetail } from "@/interfaces/order-form.interface";
 import { IProductDetail } from "@/interfaces/product-detail.interface";
+import { IUnit } from "@/interfaces/unit.interface";
 import { BusinessModel } from "@/models/Business";
 import { OrderFormModel } from "@/models/OrderForm";
 import { ProductDetailModel } from "@/models/ProductDetail";
+import { UnitModel } from "@/models/Unit";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { isIdsExist } from "@/utils/is-ids-exist";
+import { isIdsValid } from "@/utils/is-ids-valid";
 import { print } from "@/utils/print";
 import { isValidObjectId } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
@@ -45,10 +48,46 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   try {
     connectToDatabase();
 
+    if ( !isValidObjectId(orderForm.supplier_id) ) 
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `Some of the ID in order form's products is not valid.`,
+          path, 
+          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`, 
+        ),
+        { status: EStatusCode.UNPROCESSABLE_ENTITY }
+      );
+
+    const foundSupplier: IBusiness | null = 
+      await BusinessModel.findById(orderForm.supplier_id);
+
+    if (!foundSupplier) 
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `The ${ECollectionNames.BUSINESS} with the ID '${orderForm.supplier_id}' does not exist in our records.`,
+          path, 
+          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`
+        ),          
+        { status: EStatusCode.NOT_FOUND }
+      );
+    
     const orderFormProductDetailIds: string[] = 
       orderForm.product_details.map(
         (orderFormProductDetail: IOrderFormProductDetail): string => 
           orderFormProductDetail._id
+      );
+
+    if ( !isIdsValid( orderFormProductDetailIds )) 
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `Some of the ${ECollectionNames.PRODUCT_DETAIL} in order form's product details is not valid.`,
+          path, 
+          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`, 
+        ),          
+        { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
     const isProductDetailIdsExist: boolean = await isIdsExist<IProductDetail>(
@@ -73,9 +112,20 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
           orderFormProductDetail.unit_id
       );
 
-    const isProductDetailUnitIdsExist: boolean = await isIdsExist<IProductDetail>(
+    if ( !isIdsValid( orderFormProductDetailUnitIds )) 
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `Some of the ${ECollectionNames.UNIT} in order form's product details is not valid.`,
+          path, 
+          `Please check if the ${ECollectionNames.UNIT} ID is correct.`, 
+        ),          
+        { status: EStatusCode.UNPROCESSABLE_ENTITY }
+      );
+
+    const isProductDetailUnitIdsExist: boolean = await isIdsExist<IUnit>(
       orderFormProductDetailUnitIds, 
-      ProductDetailModel
+      UnitModel 
     );
 
     if ( !isProductDetailUnitIdsExist ) 
@@ -85,31 +135,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
           `Some of the ${ECollectionNames.UNIT} in order form's product details does not exist in our records.`,
           path, 
           `Please check if the ${ECollectionNames.UNIT} ID is correct.`, 
-        ),          
-        { status: EStatusCode.NOT_FOUND }
-      );
-    
-    if ( !isValidObjectId(orderForm.supplier_id) ) 
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `Some of the ID in order form's products is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`, 
-        ),
-        { status: EStatusCode.UNPROCESSABLE_ENTITY }
-      );
-
-    const foundSupplier: IBusiness | null = 
-      await BusinessModel.findById(orderForm.supplier_id);
-
-    if (!foundSupplier) 
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `The ${ECollectionNames.BUSINESS} with the ID '${orderForm.supplier_id}' does not exist in our records.`,
-          path, 
-          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`
         ),          
         { status: EStatusCode.NOT_FOUND }
       );

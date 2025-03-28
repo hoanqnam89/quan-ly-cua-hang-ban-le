@@ -72,7 +72,7 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
           email: user.email,
           birthday: user.birthday,
           gender: user.gender,
-          avatar: user.avatar,
+          avatar: user.avatar ? user.avatar : ``,
           updated_at: new Date(),
         }
       },

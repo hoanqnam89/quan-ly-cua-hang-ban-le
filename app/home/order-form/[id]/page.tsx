@@ -9,6 +9,7 @@ import { IOrderForm, IOrderFormProductDetail } from '@/interfaces/order-form.int
 import { IPageParams } from '@/interfaces/page-params.interface';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { IProduct } from '@/interfaces/product.interface';
+import { IUnit } from '@/interfaces/unit.interface';
 import { getCollectionById } from '@/services/api-service';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { formatCurrency } from '@/utils/format-currency';
@@ -31,9 +32,11 @@ export default function PreviewOrderForm({
   );
   const [products, setProducts] = useState<IProduct[]>([]);
   const [productDetails, setProductDetails] = useState<IProductDetail[]>([]);
+  const [units, setUnits] = useState<IUnit[]>([]);
   const [isOrderFormLoading, setIsOrderFormLoading] = useState<boolean>(true);
   const [isProductsLoading, setIsProductsLoading] = useState<boolean>(true);
   const [isProductDetailsLoading, setIsProductDetailsLoading] = useState<boolean>(true);
+  const [isUnitLoading, setIsUnitLoading] = useState<boolean>(true);
 
   useEffect((): void => {
     const getOrderFormById = async () => {
@@ -58,10 +61,18 @@ export default function PreviewOrderForm({
       setProductDetails([...newProductDetails]);
       setIsProductDetailsLoading(false);
     }
+    const getUnits = async () => {
+      const newUnits: IUnit[] = await fetchGetCollections<IUnit>(
+        ECollectionNames.UNIT, 
+      );
+      setUnits([...newUnits]);
+      setIsUnitLoading(false);
+    }
 
     getOrderFormById();
     getProducts();
     getProductDetails();
+    getUnits();
   }, [id]);
 
   const printInvoice = async (): Promise<void> => {
@@ -82,14 +93,19 @@ export default function PreviewOrderForm({
     );
   }
 
+  const getUnit = (id: string): IUnit | undefined => {
+    return units.find((unit: IUnit): boolean => unit._id === id);
+  }
+
   const getTotalPrice = () => orderForm.product_details.reduce(
     (accumulator: number, currentValue: IOrderFormProductDetail): number => {
       const foundProduct: IProduct | undefined = getProduct(currentValue._id);
+      const foundUnit: IUnit | undefined = getUnit(currentValue.unit_id);
 
-      if (!foundProduct)
+      if (!foundProduct || !foundUnit)
         return 0;
 
-      return accumulator + foundProduct.input_price * currentValue.quantity;
+      return accumulator + foundProduct.input_price * currentValue.quantity * foundUnit.equal;
     }, 
     0
   );
@@ -101,7 +117,12 @@ export default function PreviewOrderForm({
   );
 
   return (
-    (isOrderFormLoading || isProductsLoading || isProductDetailsLoading) 
+    (
+      isOrderFormLoading || 
+      isProductsLoading || 
+      isProductDetailsLoading || 
+      isUnitLoading
+    ) 
       ? <LoadingScreen></LoadingScreen>
       : <>
         <div 
@@ -190,7 +211,7 @@ export default function PreviewOrderForm({
                       <td 
                         className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
                       >
-                        Cái
+                        {getUnit(item.unit_id)?.name}
                       </td>
                       <td 
                         className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
@@ -213,7 +234,7 @@ export default function PreviewOrderForm({
                       <td 
                         className="py-2 px-3 text-right border-b-2 border-gray-300 font-bold text-gray-900"
                       >
-                        {formatCurrency( (getProduct(item._id)?.input_price || 0) * item.quantity )}
+                        {formatCurrency( (getProduct(item._id)?.input_price || 0) * item.quantity * (getUnit(item.unit_id)?.equal || 0) )}
                       </td>
                     </tr>
                   ))}

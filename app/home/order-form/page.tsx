@@ -128,8 +128,13 @@ export default function Product() {
           value: supplier._id,
         }))
       ]);
+      setOrderForm({
+        ...orderForm, 
+        supplier_id: newSuppliers[0]._id, 
+      });
       setIsSupplierLoading(false);
     }, 
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
     [],
   );
   
@@ -143,6 +148,9 @@ export default function Product() {
       const newUnits: IUnit[] = await fetchGetCollections<IUnit>(
         ECollectionNames.UNIT, 
       );
+
+      console.log(newUnits);
+      
 
       setUnitOptions([
         ...newUnits.map((unit: IUnit): ISelectOption => ({
@@ -388,7 +396,12 @@ export default function Product() {
         setIsModalReadonly={setIsModalReadOnly}
         isClickShowMore={isClickShowMore}
         isClickDelete={isClickDelete}
-        isLoaded={isProductLoading || isSupplierLoading || isUnitLoading}
+        isLoaded={
+          isProductLoading || 
+          isSupplierLoading || 
+          isUnitLoading || 
+          orderForm.product_details.length === 0
+        }
       >
         <>
           <Tabs>
