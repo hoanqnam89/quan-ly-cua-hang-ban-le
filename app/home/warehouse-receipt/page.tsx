@@ -1,22 +1,35 @@
 'use client';
 
-import { Button, IconContainer, Text } from '@/components'
+import { Button, IconContainer, NumberInput, SelectDropdown, Text } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
-import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
+import React, { ChangeEvent, Dispatch, ReactElement, SetStateAction, useCallback, useEffect, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { infoIcon, trashIcon } from '@/public';
+import { infoIcon, plusIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { IReceiptProduct, IWarehouseReceipt } from '@/interfaces/warehouse-receipt.interface';
 import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
-import Checkboxes, { ICheckbox } from '@/components/checkboxes/checkboxes';
-import { IProduct } from '@/interfaces/product.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { translateCollectionName } from '@/utils/translate-collection-name';
+import { IOrderForm, IOrderFormProductDetail } from '@/interfaces/order-form.interface';
+import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
+import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
+import { DEFAULT_ORDER_FORM } from '@/constants/order-form.constant';
+import styles from './style.module.css';
+import { getCollectionCount } from '@/services/api-service';
+import { IProductDetail } from '@/interfaces/product-detail.interface';
+import { IProduct } from '@/interfaces/product.interface';
+import { formatCurrency } from '@/utils/format-currency';
+import { IBusiness } from '@/interfaces/business.interface';
+import { EBusinessType } from '@/enums/business-type.enum';
+import { IUnit } from '@/interfaces/unit.interface';
+import useNotificationsHook from '@/hooks/notifications-hook';
+import { ENotificationType } from '@/components/notify/notification/notification';
+import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 
 type collectionType = IWarehouseReceipt;
 const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;
@@ -24,6 +37,9 @@ const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;
 export default function Product() {
   const [warehouseReceipt, setWarehouseReceipt] = useState<collectionType>(
     DEFAULT_WAREHOUST_RECEIPT
+  );
+  const [orderForm, setOrderForm] = useState<IOrderForm>(
+    DEFAULT_ORDER_FORM 
   );
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
@@ -35,31 +51,151 @@ export default function Product() {
     isClicked: false
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [productOptions, setProductOptions] = useState<ICheckbox[]>([]);
+  const [orderForms, setOrderForms] = useState<IOrderForm[]>([]);
+  const [orderFormOptions, setOrderFormOptions] = useState<ISelectOption[]>([]);
+  const [currentOrderFormOptionIndex, setCurrentOrderFormOptionIndex] = useState<number>(0);
+  const [isProductLoading, setIsProductLoading] = useState<boolean>(true);
+  const [isSupplierLoading, setIsSupplierLoading] = useState<boolean>(true);
+  const [isUnitLoading, setIsUnitLoading] = useState<boolean>(true);
+  const [productDetailOptions, setProductDetailOptions] = 
+    useState<ISelectOption[]>([]);
+  const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
+  const [unitOptions, setUnitOptions] = useState<ISelectOption[]>([]);
+  const [productDetailCount, setProductDetailCount] = useState<number>(-1);
+  const { createNotification, notificationElements } = useNotificationsHook();
+
+  const setCollectionCount = async (
+    collectionName: ECollectionNames, 
+    setCollection: Dispatch<SetStateAction<number>>, 
+  ): Promise<void> => {
+    const getCollectionCountResponse: Response = 
+      await getCollectionCount(collectionName);
+    const getCollectionCountJson: number = 
+      await getCollectionCountResponse.json();
+
+    setCollection(getCollectionCountJson);
+  }
+
+  useEffect((): void => {
+    setCollectionCount(ECollectionNames.PRODUCT_DETAIL, setProductDetailCount);
+  }, []);
 
   const getProducts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
-      const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
-        ECollectionNames.PRODUCT,
-      );
+      const newProductDetails: IProductDetail[] = 
+        await fetchGetCollections<IProductDetail>(
+          ECollectionNames.PRODUCT_DETAIL, 
+        );
 
-      setProductOptions([
-        ...newProducts.map((product: IProduct): ICheckbox => ({
-          label: `${product.name}`,
-          value: product._id,
-          isChecked: warehouseReceipt.product_details.filter((
-            candidateProductDetail: IReceiptProduct,
-          ): boolean => candidateProductDetail._id === product._id).length > 0,
-        }))
+      const newProducts: IProduct[] = 
+        await fetchGetCollections<IProduct>(
+          ECollectionNames.PRODUCT, 
+        );
+
+      setProductDetailOptions([
+        ...newProductDetails.map((
+          productDetail: IProductDetail
+        ): ISelectOption => {
+          const foundProduct: IProduct | undefined = newProducts.find((
+            product: IProduct
+          ): boolean => product._id === productDetail.product_id);
+
+          if (!foundProduct)
+            return {
+              label: `Không rõ`,
+              value: productDetail._id,
+            }
+
+          return {
+            label: `${foundProduct.name} - ${formatCurrency(foundProduct.input_price)} - ${formatCurrency(foundProduct.output_price)}`,
+            value: productDetail._id,
+          }
+        })
       ]);
-      setIsLoading(false);
-    },
-    [warehouseReceipt.product_details],
+      setIsProductLoading(false);
+    }, 
+    [],
   );
-
+  
   useEffect((): void => {
     getProducts();
   }, [getProducts]);
+
+  const getSuppliers: () => Promise<void> = useCallback(
+    async (): Promise<void> => {
+      const newBusinesses: IBusiness[] = await fetchGetCollections<IBusiness>(
+        ECollectionNames.BUSINESS, 
+      );
+      const newSuppliers: IBusiness[] = newBusinesses.filter((
+        business: IBusiness
+      ): boolean => 
+        business.type !== EBusinessType.SUPPLIER 
+      );
+
+      setSupplierOptions([
+        ...newSuppliers.map((supplier: IBusiness): ISelectOption => ({
+          label: `${supplier.name}`,
+          value: supplier._id,
+        }))
+      ]);
+      setOrderForm({
+        ...orderForm, 
+        supplier_id: newSuppliers[0]._id, 
+      });
+      setIsSupplierLoading(false);
+    }, 
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+    [],
+  );
+  
+  useEffect((): void => {
+    getSuppliers();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
+
+  const getUnits: () => Promise<void> = useCallback(
+    async (): Promise<void> => {
+      const newUnits: IUnit[] = await fetchGetCollections<IUnit>(
+        ECollectionNames.UNIT, 
+      );
+
+      setUnitOptions([
+        ...newUnits.map((unit: IUnit): ISelectOption => ({
+          label: `${unit.name}`,
+          value: unit._id,
+        }))
+      ]);
+      setIsUnitLoading(false);
+    }, 
+    [],
+  );
+  
+  useEffect((): void => {
+    getUnits();
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
+
+  const getOrderForms: () => Promise<void> = useCallback(
+    async (): Promise<void> => {
+      const newOrderForms: IOrderForm[] = await fetchGetCollections<IOrderForm>(
+        ECollectionNames.ORDER_FORM, 
+      );
+
+      setOrderForms([...newOrderForms]);
+      setOrderFormOptions([
+        ...newOrderForms.map((orderForm: IOrderForm): ISelectOption => ({
+          label: `${new Date(orderForm.created_at).toLocaleString()}`,
+          value: orderForm._id,
+        }))
+      ]);
+      setIsLoading(false);
+    }, 
+    [],
+  );
+
+  useEffect((): void => {
+    getOrderForms();
+  }, [getOrderForms]);
 
   const columns: Array<IColumnProps<collectionType>> = [
     {
@@ -150,34 +286,134 @@ export default function Product() {
     },
   ];
 
-  const handleChangeProducts = (
-    e: ChangeEvent<HTMLInputElement>,
-    _option: ICheckbox,
-    index: number
-  ): void => {
-    const newProductOptions: ICheckbox[] = productOptions.map((
-      productOption: ICheckbox, productOptionIndex: number
-    ): ICheckbox => ({
-      ...productOption,
-      isChecked: index === productOptionIndex
-        ? e.target.checked
-        : productOption.isChecked
-    }));
+  const handleChangeOrderForm = (e: ChangeEvent<HTMLSelectElement>) => {
+    setCurrentOrderFormOptionIndex(
+      getSelectedOptionIndex(orderFormOptions, e.target.value)
+    );
 
-    setProductOptions(newProductOptions);
+    const foundOrderForm: IOrderForm | undefined = orderForms.find((
+      orderForm: IOrderForm
+    ) => orderForm._id === e.target.value);
 
-    // const newWarehouseReceipt: collectionType = {
-    //   ...warehouseReceipt, 
-    //   product_ids: newProductOptions.filter((
-    //     productOption: ICheckbox
-    //   ): boolean => productOption.isChecked).map((
-    //     productOption: ICheckbox
-    //   ): string => productOption.value), 
-    // };
+    if (!foundOrderForm)
+      return;
 
-    // setWarehouseReceipt({...newWarehouseReceipt});
+    setOrderForm({...foundOrderForm});
   }
 
+  const handleAddWarehouseReceiptProduct = () => {
+    if (warehouseReceipt.product_details.length >= productDetailCount) {
+      createNotification({
+        id: 0,
+        children: <Text>Đã hết sản phẩm trong cơ sở dữ liệu để thêm vào phiếu nhập hàng</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true, 
+      });
+      return;
+    }
+
+    setWarehouseReceipt({
+      ...warehouseReceipt, 
+      product_details: [
+        ...warehouseReceipt.product_details, 
+        {
+          _id: productDetailOptions[0].value,
+          unit_id: unitOptions[0].value,
+          quantity: 1, 
+        }
+      ], 
+    });
+  }
+
+  const handleDeleteWarehouseReceiptProduct = (deleteIndex: number) => {
+    setWarehouseReceipt({
+      ...warehouseReceipt, 
+      product_details: [
+        ...warehouseReceipt.product_details.filter((
+          _warehouseReceiptProductDetail: IOrderFormProductDetail, 
+          index: number
+        ): boolean => index !== deleteIndex), 
+      ], 
+    });
+  }
+
+  const handleChangeWarehouseReceiptProductId = (
+    e: ChangeEvent<HTMLSelectElement>, 
+    changeIndex: number, 
+  ): void => {
+    setWarehouseReceipt({
+      ...warehouseReceipt, 
+      product_details: [
+        ...warehouseReceipt.product_details.map((
+          warehouseReceiptProductDetail: IOrderFormProductDetail, 
+          index: number
+        ): IOrderFormProductDetail => {
+          if (index === changeIndex)
+            return {
+              ...warehouseReceiptProductDetail, 
+              _id: e.target.value
+            }
+          else
+            return warehouseReceiptProductDetail;
+        }), 
+      ], 
+    });
+  }
+
+  const handleChangeWarehouseReceiptProductUnitId = (
+    e: ChangeEvent<HTMLSelectElement>, 
+    changeIndex: number, 
+  ): void => {
+    setWarehouseReceipt({
+      ...warehouseReceipt, 
+      product_details: [
+        ...warehouseReceipt.product_details.map((
+          warehouseReceiptProductDetail: IOrderFormProductDetail, 
+          index: number
+        ): IOrderFormProductDetail => {
+          if (index === changeIndex)
+            return {
+              ...warehouseReceiptProductDetail, 
+              unit_id: e.target.value
+            }
+          else
+            return warehouseReceiptProductDetail;
+        }), 
+      ], 
+    });
+  }
+
+  const handleChangeWarehouseReceiptSupplierId = (
+    e: ChangeEvent<HTMLSelectElement>, 
+  ): void => {
+    setWarehouseReceipt({
+      ...warehouseReceipt, 
+      supplier_id: e.target.value, 
+    });
+  }
+
+  const handleChangeWarehouseReceiptProductQuantity = (
+    e: ChangeEvent<HTMLInputElement>, 
+    changeIndex: number, 
+  ): void => {
+    setWarehouseReceipt({
+      ...warehouseReceipt, 
+      product_details: [
+        ...warehouseReceipt.product_details.map((
+          warehouseReceiptProductDetail: IOrderFormProductDetail, 
+          index: number
+        ): IOrderFormProductDetail => {
+          if (index === changeIndex)
+            return {
+              ...warehouseReceiptProductDetail, 
+              quantity: +e.target.value
+            }
+          else
+            return warehouseReceiptProductDetail;
+        }), 
+      ], 
+    });
+  }
   const gridColumns: string = `200px 1fr`;
 
   return (
@@ -192,28 +428,213 @@ export default function Product() {
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
     >
-      <Tabs>
+      <>
+        <Tabs>
 
-        <TabItem label={`${translateCollectionName(collectionName)}`}>
-          <InputSection label={`Danh sách sản phẩm`} gridColumns={gridColumns}>
-            <Checkboxes
-              isDisable={isModalReadOnly}
-              isLoading={isLoading}
-              options={productOptions}
-              setOptions={setProductOptions}
-              shouldSetOptions={false}
-              onInputChange={handleChangeProducts}
-            >
-            </Checkboxes>
-          </InputSection>
-        </TabItem>
+          <TabItem label={`${translateCollectionName(collectionName)}`}>
+            <InputSection label={`Chọn phiếu đặt hàng`} gridColumns={gridColumns}>
+              <SelectDropdown
+                isLoading={isLoading}
+                isDisable={isModalReadOnly}
+                options={orderFormOptions}
+                defaultOptionIndex={currentOrderFormOptionIndex}
+                onInputChange={(e): void => handleChangeOrderForm(e)}
+              >
+              </SelectDropdown>
+            </InputSection>
 
-        <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
-          <TimestampTabItem<collectionType> collection={warehouseReceipt}>
-          </TimestampTabItem>
-        </TabItem>
+            <div className={`flex items-center justify-between gap-2`}>
+              <div className={`${styles[`order-form-left`]}`}>
+                <InputSection label={`Nhà cung cấp`}>
+                  <SelectDropdown
+                    isLoading={isSupplierLoading}
+                    isDisable={true}
+                    options={supplierOptions}
+                    defaultOptionIndex={getSelectedOptionIndex(
+                      supplierOptions, 
+                      (orderForm.supplier_id
+                        ? orderForm.supplier_id
+                        : 0
+                      ) as unknown as string
+                    )}
+                  >
+                  </SelectDropdown>
+                </InputSection>
 
-      </Tabs>
+                <div className={`grid items-center ${styles[`order-form-product-table`]}`}>
+                  <Text>#</Text>
+                  <Text>Sản phẩm</Text>
+                  <Text>Đơn vị tính</Text>
+                  <Text>Số lượng</Text>
+                </div>
+
+                {orderForm.product_details.map((
+                  orderFormProductDetail: IOrderFormProductDetail, 
+                  index: number
+                ): ReactElement => {
+                  return <div 
+                    key={index} 
+                    className={`grid items-center ${styles[`order-form-product-table`]}`}
+                  >
+                    <Text>{index + 1}</Text>
+
+                    <SelectDropdown
+                      isLoading={isSupplierLoading}
+                      isDisable={true}
+                      options={productDetailOptions}
+                      defaultOptionIndex={getSelectedOptionIndex(
+                        productDetailOptions, 
+                        (orderFormProductDetail._id
+                          ? orderFormProductDetail._id
+                          : 0
+                        ) as unknown as string
+                      )}
+                    >
+                    </SelectDropdown>
+                    
+                    <SelectDropdown
+                      isLoading={isUnitLoading}
+                      isDisable={true}
+                      options={unitOptions}
+                      defaultOptionIndex={getSelectedOptionIndex(
+                        unitOptions, 
+                        (orderFormProductDetail.unit_id
+                          ? orderFormProductDetail.unit_id
+                          : 0
+                        ) as unknown as string
+                      )}
+                    >
+                    </SelectDropdown>
+                    
+                    <NumberInput
+                      min={1}
+                      max={100}
+                      name={`quantity`}
+                      isDisable={true}
+                      value={orderFormProductDetail.quantity + ``}
+                    >
+                    </NumberInput>
+                  </div>
+                })}
+              </div>
+
+              <div>
+                <InputSection label={`Nhà cung cấp`}>
+                  <SelectDropdown
+                    isLoading={isSupplierLoading}
+                    isDisable={isModalReadOnly}
+                    options={supplierOptions}
+                    defaultOptionIndex={getSelectedOptionIndex(
+                      supplierOptions, 
+                      (warehouseReceipt.supplier_id
+                        ? warehouseReceipt.supplier_id
+                        : 0
+                      ) as unknown as string
+                    )}
+                    onInputChange={(e): void => 
+                      handleChangeWarehouseReceiptSupplierId(e)
+                    }
+                  >
+                  </SelectDropdown>
+                </InputSection>
+
+                <div className={`grid items-center ${styles[`warehouse-receipt-product-table`]}`}>
+                  <Text>#</Text>
+                  <Text>Sản phẩm</Text>
+                  <Text>Đơn vị tính</Text>
+                  <Text>Số lượng</Text>
+                  <Text>Xóa</Text>
+                </div>
+
+                {warehouseReceipt.product_details.map((
+                  warehouseProductDetail: IOrderFormProductDetail, 
+                  index: number
+                ): ReactElement => {
+                  return <div 
+                    key={index} 
+                    className={`grid items-center ${styles[`warehouse-receipt-product-table`]}`}
+                  >
+                    <Text>{index + 1}</Text>
+
+                    <SelectDropdown
+                      isLoading={isSupplierLoading}
+                      isDisable={isModalReadOnly}
+                      options={productDetailOptions}
+                      defaultOptionIndex={getSelectedOptionIndex(
+                        productDetailOptions, 
+                        (warehouseProductDetail._id
+                          ? warehouseProductDetail._id
+                          : 0
+                        ) as unknown as string
+                      )}
+                      onInputChange={(e): void => 
+                        handleChangeWarehouseReceiptProductId(e, index)
+                      }
+                    >
+                    </SelectDropdown>
+                    
+                    <SelectDropdown
+                      isLoading={isUnitLoading}
+                      isDisable={isModalReadOnly}
+                      options={unitOptions}
+                      defaultOptionIndex={getSelectedOptionIndex(
+                        unitOptions, 
+                        (warehouseProductDetail.unit_id
+                          ? warehouseProductDetail.unit_id
+                          : 0
+                        ) as unknown as string
+                      )}
+                      onInputChange={(e): void => 
+                        handleChangeWarehouseReceiptProductUnitId(e, index)
+                      }
+                    >
+                    </SelectDropdown>
+                    
+                    <NumberInput
+                      min={1}
+                      max={100}
+                      name={`quantity`}
+                      isDisable={isModalReadOnly}
+                      value={warehouseProductDetail.quantity + ``}
+                      onInputChange={(e): void => 
+                        handleChangeWarehouseReceiptProductQuantity(e, index)
+                      }
+                    >
+                    </NumberInput>
+
+                    <div>
+                      <Button 
+                        isDisable={isModalReadOnly}
+                        onClick={(): void => handleDeleteWarehouseReceiptProduct(index)}
+                      >
+                        <IconContainer></IconContainer>
+                      </Button>
+                    </div>
+                  </div>
+                })}
+
+                <Button 
+                  isDisable={isModalReadOnly || isProductLoading || isSupplierLoading}  
+                  onClick={handleAddWarehouseReceiptProduct}
+                  className={`flex gap-2`} 
+                  type={EButtonType.SUCCESS}
+                >
+                  <IconContainer iconLink={plusIcon}></IconContainer>
+                  <Text>Thêm sản phẩm mới</Text>
+                </Button>
+              </div>
+            </div>
+          </TabItem>
+
+          <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
+            <TimestampTabItem<collectionType> collection={warehouseReceipt}>
+            </TimestampTabItem>
+          </TabItem>
+
+        </Tabs>
+            
+        {notificationElements}
+      </>
     </ManagerPage>
   );
 }

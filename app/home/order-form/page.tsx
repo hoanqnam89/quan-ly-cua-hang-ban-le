@@ -205,18 +205,14 @@ export default function Product() {
       ref: useRef(null), 
       title: `In`,
       size: `4fr`, 
-      render: (collection: collectionType): ReactElement => {
-        return (
-          <Button
-            onClick={(): void => {
-              window.location.href = `/home/order-form/${collection._id}`;
-              // setIsPreviewModalOpen((prev: boolean): boolean => !prev)
-            }}
-          >
-            <Text>In hóa đơn</Text>
-          </Button>
-        );
-      }
+      render: (collection: collectionType): ReactElement => <Button
+        type={EButtonType.INFO}
+        onClick={(): void => {
+          window.location.href = `/home/order-form/${collection._id}`;
+        }}
+      >
+        <Text>In hóa đơn</Text>
+      </Button>
     },
     // {
     //   key: `updated_at`,

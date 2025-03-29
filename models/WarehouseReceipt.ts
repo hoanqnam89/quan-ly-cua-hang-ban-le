@@ -17,6 +17,7 @@ const WarehouseReceiptSchema = new Schema({
   product_details: [
     {
       id: { type: ObjectId, }, 
+      unit_id: { type: ObjectId, }, 
       quantity: {
         type: Number, 
         require: [true, `Product quantity is required!`], 
