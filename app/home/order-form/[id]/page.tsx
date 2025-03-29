@@ -161,7 +161,7 @@ export default function PreviewOrderForm({
                       STT
                     </th>
                     <th 
-                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[30%]"
+                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[35%]"
                     >
                       Tên sản phẩm
                     </th>
@@ -173,10 +173,15 @@ export default function PreviewOrderForm({
                     <th 
                       className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]"
                     >
-                      Ngày hết hạn
+                      Ngày sản xuất
                     </th>
                     <th 
-                      className="py-2 px-3 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]"
+                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]"
+                    >
+                      Hạn sử dụng
+                    </th>
+                    <th 
+                      className="py-2 px-3 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
                     >
                       Giá
                     </th>
@@ -217,6 +222,14 @@ export default function PreviewOrderForm({
                         className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
                       >
                         {new Date(
+                          getProductDetail(item._id)?.date_of_manufacture || 
+                          new Date()
+                        ).toLocaleDateString()}
+                      </td>
+                      <td 
+                        className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
+                      >
+                        {new Date(
                           getProductDetail(item._id)?.expiry_date || 
                           new Date()
                         ).toLocaleDateString()}
@@ -241,7 +254,7 @@ export default function PreviewOrderForm({
                 </tbody>
                 <tfoot>
                   <tr className="bg-gray-100">
-                    <td colSpan={5} className="py-2 px-3 font-bold text-gray-900 border-t-2 border-gray-300">Tổng cộng</td>
+                    <td colSpan={6} className="py-2 px-3 font-bold text-gray-900 border-t-2 border-gray-300">Tổng cộng</td>
                     <td className="py-2 px-3 text-right font-bold text-gray-900 border-t-2 border-gray-300">{getTotalQuantity()}</td>
                     <td className="py-2 px-3 text-right font-bold text-gray-900 border-t-2 border-gray-300">{formatCurrency( getTotalPrice() )}</td>
                   </tr>
