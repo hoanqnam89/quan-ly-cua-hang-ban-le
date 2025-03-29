@@ -57,6 +57,15 @@ export default function Account() {
       size: `3fr`, 
     },
     {
+      key: `is_admin`,
+      ref: useRef(null), 
+      title: `Là quản trị viên`,
+      size: `3fr`, 
+      render: (collection: collectionType): ReactElement => {
+        return <Text isEllipsis={true}>{collection.is_admin ? `Có` : `Không`}</Text>
+      }
+    },
+    {
       key: `created_at`,
       ref: useRef(null), 
       title: `Ngày tạo`,
