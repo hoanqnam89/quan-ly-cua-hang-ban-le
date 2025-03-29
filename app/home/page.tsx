@@ -504,6 +504,7 @@ export default function Home(): ReactElement {
       // Gọi API để lấy dữ liệu mới với khoảng thời gian đã chọn
       fetchAllData(selectedOption.startDate, selectedOption.endDate);
     }
+  /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [fetchAllData, dateRange]);
 
   // Khởi tạo ứng dụng
@@ -529,6 +530,7 @@ export default function Home(): ReactElement {
       // Gọi lấy dữ liệu ban đầu
       fetchAllData(defaultOption.startDate, defaultOption.endDate);
     }
+  /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
   // Tự động cập nhật dữ liệu
