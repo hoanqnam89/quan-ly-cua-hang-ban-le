@@ -8,10 +8,6 @@
 }
 
 .warehouse-receipt-product-table {
-  grid-template-columns: 1fr 6fr 2fr 2fr 1fr;
+  grid-template-columns: 1fr 6fr 2fr 2fr;
   gap: 12px;
-}
-
-.order-form-left {
-  /* border-right: 1px solid var(--foreground); */
 }
