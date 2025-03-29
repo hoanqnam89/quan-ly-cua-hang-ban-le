@@ -1,7 +1,6 @@
 'use client';
 
 import { ReactElement, useState, useEffect, useCallback, useRef } from "react";
-import { Text } from '@/components';
 import { ECollectionNames } from "@/enums";
 import { getCollectionCount } from "@/services/api-service";
 import Script from 'next/script';
@@ -10,7 +9,12 @@ import Image from 'next/image';
 // Kiểu cho Google Charts
 declare global {
   interface Window {
-    google: any;
+    google: {
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      charts: any
+      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+      visualization: any
+    };
   }
 }
 
@@ -77,112 +81,112 @@ export default function Home(): ReactElement {
   };
 
   // Hàm lấy dữ liệu doanh thu theo thời gian
-  const fetchRevenueData = async (): Promise<void> => {
-    try {
-      const response = await fetch('/api/order-form/revenue-stats');
-      if (response.ok) {
-        const data = await response.json();
+  // const fetchRevenueData = async (): Promise<void> => {
+  //   try {
+  //     const response = await fetch('/api/order-form/revenue-stats');
+  //     if (response.ok) {
+  //       const data = await response.json();
 
-        setTotalRevenue(data.monthly || 0);
+  //       setTotalRevenue(data.monthly || 0);
 
-        const today = new Date();
-        const sampleData: IRevenueData[] = [];
-        for (let i = 0; i < 7; i++) {
-          const date = new Date();
-          date.setDate(today.getDate() - (6 - i));
-          sampleData.push({
-            date: `${date.getDate()}/${date.getMonth() + 1}`,
-            value: Math.floor(Math.random() * 5000000) + 1000000
-          });
-        }
-        setRevenueData(sampleData);
+  //       const today = new Date();
+  //       const sampleData: IRevenueData[] = [];
+  //       for (let i = 0; i < 7; i++) {
+  //         const date = new Date();
+  //         date.setDate(today.getDate() - (6 - i));
+  //         sampleData.push({
+  //           date: `${date.getDate()}/${date.getMonth() + 1}`,
+  //           value: Math.floor(Math.random() * 5000000) + 1000000
+  //         });
+  //       }
+  //       setRevenueData(sampleData);
 
-        setRevenueGrowth(((data.monthly - (data.monthly / 1.2)) / (data.monthly / 1.2)) * 100);
-      } else {
-        throw new Error('Lỗi khi lấy dữ liệu doanh thu theo thời gian');
-      }
-    } catch (error) {
-      console.error('Lỗi khi lấy dữ liệu doanh thu theo thời gian:', error);
-      // Dữ liệu mẫu doanh thu
-      setRevenueData([
-        { date: '01/02', value: 2500000 },
-        { date: '05/02', value: 2500000 },
-        { date: '09/02', value: 2500000 },
-        { date: '13/02', value: 500000 },
-        { date: '17/02', value: 5000000 },
-        { date: '21/02', value: 7500000 },
-        { date: '25/02', value: 1000000 },
-      ]);
-    }
-  };
+  //       setRevenueGrowth(((data.monthly - (data.monthly / 1.2)) / (data.monthly / 1.2)) * 100);
+  //     } else {
+  //       throw new Error('Lỗi khi lấy dữ liệu doanh thu theo thời gian');
+  //     }
+  //   } catch (error) {
+  //     console.error('Lỗi khi lấy dữ liệu doanh thu theo thời gian:', error);
+  //     // Dữ liệu mẫu doanh thu
+  //     setRevenueData([
+  //       { date: '01/02', value: 2500000 },
+  //       { date: '05/02', value: 2500000 },
+  //       { date: '09/02', value: 2500000 },
+  //       { date: '13/02', value: 500000 },
+  //       { date: '17/02', value: 5000000 },
+  //       { date: '21/02', value: 7500000 },
+  //       { date: '25/02', value: 1000000 },
+  //     ]);
+  //   }
+  // };
 
   // Hàm lấy dữ liệu khách hàng theo thời gian
-  const fetchCustomerData = async (): Promise<void> => {
-    try {
-      const userCountResponse = await getCollectionCount(ECollectionNames.USER);
-      const userCount = await userCountResponse.json();
-      setTotalCustomers(userCount);
-      const today = new Date();
-      const sampleData: ICustomerData[] = [];
-      for (let i = 0; i < 7; i++) {
-        const date = new Date();
-        date.setDate(today.getDate() - (6 - i));
-        sampleData.push({
-          date: `${date.getDate()}/${date.getMonth() + 1}`,
-          value: Math.floor(Math.random() * 3)
-        });
-      }
-      setCustomerData(sampleData);
+  // const fetchCustomerData = async (): Promise<void> => {
+  //   try {
+  //     const userCountResponse = await getCollectionCount(ECollectionNames.USER);
+  //     const userCount = await userCountResponse.json();
+  //     setTotalCustomers(userCount);
+  //     const today = new Date();
+  //     const sampleData: ICustomerData[] = [];
+  //     for (let i = 0; i < 7; i++) {
+  //       const date = new Date();
+  //       date.setDate(today.getDate() - (6 - i));
+  //       sampleData.push({
+  //         date: `${date.getDate()}/${date.getMonth() + 1}`,
+  //         value: Math.floor(Math.random() * 3)
+  //       });
+  //     }
+  //     setCustomerData(sampleData);
 
-      setCustomerGrowth(5);
-    } catch (error) {
-      console.error('Lỗi khi lấy dữ liệu khách hàng theo thời gian:', error);
-      // Dữ liệu mẫu khách hàng nhân viênviên
-      setCustomerData([
-        { date: '01/02', value: 2 },
-        { date: '05/02', value: 0 },
-        { date: '09/02', value: 1 },
-        { date: '13/02', value: 0 },
-        { date: '17/02', value: 2 },
-        { date: '21/02', value: 0 },
-        { date: '25/02', value: 2 },
-      ]);
-    }
-  };
+  //     setCustomerGrowth(5);
+  //   } catch (error) {
+  //     console.error('Lỗi khi lấy dữ liệu khách hàng theo thời gian:', error);
+  //     // Dữ liệu mẫu khách hàng nhân viênviên
+  //     setCustomerData([
+  //       { date: '01/02', value: 2 },
+  //       { date: '05/02', value: 0 },
+  //       { date: '09/02', value: 1 },
+  //       { date: '13/02', value: 0 },
+  //       { date: '17/02', value: 2 },
+  //       { date: '21/02', value: 0 },
+  //       { date: '25/02', value: 2 },
+  //     ]);
+  //   }
+  // };
 
   // Hàm cập nhật các thẻ thống kê
-  const updateStatsCards = useCallback(() => {
-    setStatsCards([
-      {
-        title: 'Tổng sản phẩm',
-        value: totalProducts,
-        icon: 'product',
-        iconColor: 'text-pink-600',
-        iconBgColor: 'bg-pink-100'
-      },
-      {
-        title: 'Tổng nhân viên',
-        value: totalEmployees,
-        icon: 'employee',
-        iconColor: 'text-indigo-600',
-        iconBgColor: 'bg-indigo-100'
-      },
-      {
-        title: 'Đơn hàng',
-        value: totalOrders,
-        icon: 'order',
-        iconColor: 'text-blue-600',
-        iconBgColor: 'bg-blue-100'
-      },
-      {
-        title: 'Chi tiết sản phẩm',
-        value: totalProductDetails,
-        icon: 'product-detail',
-        iconColor: 'text-amber-600',
-        iconBgColor: 'bg-amber-100'
-      }
-    ]);
-  }, [totalProducts, totalEmployees, totalOrders, totalProductDetails]);
+  // const updateStatsCards = useCallback(() => {
+  //   setStatsCards([
+  //     {
+  //       title: 'Tổng sản phẩm',
+  //       value: totalProducts,
+  //       icon: 'product',
+  //       iconColor: 'text-pink-600',
+  //       iconBgColor: 'bg-pink-100'
+  //     },
+  //     {
+  //       title: 'Tổng nhân viên',
+  //       value: totalEmployees,
+  //       icon: 'employee',
+  //       iconColor: 'text-indigo-600',
+  //       iconBgColor: 'bg-indigo-100'
+  //     },
+  //     {
+  //       title: 'Đơn hàng',
+  //       value: totalOrders,
+  //       icon: 'order',
+  //       iconColor: 'text-blue-600',
+  //       iconBgColor: 'bg-blue-100'
+  //     },
+  //     {
+  //       title: 'Chi tiết sản phẩm',
+  //       value: totalProductDetails,
+  //       icon: 'product-detail',
+  //       iconColor: 'text-amber-600',
+  //       iconBgColor: 'bg-amber-100'
+  //     }
+  //   ]);
+  // }, [totalProducts, totalEmployees, totalOrders, totalProductDetails]);
 
   // Hàm tổng hợp để lấy tất cả dữ liệu
   const fetchAllData = useCallback(async (startDate?: string, endDate?: string): Promise<void> => {
@@ -661,7 +665,7 @@ export default function Home(): ReactElement {
               {revenueData.map((item, index) => {
                 const heightPercent = (item.value / maxValue) * 100;
                 const isFirst = index === 0;
-                const isLast = index === revenueData.length - 1;
+                // const isLast = index === revenueData.length - 1;
                 const width = 100 / (revenueData.length - 1);
 
                 return (
