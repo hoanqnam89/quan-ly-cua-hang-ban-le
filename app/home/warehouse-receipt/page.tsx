@@ -279,7 +279,7 @@ export default function Product() {
     setOrderForm({...foundOrderForm});
     setWarehouseReceipt({
       ...foundOrderForm,
-      supplier_receipt_id: ``, 
+      supplier_receipt_id: foundOrderForm._id, 
     })
   }
 
@@ -395,7 +395,7 @@ export default function Product() {
           </InputSection>
 
           <div className={`flex items-center justify-between gap-2`}>
-            <div>
+            <div className={`flex flex-col gap-2`}>
               <InputSection label={`Nhà cung cấp`}>
                 <SelectDropdown
                   isLoading={isSupplierLoading}
@@ -469,7 +469,7 @@ export default function Product() {
               })}
             </div>
 
-            <div>
+            <div className={`flex flex-col gap-2`}>
               <InputSection label={`Nhà cung cấp`}>
                 <SelectDropdown
                   isLoading={isSupplierLoading}

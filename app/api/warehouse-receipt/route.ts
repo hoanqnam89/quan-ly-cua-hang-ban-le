@@ -1,9 +1,11 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { IBusiness } from "@/interfaces/business.interface";
+import { IOrderForm } from "@/interfaces/order-form.interface";
 import { IProductDetail } from "@/interfaces/product-detail.interface";
 import { IReceiptProduct, IWarehouseReceipt } from "@/interfaces/warehouse-receipt.interface";
 import { BusinessModel } from "@/models/Business";
+import { OrderFormModel } from "@/models/OrderForm";
 import { ProductDetailModel } from "@/models/ProductDetail";
 import { WarehouseReceiptModel } from "@/models/WarehouseReceipt";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
@@ -46,6 +48,31 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   try {
     connectToDatabase();
     
+    if ( !isValidObjectId(warehouseReceipt.supplier_id) )
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `The ID '${warehouseReceipt.supplier_id}' is not valid.`,
+          path, 
+          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`, 
+        ),
+        { status: EStatusCode.UNPROCESSABLE_ENTITY }
+      );
+
+    const foundSupplier: IBusiness | null = 
+      await BusinessModel.findById(warehouseReceipt.supplier_id);
+
+    if (!foundSupplier) 
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `The ${ECollectionNames.BUSINESS} with the ID '${warehouseReceipt.supplier_receipt_id}' does not exist in our records.`,
+          path, 
+          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`
+        ),          
+        { status: EStatusCode.NOT_FOUND }
+      );
+
     if ( !isValidObjectId(warehouseReceipt.supplier_receipt_id) )
       return NextResponse.json(
         createErrorMessage(
@@ -57,16 +84,16 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
-    const foundSupplierReceipt: IBusiness | null = 
-      await BusinessModel.findById(warehouseReceipt.supplier_receipt_id);
+    const foundSupplierReceipt: IOrderForm | null = 
+      await OrderFormModel.findById(warehouseReceipt.supplier_receipt_id);
 
     if (!foundSupplierReceipt) 
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `The ${ECollectionNames.BUSINESS} with the ID '${warehouseReceipt.supplier_receipt_id}' does not exist in our records.`,
+          `The ${ECollectionNames.ORDER_FORM} with the ID '${warehouseReceipt.supplier_receipt_id}' does not exist in our records.`,
           path, 
-          `Please check if the ${ECollectionNames.SUPPLIER_RECEIPT} ID is correct.`
+          `Please check if the ${ECollectionNames.ORDER_FORM} ID is correct.`
         ),          
         { status: EStatusCode.NOT_FOUND }
       );
@@ -123,6 +150,8 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     const newWarehouseReceipt = new collectionModel({
       created_at: new Date(), 
       updated_at: new Date(), 
+      supplier_id: warehouseReceipt.supplier_id, 
+      supplier_receipt_id: warehouseReceipt.supplier_receipt_id, 
       product_details: warehouseReceipt.product_details,
     });
 
