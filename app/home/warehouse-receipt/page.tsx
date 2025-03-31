@@ -166,6 +166,7 @@ export default function Product() {
           value: orderForm._id,
         }))
       ]);
+      setOrderForm({...newOrderForms[0]});
       setIsLoading(false);
     }, 
     [],
@@ -551,27 +552,8 @@ export default function Product() {
                     }
                   >
                   </NumberInput>
-
-                  {/* <div>
-                    <Button 
-                      isDisable={isModalReadOnly}
-                      onClick={(): void => handleDeleteWarehouseReceiptProduct(index)}
-                    >
-                      <IconContainer></IconContainer>
-                    </Button>
-                  </div> */}
                 </div>
               })}
-
-              {/* <Button 
-                isDisable={isModalReadOnly || isProductLoading || isSupplierLoading}  
-                onClick={handleAddWarehouseReceiptProduct}
-                className={`flex gap-2`} 
-                type={EButtonType.SUCCESS}
-              >
-                <IconContainer iconLink={plusIcon}></IconContainer>
-                <Text>Thêm sản phẩm mới</Text>
-              </Button> */}
             </div>
           </div>
         </TabItem>

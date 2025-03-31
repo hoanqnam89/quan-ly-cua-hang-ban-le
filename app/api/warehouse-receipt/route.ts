@@ -1,7 +1,7 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { IBusiness } from "@/interfaces/business.interface";
-import { IOrderForm } from "@/interfaces/order-form.interface";
+import { IOrderForm, IOrderFormProductDetail } from "@/interfaces/order-form.interface";
 import { IProductDetail } from "@/interfaces/product-detail.interface";
 import { IReceiptProduct, IWarehouseReceipt } from "@/interfaces/warehouse-receipt.interface";
 import { BusinessModel } from "@/models/Business";
@@ -168,6 +168,20 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         ),
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
+
+    warehouseReceipt.product_details.forEach(async (
+      productDetail: IOrderFormProductDetail
+    ): Promise<void> => {
+      await ProductDetailModel.findOneAndUpdate(
+        { _id: productDetail._id }, 
+        {
+          $set: {
+            input_quantity: productDetail.quantity, 
+            updated_at: new Date(), 
+          }
+        }
+      );
+    });
 
     return NextResponse.json(
       savedWarehouseReceipt, 

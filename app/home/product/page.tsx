@@ -66,6 +66,10 @@ export default function Product() {
           value: supplier._id,
         }))
       ]);
+      setProduct({
+        ...product, 
+        supplier_id: newSuppliers[0]._id
+      })
       setIsLoading(false);
     }, 
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
