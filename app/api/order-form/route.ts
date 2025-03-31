@@ -142,6 +142,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     const newOrderForm = new collectionModel({
       created_at: new Date(), 
       updated_at: new Date(), 
+      supplier_id: orderForm.supplier_id, 
       product_details: orderForm.product_details, 
     });
 

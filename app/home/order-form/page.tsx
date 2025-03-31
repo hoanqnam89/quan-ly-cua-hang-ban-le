@@ -134,13 +134,11 @@ export default function Product() {
       });
       setIsSupplierLoading(false);
     }, 
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
     [],
   );
   
   useEffect((): void => {
     getSuppliers();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
   const getUnits: () => Promise<void> = useCallback(
@@ -148,9 +146,6 @@ export default function Product() {
       const newUnits: IUnit[] = await fetchGetCollections<IUnit>(
         ECollectionNames.UNIT, 
       );
-
-      console.log(newUnits);
-      
 
       setUnitOptions([
         ...newUnits.map((unit: IUnit): ISelectOption => ({
