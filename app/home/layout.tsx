@@ -13,8 +13,8 @@ export interface CNavbarItem {
   onClick?: () => void
 }
 
-export default function RootLayout({ 
-  children 
+export default function RootLayout({
+  children
 }: Readonly<IRootLayout>): ReactElement {
   const [isExpand, setIsExpand] = useState<boolean>(false);
 
@@ -26,79 +26,79 @@ export default function RootLayout({
   const navbarItems: CNavbarItem[] = [
     {
       label: isExpand ? `Thu gọn` : `Mở rộng`,
-      icon: isExpand ? chevronLeftIcon : chevronRightIcon, 
-      onClick: toggleNavbar, 
+      icon: isExpand ? chevronLeftIcon : chevronRightIcon,
+      onClick: toggleNavbar,
     },
     {
       link: `${currentPath}/`,
       label: `Trang chủ`,
-      icon: homeIcon, 
+      icon: homeIcon,
     },
     {
       link: `${currentPath}/account`,
       label: `Tài khoản`,
-      icon: circleUserRoundIcon, 
+      icon: circleUserRoundIcon,
     },
     {
       link: `${currentPath}/user`,
       label: `Nhân viên`,
-      icon: userIcon, 
+      icon: userIcon,
     },
     {
       link: `${currentPath}/unit`,
-      label: `Đơn vị tính`, 
-      icon: circleSmallIcon, 
+      label: `Đơn vị tính`,
+      icon: circleSmallIcon,
     },
     {
       link: `${currentPath}/business`,
       label: `Doanh nghiệp`,
-      icon: factoryIcon, 
+      icon: factoryIcon,
     },
     {
       link: `${currentPath}/product`,
       label: `Sản phẩm`,
-      icon: boxIcon, 
+      icon: boxIcon,
     },
     {
       link: `${currentPath}/product-detail`,
-      label: `Chi tiết sản phẩm`,
-      icon: boxesIcon, 
+      label: `Đơn hàng`,
+      icon: boxesIcon,
     },
     {
       link: `${currentPath}/order-form`,
       label: `Phiếu đặt hàng`,
-      icon: scrollIcon, 
+      icon: scrollIcon,
     },
     {
       link: `${currentPath}/warehouse-receipt`,
       label: `Phiếu nhập kho`,
-      icon: scrollIcon, 
+      icon: scrollIcon,
     },
     {
       link: `${currentPath}/personal-info`,
-      label: `Thông tin cá nhân`, 
-      icon: circleUserRoundIcon, 
+      label: `Thông tin cá nhân`,
+      icon: circleUserRoundIcon,
     },
     {
       link: `${currentPath}/setting`,
-      label: `Cài đặt`, 
-      icon: settingIcon, 
+      label: `Cài đặt`,
+      icon: settingIcon,
     },
   ];
 
   const pageStyle: CSSProperties = {
-    gridTemplateColumns: `${isExpand 
-      ? `max-content` 
+    gridTemplateColumns: `${isExpand
+      ? `max-content`
       : `calc(24px + 16px * 2 + 8px * 2)`
-    } auto`,
+      } auto`,
   }
 
   return (
     <div className={`h-lvh grid`} style={pageStyle}>
       <nav className={`h-lvh overflow-y-scroll flex flex-col gap-4 no-scrollbar p-4 ${styles.nav}`}>
         {navbarItems.map((navbarItem: CNavbarItem, index: number) =>
-          <NavbarItem 
-            navbarItem={navbarItem} 
+          <NavbarItem
+            navbarItem={navbarItem}
             key={index}
           >
           </NavbarItem>

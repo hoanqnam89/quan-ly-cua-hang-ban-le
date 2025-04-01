@@ -5,15 +5,15 @@ import { IconContainer, Text } from '@/components';
 
 interface INavbarItemProps {
   setIsLoading?: Dispatch<SetStateAction<boolean>>
-  navbarItem: CNavbarItem, 
+  navbarItem: CNavbarItem,
 }
 
-export default function NavbarItem({ 
-  setIsLoading, 
-  navbarItem, 
+export default function NavbarItem({
+  setIsLoading,
+  navbarItem,
 }: Readonly<INavbarItemProps>): ReactElement {
-  const navbarItemStyle: CSSProperties = { 
-    gridTemplateColumns: `24px auto`, 
+  const navbarItemStyle: CSSProperties = {
+    gridTemplateColumns: `24px auto`,
   }
 
   const handleRedirect = (): void => {
@@ -21,7 +21,15 @@ export default function NavbarItem({
       setIsLoading(true);
   }
 
-  if ( navbarItem.link )
+  const iconStyle: CSSProperties = {
+    width: '24px',
+    height: '24px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  }
+
+  if (navbarItem.link)
     return (
       <Link
         href={navbarItem.link}
@@ -32,8 +40,9 @@ export default function NavbarItem({
         style={navbarItemStyle}
         title={navbarItem.label}
       >
-        <IconContainer iconLink={navbarItem.icon}>
-        </IconContainer>
+        <div style={iconStyle}>
+          <IconContainer iconLink={navbarItem.icon} size={24} color="#ffffff" />
+        </div>
 
         <Text weight={600} isEllipsis={true}>{navbarItem.label}</Text>
       </Link>
@@ -48,8 +57,9 @@ export default function NavbarItem({
       title={navbarItem.label}
       onClick={navbarItem.onClick}
     >
-      <IconContainer iconLink={navbarItem.icon}>
-      </IconContainer>
+      <div style={iconStyle}>
+        <IconContainer iconLink={navbarItem.icon} size={24} color="#ffffff" />
+      </div>
 
       <Text weight={600} isEllipsis={true}>{navbarItem.label}</Text>
     </div>
