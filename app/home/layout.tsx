@@ -67,7 +67,7 @@ export default function RootLayout({
     {
       link: `${currentPath}/order`,
       label: `Đơn hàng`,
-      icon: boxesIcon,
+      icon: scrollIcon,
     },
     {
       link: `${currentPath}/order-form`,
