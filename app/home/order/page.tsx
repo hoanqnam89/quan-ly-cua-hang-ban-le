@@ -32,7 +32,7 @@ const ImportOrderList = () => {
   const router = useRouter();
 
   const handleCreateOrder = () => {
-    router.push('/home/product-detail/create');
+    router.push('/home/order/create');
   };
 
   return (

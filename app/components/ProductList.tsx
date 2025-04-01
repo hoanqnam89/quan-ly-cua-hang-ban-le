@@ -1,0 +1,47 @@
+'use client';
+
+import { IProduct } from '../interfaces/product.interface';
+import Image from 'next/image';
+import { formatCurrency } from '../utils/format';
+
+interface ProductListProps {
+    products: IProduct[];
+    onSelect?: (product: IProduct) => void;
+}
+
+export default function ProductList({ products, onSelect }: ProductListProps) {
+    return (
+        <div className="grid grid-cols-3 gap-4">
+            {products.map((product) => (
+                <div
+                    key={product._id.toString()}
+                    onClick={() => onSelect?.(product)}
+                    className="bg-white rounded-xl border border-slate-200 p-4 cursor-pointer hover:border-blue-500 hover:shadow-sm transition-all duration-200"
+                >
+                    <div className="aspect-square bg-slate-50 rounded-lg relative overflow-hidden mb-3">
+                        {product.image_links?.[0] ? (
+                            <Image
+                                src={product.image_links[0]}
+                                alt={product.name}
+                                fill
+                                className="object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                                <Image
+                                    src="/icons/product.svg"
+                                    alt="product"
+                                    width={24}
+                                    height={24}
+                                    className="text-slate-300"
+                                />
+                            </div>
+                        )}
+                    </div>
+                    <h3 className="font-medium text-slate-900 mb-1 line-clamp-2">{product.name}</h3>
+                    <div className="text-blue-600 font-medium">{formatCurrency(product.output_price)}</div>
+                </div>
+            ))}
+        </div>
+    );
+} 
