@@ -14,5 +14,5 @@ export interface IInputProps<T> {
   step?: number
   onInputChange?: (e: ChangeEvent<HTMLInputElement>) => void
   onInputBlur?: (e: ChangeEvent<HTMLInputElement>) => void
-  onInputKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void, 
+  onInputKeyDown?: (e: KeyboardEvent<HTMLInputElement>) => void
 }

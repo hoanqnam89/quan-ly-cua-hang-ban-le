@@ -2,6 +2,7 @@ export interface IOrderFormProductDetail {
   _id: string
   unit_id: string
   quantity: number
+  note?: string
 } 
 
 export interface IOrderForm {

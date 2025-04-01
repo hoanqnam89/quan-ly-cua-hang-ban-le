@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, IconContainer, NumberInput, SelectDropdown, Text } from '@/components'
+import { Button, IconContainer, NumberInput, SelectDropdown, Text, TextInput } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
@@ -26,6 +26,8 @@ import { formatCurrency } from '@/utils/format-currency';
 import { IBusiness } from '@/interfaces/business.interface';
 import { EBusinessType } from '@/enums/business-type.enum';
 import { IUnit } from '@/interfaces/unit.interface';
+import { EButtonType } from '@/components/button/interfaces/button-type.interface';
+import Textarea from '@/components/textarea/Textarea';
 
 type collectionType = IWarehouseReceipt;
 const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;
@@ -224,6 +226,19 @@ export default function Product() {
       }
     },
     {
+      ref: useRef(null), 
+      title: `In`,
+      size: `4fr`, 
+      render: (collection: collectionType): ReactElement => <Button
+        type={EButtonType.INFO}
+        onClick={(): void => {
+          window.location.href = `/home/warehouse-receipt/${collection._id}`;
+        }}
+      >
+        <Text>In hóa đơn</Text>
+      </Button>
+    },
+    {
       title: `Xem thêm`,
       ref: useRef(null),
       size: `2fr`,
@@ -361,6 +376,30 @@ export default function Product() {
       ], 
     });
   }
+
+  const handleChangeWarehouseReceiptProductNote = (
+    e: ChangeEvent<HTMLTextAreaElement>, 
+    changeIndex: number, 
+  ): void => {
+    setWarehouseReceipt({
+      ...warehouseReceipt, 
+      product_details: [
+        ...warehouseReceipt.product_details.map((
+          warehouseReceiptProductDetail: IOrderFormProductDetail, 
+          index: number
+        ): IOrderFormProductDetail => {
+          if (index === changeIndex)
+            return {
+              ...warehouseReceiptProductDetail, 
+              note: e.target.value
+            }
+          else
+            return warehouseReceiptProductDetail;
+        }), 
+      ], 
+    });
+  }
+
   const gridColumns: string = `200px 1fr`;
 
   return (
@@ -495,6 +534,7 @@ export default function Product() {
                 <Text>Sản phẩm</Text>
                 <Text>Đơn vị tính</Text>
                 <Text>Số lượng</Text>
+                <Text>Ghi chú</Text>
               </div>
 
               {warehouseReceipt.product_details.map((
@@ -552,6 +592,16 @@ export default function Product() {
                     }
                   >
                   </NumberInput>
+
+                  <Textarea
+                    name={`note`}
+                    isDisable={isModalReadOnly}
+                    value={warehouseProductDetail.note ?? ``}
+                    onInputChange={(e: ChangeEvent<HTMLTextAreaElement>): void => 
+                      handleChangeWarehouseReceiptProductNote(e, index)
+                    }
+                  >
+                  </Textarea>
                 </div>
               })}
             </div>

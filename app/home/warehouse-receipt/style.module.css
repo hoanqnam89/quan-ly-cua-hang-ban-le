@@ -8,6 +8,6 @@
 }
 
 .warehouse-receipt-product-table {
-  grid-template-columns: 1fr 6fr 2fr 2fr;
+  grid-template-columns: 1fr 6fr 2fr 2fr 4fr;
   gap: 12px;
 }
