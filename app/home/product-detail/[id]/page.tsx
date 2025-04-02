@@ -15,6 +15,7 @@ import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-s
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
 import { IProduct } from '@/interfaces/product.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
+import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
@@ -74,15 +75,22 @@ export default function Detail({
       <Text size={32}>Chi tiết {translateCollectionName(collectionName)} {id}</Text>
 
       <InputSection label={`Cho sản phẩm`}>
-        <SelectDropdown
-          isLoading={isLoading}
-          isDisable={true}
-          options={productOptions}
-          defaultOptionIndex={getSelectedOptionIndex(
-            productOptions, collection.product_id
+        <div className={`flex items-center justify-center gap-2`}>
+          {createCollectionDetailLink(
+            ECollectionNames.PRODUCT, 
+            collection.product_id
           )}
-        >
-        </SelectDropdown>
+
+          <SelectDropdown
+            isLoading={isLoading}
+            isDisable={true}
+            options={productOptions}
+            defaultOptionIndex={getSelectedOptionIndex(
+              productOptions, collection.product_id
+            )}
+          >
+          </SelectDropdown>
+        </div>
       </InputSection>
 
       <InputSection label={`Ngày sản xuất`} gridColumns={gridColumns}>

@@ -18,6 +18,7 @@ import { ISelectOption } from '@/components/select-dropdown/interfaces/select-op
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { enumToKeyValueArray } from '@/utils/enum-to-array';
 import { EUserGender } from '@/enums/user-gender.enum';
+import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 
 type collectionType = IUser;
 const collectionName: ECollectionNames = ECollectionNames.USER;
@@ -81,16 +82,23 @@ export default function Detail({
       <Text size={32}>Chi tiết {translateCollectionName(collectionName)} {id}</Text>
 
       <InputSection label={`Cho tài khoản`}>
-        <SelectDropdown
-          name={`account_id`}
-          isLoading={isLoading}
-          isDisable={true}
-          options={accountOptions}
-          defaultOptionIndex={getSelectedOptionIndex(
-            accountOptions, collection.account_id
+        <div className={`flex items-center justify-center gap-2`}>
+          {createCollectionDetailLink(
+            ECollectionNames.ACCOUNT, 
+            collection.account_id
           )}
-        >
-        </SelectDropdown>
+
+          <SelectDropdown
+            name={`account_id`}
+            isLoading={isLoading}
+            isDisable={true}
+            options={accountOptions}
+            defaultOptionIndex={getSelectedOptionIndex(
+              accountOptions, collection.account_id
+            )}
+          >
+          </SelectDropdown>
+        </div>
       </InputSection>
 
       <InputSection label={`Họ`}>
