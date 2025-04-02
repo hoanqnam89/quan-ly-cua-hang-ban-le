@@ -22,10 +22,14 @@ export default function CreateOrder() {
     const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
     const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
     const [employee, setEmployee] = useState<string>('');
+    const [employeeName, setEmployeeName] = useState<string>('');
     const [paymentMethod, setPaymentMethod] = useState<string>('cash');
     const [displayPaymentText, setDisplayPaymentText] = useState<string>('Thanh toán tiền mặt');
     const [customerPayment, setCustomerPayment] = useState<string>('0');
     const [changeAmount, setChangeAmount] = useState<string>('0');
+    const [note, setNote] = useState<string>('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [searchTerm, setSearchTerm] = useState<string>('');
 
     const totalAmount = orderItems.reduce(
         (sum, item) => sum + item.product.output_price * item.quantity,
@@ -50,6 +54,7 @@ export default function CreateOrder() {
 
                 // Lấy account_id từ response đầu tiên
                 const accountId = data._id;
+                setEmployee(accountId);
 
                 // Gọi API thứ hai để lấy thông tin chi tiết người dùng
                 const userResponse = await fetch(`/api/user/account/${accountId}`);
@@ -67,7 +72,7 @@ export default function CreateOrder() {
                     userData.name?.last || ''
                 ].filter(Boolean).join(' ');
 
-                setEmployee(fullName || 'Chưa xác định');
+                setEmployeeName(fullName || 'Chưa xác định');
             } catch (err) {
                 console.error('Error fetching employee:', err);
                 setEmployee('Chưa xác định');
@@ -152,48 +157,160 @@ export default function CreateOrder() {
         setChangeAmount(change >= 0 ? change.toLocaleString() : '0');
     };
 
+    const handleCreateOrder = async () => {
+        if (orderItems.length === 0) {
+            alert('Vui lòng thêm sản phẩm vào đơn hàng');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            const response = await fetch('/api/order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    employee_id: employee,
+                    items: orderItems.map(item => ({
+                        product_id: item.product._id,
+                        quantity: item.quantity,
+                        price: item.product.output_price
+                    })),
+                    total_amount: totalAmount,
+                    payment_method: paymentMethod,
+                    payment_status: true,
+                    note: note
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Không thể tạo đơn hàng');
+            }
+
+            // ---- START: Cập nhật số lượng tồn kho ----
+            try {
+                for (const item of orderItems) {
+                    // Tìm thông tin chi tiết sản phẩm để cập nhật kho
+                    const productDetailResponse = await fetch(`/api/product-detail/by-product/${item.product._id}`);
+
+                    if (!productDetailResponse.ok) {
+                        console.warn(`Không thể lấy thông tin chi tiết sản phẩm ${item.product.name} (${item.product._id}). Status: ${productDetailResponse.status}`);
+                        continue;
+                    }
+
+                    const productDetails = await productDetailResponse.json();
+
+                    if (!productDetails || productDetails.length === 0) {
+                        console.warn(`Không tìm thấy thông tin chi tiết cho sản phẩm ${item.product.name} (${item.product._id})`);
+                        continue;
+                    }
+
+                    // Sử dụng productDetail đầu tiên nếu có nhiều
+                    const productDetail = productDetails[0];
+
+                    // Cập nhật số lượng trong kho và số lượng đang bán
+                    const stockUpdateResponse = await fetch(`/api/product-detail/${productDetail._id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            _id: productDetail._id,
+                            input_quantity: Math.max(0, productDetail.input_quantity - item.quantity), // Giảm số lượng trong kho
+                            output_quantity: productDetail.output_quantity + item.quantity, // Tăng số lượng đang bán
+                            date_of_manufacture: productDetail.date_of_manufacture,
+                            expiry_date: productDetail.expiry_date
+                        }),
+                    });
+
+                    if (!stockUpdateResponse.ok) {
+                        console.warn(`Không thể cập nhật tồn kho cho sản phẩm ${item.product.name} (${item.product._id}). Status: ${stockUpdateResponse.status}`);
+                    }
+                }
+            } catch (stockError) {
+                console.error('Lỗi khi cập nhật tồn kho:', stockError);
+            }
+            // ---- END: Cập nhật số lượng tồn kho ----
+
+            alert('Tạo đơn hàng thành công!');
+            router.push('/home/order');
+        } catch (error) {
+            console.error('Error creating order:', error);
+            alert('Có lỗi xảy ra khi tạo đơn hàng');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Lọc sản phẩm theo từ khóa tìm kiếm
+    const filteredProducts = products.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(e.target.value);
+    };
+
     return (
         <div className="min-h-screen bg-white pb-24">
             <div className="bg-white border-b border-slate-200 sticky top-0 z-40">
-                <div className="max-w-[1400px] mx-auto">
-                    <div className="flex items-center h-14 px-5">
+                <div className="max-w-[1500px] mx-auto">
+                    <div className="flex items-center h-16 px-5">
                         <Button
                             onClick={handleBack}
-                            className="flex items-center justify-center w-[30px] h-[30px] rounded-lg border border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200"
+                            className="flex items-center justify-center w-[26px] h-[26px] rounded-lg border border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200"
                         >
                             <Image
                                 src="/icons/chevron-left.svg"
                                 alt="back"
-                                width={16}
-                                height={16}
+                                width={14}
+                                height={14}
                                 className="text-slate-600"
                                 priority
                             />
                         </Button>
-                        <span className="ml-3 text-lg font-medium text-slate-900">Tạo đơn hàng</span>
+                        <span className="ml-3 text-xl font-medium text-slate-900">Tạo đơn hàng</span>
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-[1400px] mx-auto p-5">
-                <div className="grid grid-cols-7 gap-5">
+            <div className="max-w-[1500px] mx-auto p-6">
+                <div className="grid grid-cols-7 gap-6">
                     {/* Cột trái - Sản phẩm đã chọn */}
                     <div className="col-span-4">
-                        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm h-[600px] flex flex-col">
-                            <h2 className="text-lg font-semibold text-slate-900 mb-5 flex items-center gap-2">
+                        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm h-[650px] flex flex-col">
+                            <h2 className="text-xl font-semibold text-slate-900 mb-5 flex items-center gap-2">
                                 <Image
                                     src="/icons/cart.svg"
                                     alt="cart"
-                                    width={20}
-                                    height={20}
+                                    width={22}
+                                    height={22}
                                     className="text-slate-700"
                                     priority
                                 />
                                 Sản phẩm đã chọn
                             </h2>
 
+                            <style jsx global>{`
+                                .custom-scrollbar::-webkit-scrollbar {
+                                    width: 8px;
+                                }
+                                .custom-scrollbar::-webkit-scrollbar-track {
+                                    background: #f1f5f9;
+                                    border-radius: 10px;
+                                }
+                                .custom-scrollbar::-webkit-scrollbar-thumb {
+                                    background: #cbd5e1;
+                                    border-radius: 10px;
+                                }
+                                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                                    background: #94a3b8;
+                                }
+                            `}</style>
+
                             {orderItems.length > 0 ? (
-                                <div className="flex-1 overflow-y-auto space-y-4">
+                                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
                                     {orderItems.map((item) => (
                                         <div
                                             key={item.product._id}
@@ -220,14 +337,15 @@ export default function CreateOrder() {
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <h3 className="font-medium text-slate-900 truncate">{item.product.name}</h3>
+                                                <h3 className="font-medium text-base text-slate-900 truncate">{item.product.name}</h3>
                                                 <div className="mt-1 text-sm text-slate-500">
                                                     {formatCurrency(item.product.output_price)}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-3">
+                                            <div className="inline-flex h-10 border border-slate-200 rounded-lg overflow-hidden divide-x divide-slate-200">
                                                 <button
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         if (item.quantity > 1) {
                                                             setOrderItems(prev =>
                                                                 prev.map(i =>
@@ -238,21 +356,22 @@ export default function CreateOrder() {
                                                             );
                                                         }
                                                     }}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100"
+                                                    className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 transition-colors"
                                                 >
                                                     <Image
                                                         src="/icons/minus.svg"
                                                         alt="minus"
-                                                        width={20}
-                                                        height={20}
+                                                        width={18}
+                                                        height={18}
                                                         className="text-slate-600"
                                                     />
                                                 </button>
-                                                <span className="w-10 text-center font-medium text-slate-900">
+                                                <div className="w-12 h-10 flex items-center justify-center bg-white font-medium text-base text-slate-900">
                                                     {item.quantity}
-                                                </span>
+                                                </div>
                                                 <button
-                                                    onClick={() => {
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
                                                         setOrderItems(prev =>
                                                             prev.map(i =>
                                                                 i.product._id === item.product._id
@@ -261,13 +380,13 @@ export default function CreateOrder() {
                                                             )
                                                         );
                                                     }}
-                                                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100"
+                                                    className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 transition-colors"
                                                 >
                                                     <Image
                                                         src="/icons/plus.svg"
                                                         alt="plus"
-                                                        width={20}
-                                                        height={20}
+                                                        width={18}
+                                                        height={18}
                                                         className="text-slate-600"
                                                     />
                                                 </button>
@@ -316,13 +435,13 @@ export default function CreateOrder() {
 
                     {/* Cột phải - Danh sách sản phẩm */}
                     <div className="col-span-3">
-                        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm h-[600px] flex flex-col">
-                            <h2 className="text-lg font-semibold text-slate-900 mb-5 flex items-center gap-2">
+                        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm h-[650px] flex flex-col">
+                            <h2 className="text-xl font-semibold text-slate-900 mb-5 flex items-center gap-2">
                                 <Image
                                     src="/icons/product.svg"
                                     alt="product"
-                                    width={20}
-                                    height={20}
+                                    width={22}
+                                    height={22}
                                     className="text-slate-700"
                                     priority
                                 />
@@ -333,14 +452,16 @@ export default function CreateOrder() {
                                     <input
                                         type="text"
                                         placeholder="Tìm theo tên sản phẩm... (F3)"
-                                        className="w-full h-10 px-4 pl-9 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-400 text-[15px] text-slate-900 placeholder:text-slate-400"
+                                        className="w-full h-11 px-4 pl-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-400 text-base text-slate-900 placeholder:text-slate-400"
+                                        value={searchTerm}
+                                        onChange={handleSearchChange}
                                     />
                                     <div className="absolute left-3 top-1/2 -translate-y-1/2">
                                         <Image
                                             src="/icons/search.svg"
                                             alt="search"
-                                            width={16}
-                                            height={16}
+                                            width={18}
+                                            height={18}
                                             className="text-slate-400"
                                             priority
                                         />
@@ -348,7 +469,7 @@ export default function CreateOrder() {
                                 </div>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto">
+                            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
                                 {loading ? (
                                     <div className="flex items-center justify-center h-full">
                                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
@@ -357,7 +478,7 @@ export default function CreateOrder() {
                                     <div className="flex items-center justify-center h-full text-red-500">
                                         {error}
                                     </div>
-                                ) : products.length === 0 ? (
+                                ) : filteredProducts.length === 0 ? (
                                     <div className="flex items-center justify-center h-full">
                                         <div className="text-center">
                                             <Image
@@ -368,15 +489,19 @@ export default function CreateOrder() {
                                                 className="mx-auto mb-3 text-slate-400"
                                                 priority
                                             />
-                                            <p className="text-slate-600 mb-3 text-[16px]">Không có sản phẩm nào</p>
-                                            <button className="px-6 py-2.5 text-blue-600 hover:text-blue-700 font-medium hover:bg-blue-50 rounded-lg transition-all duration-200 border border-blue-200 text-[16px]">
-                                                Thêm sản phẩm
-                                            </button>
+                                            <p className="text-slate-600 mb-3 text-[16px]">
+                                                {searchTerm ? 'Không tìm thấy sản phẩm phù hợp' : 'Không có sản phẩm nào'}
+                                            </p>
+                                            {!searchTerm && (
+                                                <button className="px-6 py-2.5 text-blue-600 hover:text-blue-700 font-medium hover:bg-blue-50 rounded-lg transition-all duration-200 border border-blue-200 text-[16px]">
+                                                    Thêm sản phẩm
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (
                                     <ProductList
-                                        products={products}
+                                        products={filteredProducts}
                                         onSelect={handleAddToOrder}
                                     />
                                 )}
@@ -387,48 +512,48 @@ export default function CreateOrder() {
             </div>
 
             <div className="bg-white border-t border-slate-200">
-                <div className="max-w-[1400px] mx-auto p-5">
-                    <div className="grid grid-cols-3 gap-5">
+                <div className="max-w-[1500px] mx-auto p-6">
+                    <div className="grid grid-cols-3 gap-6">
                         <div className="col-span-2">
-                            <h2 className="text-lg font-semibold text-slate-900 mb-5 flex items-center gap-2">
+                            <h2 className="text-xl font-semibold text-slate-900 mb-5 flex items-center gap-2">
                                 <Image
                                     src="/icons/order.svg"
                                     alt="payment"
-                                    width={20}
-                                    height={20}
+                                    width={22}
+                                    height={22}
                                     className="text-slate-700"
                                     priority
                                 />
                                 Thanh toán
                             </h2>
-                            <div className="space-y-4">
+                            <div className="space-y-5">
                                 <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                                    <span className="text-slate-700 text-[16px]">Tổng tiền hàng</span>
+                                    <span className="text-slate-700 text-[17px]">Tổng tiền hàng</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-slate-500 text-[16px]">{orderItems.length} sản phẩm</span>
-                                        <span className="text-slate-900 font-medium text-[16px]">
+                                        <span className="text-slate-500 text-[17px]">{orderItems.length} sản phẩm</span>
+                                        <span className="text-slate-900 font-medium text-[17px]">
                                             {formatCurrency(totalAmount)}
                                         </span>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                                    <span className="text-slate-700 text-[16px]">Thêm giảm giá</span>
+                                    <span className="text-slate-700 text-[17px]">Thêm giảm giá</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-slate-500 text-[16px]">---</span>
-                                        <span className="text-slate-900 font-medium text-[16px]">0đ</span>
+                                        <span className="text-slate-500 text-[17px]">---</span>
+                                        <span className="text-slate-900 font-medium text-[17px]">0đ</span>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                                    <span className="text-slate-700 text-[16px]">Thêm phí giao hàng</span>
+                                    <span className="text-slate-700 text-[17px]">Thêm phí giao hàng</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-slate-500 text-[16px]">---</span>
-                                        <span className="text-slate-900 font-medium text-[16px]">0đ</span>
+                                        <span className="text-slate-500 text-[17px]">---</span>
+                                        <span className="text-slate-900 font-medium text-[17px]">0đ</span>
                                     </div>
                                 </div>
                                 <div className="flex justify-between items-center py-3">
-                                    <span className="font-semibold text-slate-900 text-lg">Thành tiền</span>
+                                    <span className="font-semibold text-slate-900 text-xl">Thành tiền</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-slate-900 text-xl font-semibold">
+                                        <span className="text-slate-900 text-2xl font-semibold">
                                             {formatCurrency(totalAmount)}
                                         </span>
                                     </div>
@@ -520,7 +645,7 @@ export default function CreateOrder() {
                                     </label>
                                     <div className="relative">
                                         <div className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[16px] text-slate-700">
-                                            {employee}
+                                            {employeeName}
                                         </div>
                                     </div>
                                 </div>
@@ -540,6 +665,8 @@ export default function CreateOrder() {
                                     Ghi chú
                                 </h2>
                                 <textarea
+                                    value={note}
+                                    onChange={(e) => setNote(e.target.value)}
                                     placeholder="VD: Giao hàng trong giờ hành chính cho khách"
                                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 min-h-[200px] resize-none text-[15px] leading-relaxed text-slate-700 placeholder:text-slate-400 transition-all duration-200"
                                 ></textarea>
@@ -550,29 +677,33 @@ export default function CreateOrder() {
             </div>
 
             <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg">
-                <div className="max-w-[1400px] mx-auto px-5 py-4">
-                    <div className="flex items-center justify-end gap-4">
-                        <Button className="px-6 py-2.5 bg-slate-50 border border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 font-medium text-[16px] text-slate-700 transition-all duration-200 hover:shadow-sm flex items-center gap-2">
+                <div className="max-w-[1500px] mx-auto px-6 py-5">
+                    <div className="flex items-center justify-end gap-5">
+                        <Button className="px-7 py-3 bg-slate-50 border border-slate-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 font-medium text-[17px] text-slate-700 transition-all duration-200 hover:shadow-sm flex items-center gap-2">
                             <Image
                                 src="/icons/save.svg"
                                 alt="save"
-                                width={18}
-                                height={18}
+                                width={20}
+                                height={20}
                                 className="text-slate-600"
                                 priority
                             />
                             Lưu nháp
                         </Button>
-                        <Button className="h-11 px-6 bg-white hover:bg-blue-50 border-2 border-slate-200 hover:border-blue-500 rounded-lg font-medium text-[15px] text-slate-900 hover:text-blue-600 shadow-sm transition-all duration-200 flex items-center gap-2">
+                        <Button
+                            onClick={handleCreateOrder}
+                            isDisable={isSubmitting}
+                            className="h-12 px-7 bg-white hover:bg-blue-50 border-2 border-slate-200 hover:border-blue-500 rounded-lg font-medium text-[17px] text-slate-900 hover:text-blue-600 shadow-sm transition-all duration-200 flex items-center gap-2"
+                        >
                             <Image
                                 src="/icons/check.svg"
                                 alt="check"
-                                width={20}
-                                height={20}
+                                width={22}
+                                height={22}
                                 className="text-slate-900"
                                 priority
                             />
-                            Tạo đơn hàng
+                            {isSubmitting ? 'Đang xử lý...' : 'Tạo đơn hàng'}
                         </Button>
                     </div>
                 </div>

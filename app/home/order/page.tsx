@@ -22,18 +22,107 @@ import { DEFAULT_PROCDUCT_DETAIL } from '@/constants/product-detail.constant';
 import DateInput from '@/components/date-input/date-input';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { formatCurrency } from '@/utils/format';
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
 
+interface OrderItem {
+  product_id: string;
+  quantity: number;
+  price: number;
+}
+
+interface Order {
+  _id: string;
+  order_code: string;
+  employee_id: string;
+  items: OrderItem[];
+  total_amount: number;
+  payment_method: string;
+  payment_status: boolean;
+  note?: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
 const ImportOrderList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTab, setSelectedTab] = useState('all');
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await fetch('/api/order');
+        if (!response.ok) {
+          throw new Error('Không thể tải danh sách đơn hàng');
+        }
+        const data = await response.json();
+        setOrders(data);
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   const handleCreateOrder = () => {
     router.push('/home/order/create');
   };
+
+  const handleDeleteOrder = async (e: React.MouseEvent, orderId: string) => {
+    e.stopPropagation();
+
+    if (confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?')) {
+      try {
+        console.log('Đang gửi yêu cầu xóa đơn hàng:', orderId);
+
+        const response = await fetch(`/api/order/${orderId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+
+        console.log('Status code:', response.status);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Thông tin lỗi từ server:', errorData);
+          throw new Error(`Không thể xóa đơn hàng: ${response.status} ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('Kết quả xóa đơn hàng:', result);
+
+        // Cập nhật trạng thái để loại bỏ đơn hàng đã xóa
+        setOrders(orders.filter(order => order._id !== orderId));
+        alert('Đã xóa đơn hàng thành công!');
+      } catch (err) {
+        console.error('Error deleting order:', err);
+        alert('Đã xảy ra lỗi khi xóa đơn hàng: ' + (err instanceof Error ? err.message : 'Lỗi không xác định'));
+      }
+    }
+  };
+
+  // Lọc đơn hàng theo tab
+  const filteredOrders = orders.filter(order => {
+    if (selectedTab === 'all') return true;
+    if (selectedTab === 'completed') return order.payment_status;
+    if (selectedTab === 'new') return !order.payment_status;
+    return true;
+  });
+
+  // Lọc đơn hàng theo từ khóa tìm kiếm
+  const searchedOrders = filteredOrders.filter(order =>
+    order.order_code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -48,9 +137,7 @@ const ImportOrderList = () => {
             </p>
           </div>
           <div className="flex gap-4">
-            <Button
-              className="flex items-center gap-2.5 px-6 py-3 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 shadow-lg shadow-slate-200/20"
-            >
+            <Button className="flex items-center gap-2.5 px-6 py-3 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 shadow-lg shadow-slate-200/20">
               <svg
                 width="20"
                 height="20"
@@ -193,99 +280,110 @@ const ImportOrderList = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-xl shadow-slate-200/20 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b-2 border-slate-100">
-                <th className="px-8 py-5 text-left w-10">
-                  <input
-                    type="checkbox"
-                    className="w-5 h-5 rounded-lg border-2 border-slate-300 text-blue-600 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200"
-                  />
-                </th>
-                <th className="px-8 py-5 text-left font-semibold text-slate-600">Mã đơn nhập</th>
-                <th className="px-8 py-5 text-left font-semibold text-slate-600">Ngày cập nhật</th>
-                <th className="px-8 py-5 text-left font-semibold text-slate-600">Khách hàng</th>
-                <th className="px-8 py-5 text-left font-semibold text-slate-600">Trạng thái</th>
-                <th className="px-8 py-5 text-right font-semibold text-slate-600">Thành tiền</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors duration-200">
-                <td className="px-8 py-5">
-                  <input
-                    type="checkbox"
-                    className="w-5 h-5 rounded-lg border-2 border-slate-300 text-blue-600 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200"
-                  />
-                </td>
-                <td className="px-8 py-5">
-                  <a href="#" className="text-blue-600 hover:text-blue-700 font-semibold text-base">#D3</a>
-                </td>
-                <td className="px-8 py-5 text-slate-600">30/03/2025 01:01</td>
-                <td className="px-8 py-5 text-slate-600">---</td>
-                <td className="px-8 py-5">
-                  <span className="inline-flex px-4 py-1.5 rounded-full text-sm bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100/50">
-                    Đã hoàn thành
-                  </span>
-                </td>
-                <td className="px-8 py-5 text-right font-semibold text-slate-800">150,000đ</td>
-              </tr>
-              <tr className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors duration-200">
-                <td className="px-8 py-5">
-                  <input
-                    type="checkbox"
-                    className="w-5 h-5 rounded-lg border-2 border-slate-300 text-blue-600 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200"
-                  />
-                </td>
-                <td className="px-8 py-5">
-                  <a href="#" className="text-blue-600 hover:text-blue-700 font-semibold text-base">#D2</a>
-                </td>
-                <td className="px-8 py-5 text-slate-600">30/03/2025 01:01</td>
-                <td className="px-8 py-5 text-slate-600">---</td>
-                <td className="px-8 py-5">
-                  <span className="inline-flex px-4 py-1.5 rounded-full text-sm bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100/50">
-                    Đã hoàn thành
-                  </span>
-                </td>
-                <td className="px-8 py-5 text-right font-semibold text-slate-800">200,000đ</td>
-              </tr>
-              <tr className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors duration-200">
-                <td className="px-8 py-5">
-                  <input
-                    type="checkbox"
-                    className="w-5 h-5 rounded-lg border-2 border-slate-300 text-blue-600 focus:ring-4 focus:ring-blue-500/20 transition-all duration-200"
-                  />
-                </td>
-                <td className="px-8 py-5">
-                  <a href="#" className="text-blue-600 hover:text-blue-700 font-semibold text-base">#D1</a>
-                </td>
-                <td className="px-8 py-5 text-slate-600">30/03/2025 00:59</td>
-                <td className="px-8 py-5 text-slate-600">---</td>
-                <td className="px-8 py-5">
-                  <span className="inline-flex px-4 py-1.5 rounded-full text-sm bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100/50">
-                    Đã hoàn thành
-                  </span>
-                </td>
-                <td className="px-8 py-5 text-right font-semibold text-slate-800">830,000đ</td>
-              </tr>
-            </tbody>
-          </table>
-
-          <div className="px-8 py-5 flex items-center justify-between border-t-2 border-slate-100 bg-slate-50">
-            <div className="text-sm text-slate-600">
-              Hiển thị 1-3 trên tổng 3 đơn hàng
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-xl shadow-slate-200/20 overflow-hidden">
+            <div className="max-h-[490px] overflow-y-auto scrollbar-custom">
+              <style jsx global>{`
+                .scrollbar-custom::-webkit-scrollbar {
+                  width: 8px;
+                }
+                .scrollbar-custom::-webkit-scrollbar-track {
+                  background: #f1f5f9;
+                  border-radius: 10px;
+                }
+                .scrollbar-custom::-webkit-scrollbar-thumb {
+                  background: #cbd5e1;
+                  border-radius: 10px;
+                }
+                .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+                  background: #94a3b8;
+                }
+              `}</style>
+              <table className="w-full">
+                <thead className="sticky top-0 bg-white z-10">
+                  <tr className="border-b-2 border-slate-100">
+                    <th className="px-8 py-5 text-left font-semibold text-slate-600">Mã đơn nhập</th>
+                    <th className="px-8 py-5 text-left font-semibold text-slate-600">Ngày cập nhật</th>
+                    <th className="px-8 py-5 text-left font-semibold text-slate-600">Trạng thái</th>
+                    <th className="px-8 py-5 text-right font-semibold text-slate-600">Thành tiền</th>
+                    <th className="px-8 py-5 text-center font-semibold text-slate-600">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {searchedOrders.map((order) => (
+                    <tr
+                      key={order._id}
+                      className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors duration-200"
+                      onClick={() => router.push(`/home/order/${order._id}`)}
+                    >
+                      <td className="px-8 py-5">
+                        <a href="#" className="text-blue-600 hover:text-blue-700 font-semibold text-base">
+                          {order.order_code.replace('SL', 'HD')}
+                        </a>
+                      </td>
+                      <td className="px-8 py-5 text-slate-600">
+                        {new Date(order.created_at).toLocaleDateString('vi-VN', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="inline-flex px-4 py-1.5 rounded-full text-sm bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100/50">
+                          {order.payment_status ? 'Đã hoàn thành' : 'Chưa hoàn thành'}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5 text-right font-semibold text-slate-800">
+                        {formatCurrency(order.total_amount)}
+                      </td>
+                      <td className="px-8 py-5 text-center">
+                        <button
+                          onClick={(e) => handleDeleteOrder(e, order._id)}
+                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
+                        >
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              d="M3 6H5H21"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                            <path
+                              d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-slate-600">Hiển thị</span>
-              <select className="bg-white border-2 border-slate-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200">
-                <option>20</option>
-                <option>50</option>
-                <option>100</option>
-              </select>
-              <span className="text-sm text-slate-600">mục</span>
+
+            <div className="px-8 py-5 border-t-2 border-slate-100 bg-slate-50">
+              <div className="text-sm text-slate-600">
+                Hiển thị {searchedOrders.length} trên tổng {orders.length} đơn hàng
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         <div className="mt-8 text-center">
           <p className="text-sm text-slate-500">

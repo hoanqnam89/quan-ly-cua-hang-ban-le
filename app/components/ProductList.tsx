@@ -16,7 +16,7 @@ export default function ProductList({ products, onSelect }: ProductListProps) {
                 <div
                     key={product._id.toString()}
                     onClick={() => onSelect?.(product)}
-                    className="bg-white rounded-xl border border-slate-200 p-4 cursor-pointer hover:border-blue-500 hover:shadow-sm transition-all duration-200"
+                    className="bg-white rounded-xl border border-slate-200 p-4 cursor-pointer hover:border-blue-500 hover:shadow-md transition-all duration-200 transform hover:-translate-y-1 group"
                 >
                     <div className="aspect-square bg-slate-50 rounded-lg relative overflow-hidden mb-3">
                         {product.image_links?.[0] ? (
@@ -38,8 +38,19 @@ export default function ProductList({ products, onSelect }: ProductListProps) {
                             </div>
                         )}
                     </div>
-                    <h3 className="font-medium text-slate-900 mb-1 line-clamp-2">{product.name}</h3>
-                    <div className="text-blue-600 font-medium">{formatCurrency(product.output_price)}</div>
+                    <h3 className="font-medium text-slate-900 mb-1 min-h-[40px]">{product.name}</h3>
+                    <div className="flex justify-between items-center mt-2">
+                        <div className="text-blue-600 font-medium">{formatCurrency(product.output_price)}</div>
+                        <div className="p-1.5 bg-blue-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Image
+                                src="/icons/plus.svg"
+                                alt="add"
+                                width={18}
+                                height={18}
+                                className="text-blue-600"
+                            />
+                        </div>
+                    </div>
                 </div>
             ))}
         </div>
