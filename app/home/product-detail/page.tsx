@@ -6,7 +6,7 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { ECollectionNames } from '@/enums'
 import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { infoIcon, trashIcon } from '@/public';
+import { externalLinkIcon, infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
@@ -20,6 +20,7 @@ import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { DEFAULT_PROCDUCT_DETAIL } from '@/constants/product-detail.constant';
 import DateInput from '@/components/date-input/date-input';
+import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
@@ -158,6 +159,22 @@ export default function Product() {
         >
         </IconContainer>
       </Button>
+    },
+    {
+      title: `Xem chi tiết`,
+      ref: useRef(null), 
+      size: `2fr`, 
+      render: (collection: collectionType): ReactElement => 
+        <a 
+          href={`/home/${nameToHyphenAndLowercase(collectionName)}/${collection._id}`} 
+          target={`_blank`}
+        >
+          <IconContainer 
+            tooltip={createMoreInfoTooltip(collectionName)}
+            iconLink={externalLinkIcon}
+          >
+          </IconContainer>
+        </a>
     },
     {
       title: `Xóa`,
