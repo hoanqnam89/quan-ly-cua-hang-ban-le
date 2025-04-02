@@ -175,17 +175,17 @@ export default function Product() {
       title: `Mã`,
       size: `6fr`,
     },
-    {
-      key: `product_details`,
-      ref: useRef(null), 
-      title: `Danh sách sản phẩm`,
-      size: `6fr`, 
-      render: (collection: collectionType): ReactElement => {
-        return <Text>{collection.product_details.map((
-          orderFormProduct: IOrderFormProductDetail
-        ) => orderFormProduct._id).join(`, `)}</Text>
-      }
-    },
+    // {
+    //   key: `product_details`,
+    //   ref: useRef(null), 
+    //   title: `Danh sách sản phẩm`,
+    //   size: `6fr`, 
+    //   render: (collection: collectionType): ReactElement => {
+    //     return <Text>{collection.product_details.map((
+    //       orderFormProduct: IOrderFormProductDetail
+    //     ) => orderFormProduct._id).join(`, `)}</Text>
+    //   }
+    // },
     {
       key: `created_at`,
       ref: useRef(null), 

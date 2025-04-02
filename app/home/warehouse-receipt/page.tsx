@@ -191,20 +191,20 @@ export default function Product() {
       title: `Mã`,
       size: `6fr`,
     },
-    {
-      key: `product_details`,
-      ref: useRef(null),
-      title: `Danh sách sản phẩm`,
-      size: `3fr`,
-      render: (collection: collectionType): ReactElement => <div>
-        {
-          collection.product_details.map(
-            (productDetail: IReceiptProduct, index: number): ReactElement =>
-              <Text key={index}>{productDetail._id}</Text>
-          )
-        }
-      </div>
-    },
+    // {
+    //   key: `product_details`,
+    //   ref: useRef(null),
+    //   title: `Danh sách sản phẩm`,
+    //   size: `3fr`,
+    //   render: (collection: collectionType): ReactElement => <div>
+    //     {
+    //       collection.product_details.map(
+    //         (productDetail: IReceiptProduct, index: number): ReactElement =>
+    //           <Text key={index}>{productDetail._id}</Text>
+    //       )
+    //     }
+    //   </div>
+    // },
     {
       key: `created_at`,
       ref: useRef(null),
