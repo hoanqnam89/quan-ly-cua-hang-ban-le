@@ -6,7 +6,7 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { DEFAULT_USER } from '@/constants/user.constant'
 import { ECollectionNames } from '@/enums'
 import { IAccount, IUser } from '@/interfaces'
-import { infoIcon, trashIcon } from '@/public'
+import { externalLinkIcon, infoIcon, trashIcon } from '@/public'
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip'
 import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
@@ -25,6 +25,7 @@ import { getDate } from '@/utils/get-date';
 import { getSameDayOfYear } from '@/utils/get-same-date-of-year';
 import { MINIMUM_WORKING_AGE } from '@/constants/minimum-working-age.constant';
 import { MAXIMUM_WORKING_AGE } from '@/constants/maximum-working-age.constant';
+import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 
 type collectionType = IUser;
 const collectionName: ECollectionNames = ECollectionNames.USER;
@@ -237,6 +238,22 @@ export default function User() {
         >
         </IconContainer>
       </Button>
+    },
+    {
+      title: `Xem chi tiết`,
+      ref: useRef(null), 
+      size: `2fr`, 
+      render: (collection: collectionType): ReactElement => 
+        <a 
+          href={`/home/${nameToHyphenAndLowercase(collectionName)}/${collection._id}`} 
+          target={`_blank`}
+        >
+          <IconContainer 
+            tooltip={createMoreInfoTooltip(collectionName)}
+            iconLink={externalLinkIcon}
+          >
+          </IconContainer>
+        </a>
     },
     {
       title: `Xóa`,
