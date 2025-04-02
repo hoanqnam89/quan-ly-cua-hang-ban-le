@@ -6,7 +6,7 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { ECollectionNames } from '@/enums'
 import React, { ChangeEvent, ReactElement, useEffect, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { infoIcon, trashIcon } from '@/public';
+import { externalLinkIcon, infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
@@ -20,6 +20,7 @@ import { ISelectOption } from '@/components/select-dropdown/interfaces/select-op
 import { enumToKeyValueArray } from '@/utils/enum-to-array';
 import { EBusinessType } from '@/enums/business-type.enum';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
+import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 
 type collectionType = IBusiness;
 const collectionName: ECollectionNames = ECollectionNames.BUSINESS;
@@ -178,6 +179,22 @@ export default function Product() {
         >
         </IconContainer>
       </Button>
+    },
+    {
+      title: `Xem chi tiết`,
+      ref: useRef(null), 
+      size: `2fr`, 
+      render: (collection: collectionType): ReactElement => 
+        <a 
+          href={`/home/${nameToHyphenAndLowercase(collectionName)}/${collection._id}`} 
+          target={`_blank`}
+        >
+          <IconContainer 
+            tooltip={createMoreInfoTooltip(collectionName)}
+            iconLink={externalLinkIcon}
+          >
+          </IconContainer>
+        </a>
     },
     {
       title: `Xóa`,

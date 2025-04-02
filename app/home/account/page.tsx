@@ -15,6 +15,7 @@ import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import Checkbox from '@/components/checkbox/checkbox';
 import { translateCollectionName } from '@/utils/translate-collection-name';
+import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 
 type collectionType = IAccount;
 const collectionName: ECollectionNames = ECollectionNames.ACCOUNT;
@@ -110,7 +111,10 @@ export default function Account() {
       ref: useRef(null), 
       size: `2fr`, 
       render: (collection: collectionType): ReactElement => 
-        <a href={`/home/account/${collection._id}`} target={`_`}>
+        <a 
+          href={`/home/${nameToHyphenAndLowercase(collectionName)}/${collection._id}`} 
+          target={`_blank`}
+        >
           <IconContainer 
             tooltip={createMoreInfoTooltip(collectionName)}
             iconLink={externalLinkIcon}
