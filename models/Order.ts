@@ -1,20 +1,21 @@
-import { ObjectId } from 'mongodb';
-import { models, model, Schema } from 'mongoose';
+import mongoose from 'mongoose';
 import { IOrder } from '@/interfaces/order.interface';
 
-const OrderSchema = new Schema({
+const orderSchema = new mongoose.Schema({
     order_code: {
         type: String,
         required: true,
         unique: true
     },
     employee_id: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
         required: true
     },
     items: [{
         product_id: {
-            type: String,
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Product',
             required: true
         },
         quantity: {
@@ -35,32 +36,33 @@ const OrderSchema = new Schema({
     },
     payment_method: {
         type: String,
-        required: true,
-        enum: ['cash', 'transfer', 'card']
+        enum: ['cash', 'transfer', 'card'],
+        default: 'cash'
     },
     payment_status: {
         type: Boolean,
-        required: true,
         default: false
     },
-    note: {
-        type: String
+    status: {
+        type: String,
+        enum: ['pending', 'completed', 'cancelled'],
+        default: 'pending'
     },
+    note: String,
     created_at: {
         type: Date,
-        default: () => Date.now(),
-        immutable: true
+        default: Date.now
     },
     updated_at: {
         type: Date,
-        default: () => Date.now()
+        default: Date.now
     }
 });
 
-// Middleware để cập nhật updated_at trước khi lưu
-OrderSchema.pre('save', function (next) {
+// Middleware để tự động cập nhật updated_at
+orderSchema.pre('save', function (next) {
     this.updated_at = new Date();
     next();
 });
 
-export const OrderModel = models.Order || model<IOrder>('Order', OrderSchema); 
+export const OrderModel = mongoose.models.Order || mongoose.model<IOrder>('Order', orderSchema); 

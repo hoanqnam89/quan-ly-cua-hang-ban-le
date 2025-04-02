@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { OrderModel } from "@/models/Order";
 import { isValidObjectId } from "mongoose";
 
+// Import cache từ route.ts
+import { invalidateOrderCache } from "../cache";
+
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -62,6 +65,9 @@ export async function DELETE(
                 { status: 404 }
             );
         }
+
+        // Vô hiệu hóa cache khi xóa đơn hàng
+        invalidateOrderCache();
 
         return NextResponse.json({
             success: true,
