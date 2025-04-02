@@ -11,5 +11,6 @@
 }
 
 .row {
-  border-top-color: lch(from var(--foreground) calc(l - var(--brightness-different)) c h);
+  border-top-width: .8px;
+  border-top-color: color-mix(in oklab, #fff 10%, transparent);
 }

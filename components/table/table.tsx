@@ -222,7 +222,7 @@ export default function Table<T extends {_id: string, index?: number}>({
             weight={600}
             onClick={(): void => sortHeader(columnIndex, column.key)} 
             tooltip={`Click to sort ${column.title}`}
-            className={`${column.key && `cursor-pointer`}`}
+            className={`${column.key && `cursor-pointer`} py-2 pl-1 pr-4 border-b border-b-zinc-950/10`}
           >
             {column.title}
           </Text>
@@ -262,7 +262,7 @@ export default function Table<T extends {_id: string, index?: number}>({
         (row: T, rowIndex: number): ReactElement => isVisibles[rowIndex] ? 
           <div
             key={`${row._id}`}
-            className={`grid justify-between items-center gap-0 pb-1 pt-2 border-t-2 border-t-solid ${styles.row}`}
+            className={`grid justify-between items-center gap-0 pb-1 pt-2 border-t-solid ${styles.row}`}
             style={gridStyle}
           >
             {columns.map((
@@ -286,6 +286,7 @@ export default function Table<T extends {_id: string, index?: number}>({
                 isCopyable={true} 
                 isEllipsis={true} 
                 tooltip={rowData}
+                className={`py-2 pl-1 pr-4`}
               >
                 {rowData}
               </Text>
