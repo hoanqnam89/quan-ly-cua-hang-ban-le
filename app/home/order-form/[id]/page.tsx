@@ -24,7 +24,7 @@ const date: string = new Date().toLocaleString();
 
 export default function PreviewOrderForm({
   params
-}: IPageParams): ReactElement {
+}: Readonly<IPageParams>): ReactElement {
   const { id } = use(params);
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [orderForm, setOrderForm] = useState<collectionType>(

@@ -18,6 +18,7 @@ import copyIcon from '@/public/copy.svg?url';
 import dollarSignIcon from '@/public/dollar-sign.svg?url';
 import homeIcon from '@/public/home.svg?url';
 import emptyIcon from '@/public/empty.svg?url';
+import externalLinkIcon from '@/public/external-link.svg?url';
 import factoryIcon from '@/public/factory.svg?url';
 import infoIcon from '@/public/info.svg?url';
 import listCollapseIcon from '@/public/list-collapse.svg?url';
@@ -60,6 +61,7 @@ export {
   dollarSignIcon, 
   homeIcon, 
   emptyIcon, 
+  externalLinkIcon, 
   factoryIcon, 
   infoIcon, 
   listCollapseIcon, 

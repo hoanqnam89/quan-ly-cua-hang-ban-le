@@ -7,7 +7,7 @@ import { ECollectionNames } from '@/enums'
 import { IAccount } from '@/interfaces'
 import React, { ChangeEvent, ReactElement, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { infoIcon, trashIcon } from '@/public';
+import { externalLinkIcon, infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import { DEFAULT_ACCOUNT } from '@/constants/account.constant';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
@@ -104,6 +104,19 @@ export default function Account() {
         >
         </IconContainer>
       </Button>
+    },
+    {
+      title: `Xem chi tiết`,
+      ref: useRef(null), 
+      size: `2fr`, 
+      render: (collection: collectionType): ReactElement => 
+        <a href={`/home/account/${collection._id}`} target={`_`}>
+          <IconContainer 
+            tooltip={createMoreInfoTooltip(collectionName)}
+            iconLink={externalLinkIcon}
+          >
+          </IconContainer>
+        </a>
     },
     {
       title: `Xóa`,
