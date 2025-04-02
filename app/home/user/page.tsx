@@ -26,6 +26,7 @@ import { getSameDayOfYear } from '@/utils/get-same-date-of-year';
 import { MINIMUM_WORKING_AGE } from '@/constants/minimum-working-age.constant';
 import { MAXIMUM_WORKING_AGE } from '@/constants/maximum-working-age.constant';
 import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
+import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 
 type collectionType = IUser;
 const collectionName: ECollectionNames = ECollectionNames.USER;
@@ -127,16 +128,10 @@ export default function User() {
       title: `Tài khoản`,
       size: `3fr`, 
       render: (collection: collectionType): ReactElement => 
-        <a 
-          href={`/home/${nameToHyphenAndLowercase(ECollectionNames.ACCOUNT)}/${collection.account_id}`} 
-          target={`_blank`}
-        >
-          <IconContainer 
-            tooltip={createMoreInfoTooltip(collectionName)}
-            iconLink={externalLinkIcon}
-          >
-          </IconContainer>
-        </a>
+        createCollectionDetailLink(
+          ECollectionNames.ACCOUNT, 
+          collection.account_id
+        )
     },
     {
       key: `name`,
@@ -255,16 +250,10 @@ export default function User() {
       ref: useRef(null), 
       size: `2fr`, 
       render: (collection: collectionType): ReactElement => 
-        <a 
-          href={`/home/${nameToHyphenAndLowercase(collectionName)}/${collection._id}`} 
-          target={`_blank`}
-        >
-          <IconContainer 
-            tooltip={createMoreInfoTooltip(collectionName)}
-            iconLink={externalLinkIcon}
-          >
-          </IconContainer>
-        </a>
+        createCollectionDetailLink(
+          collectionName, 
+          collection._id
+        )
     },
     {
       title: `Xóa`,

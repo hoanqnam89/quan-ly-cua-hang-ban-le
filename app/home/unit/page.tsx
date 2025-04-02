@@ -15,6 +15,7 @@ import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IUnit } from '@/interfaces/unit.interface';
 import { DEFAULT_UNIT } from '@/constants/unit.constant';
 import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
+import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 
 type collectionType = IUnit;
 const collectionName: ECollectionNames = ECollectionNames.UNIT;
@@ -101,16 +102,10 @@ export default function Account() {
       ref: useRef(null), 
       size: `2fr`, 
       render: (collection: collectionType): ReactElement => 
-        <a 
-          href={`/home/${nameToHyphenAndLowercase(collectionName)}/${collection._id}`} 
-          target={`_blank`}
-        >
-          <IconContainer 
-            tooltip={createMoreInfoTooltip(collectionName)}
-            iconLink={externalLinkIcon}
-          >
-          </IconContainer>
-        </a>
+        createCollectionDetailLink(
+          collectionName, 
+          collection._id
+        )
     },
     {
       title: `Xóa`,

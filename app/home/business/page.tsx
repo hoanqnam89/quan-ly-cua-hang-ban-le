@@ -21,6 +21,7 @@ import { enumToKeyValueArray } from '@/utils/enum-to-array';
 import { EBusinessType } from '@/enums/business-type.enum';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
 import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
+import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 
 type collectionType = IBusiness;
 const collectionName: ECollectionNames = ECollectionNames.BUSINESS;
@@ -185,16 +186,10 @@ export default function Product() {
       ref: useRef(null), 
       size: `2fr`, 
       render: (collection: collectionType): ReactElement => 
-        <a 
-          href={`/home/${nameToHyphenAndLowercase(collectionName)}/${collection._id}`} 
-          target={`_blank`}
-        >
-          <IconContainer 
-            tooltip={createMoreInfoTooltip(collectionName)}
-            iconLink={externalLinkIcon}
-          >
-          </IconContainer>
-        </a>
+        createCollectionDetailLink(
+          collectionName, 
+          collection._id
+        )
     },
     {
       title: `Xóa`,

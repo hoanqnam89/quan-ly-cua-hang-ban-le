@@ -25,6 +25,7 @@ import { VND_UNIT } from '@/constants/vnd-unit.constant';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { formatCurrency } from '@/utils/format-currency';
 import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
+import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -153,16 +154,10 @@ export default function Product() {
       title: `Nhà sản xuất`,
       size: `4fr`, 
       render: (collection: collectionType): ReactElement => 
-        <a 
-          href={`/home/${nameToHyphenAndLowercase(ECollectionNames.BUSINESS)}/${collection.supplier_id}`} 
-          target={`_blank`}
-        >
-          <IconContainer 
-            tooltip={createMoreInfoTooltip(collectionName)}
-            iconLink={externalLinkIcon}
-          >
-          </IconContainer>
-        </a>
+        createCollectionDetailLink(
+          ECollectionNames.BUSINESS, 
+          collection.supplier_id
+        )
     },
     {
       key: `name`,
@@ -264,16 +259,10 @@ export default function Product() {
       ref: useRef(null), 
       size: `2fr`, 
       render: (collection: collectionType): ReactElement => 
-        <a 
-          href={`/home/${nameToHyphenAndLowercase(collectionName)}/${collection._id}`} 
-          target={`_blank`}
-        >
-          <IconContainer 
-            tooltip={createMoreInfoTooltip(collectionName)}
-            iconLink={externalLinkIcon}
-          >
-          </IconContainer>
-        </a>
+        createCollectionDetailLink(
+          collectionName, 
+          collection._id
+        )
     },
     {
       title: `Xóa`,

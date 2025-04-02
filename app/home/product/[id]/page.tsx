@@ -5,7 +5,7 @@ import { IPageParams } from '@/interfaces/page-params.interface'
 import { getCollectionById } from '@/services/api-service';
 import React, { ReactElement, use, useCallback, useEffect, useState } from 'react'
 import InputSection from '../../components/input-section/input-section';
-import { TextInput, Text, SelectDropdown, NumberInput, LoadingScreen } from '@/components';
+import { TextInput, Text, SelectDropdown, NumberInput, LoadingScreen, IconContainer } from '@/components';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IProduct } from '@/interfaces/product.interface';
@@ -17,6 +17,7 @@ import { IBusiness } from '@/interfaces/business.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { EBusinessType } from '@/enums/business-type.enum';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
+import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -71,7 +72,6 @@ export default function Detail({
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
-
   useEffect((): void => {
     const getCollectionNameById = async () => {
       const getCollectionApiResponse: Response = 
@@ -81,23 +81,30 @@ export default function Detail({
       setIsLoading(false);
     }
     getCollectionNameById();
-  });
+  }, []);
 
   return (
     <>
       <Text size={32}>Chi tiết {translateCollectionName(collectionName)} {id}</Text>
 
       <InputSection label={`Cho nhà sản xuất`}>
-        <SelectDropdown
-          name={`supplier_id`}
-          isLoading={isLoading}
-          isDisable={true}
-          options={supplierOptions}
-          defaultOptionIndex={getSelectedOptionIndex(
-            supplierOptions, collection.supplier_id
+        <div className={`flex items-center justify-center gap-2`}>
+          {createCollectionDetailLink(
+            ECollectionNames.BUSINESS, 
+            collection.supplier_id
           )}
-        >
-        </SelectDropdown>
+
+          <SelectDropdown
+            name={`supplier_id`}
+            isLoading={isLoading}
+            isDisable={true}
+            options={supplierOptions}
+            defaultOptionIndex={getSelectedOptionIndex(
+              supplierOptions, collection.supplier_id
+            )}
+          >
+          </SelectDropdown>
+        </div>
       </InputSection>
 
       <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>

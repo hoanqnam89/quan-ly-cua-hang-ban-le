@@ -21,6 +21,7 @@ import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { DEFAULT_PROCDUCT_DETAIL } from '@/constants/product-detail.constant';
 import DateInput from '@/components/date-input/date-input';
 import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
+import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
@@ -87,16 +88,10 @@ export default function Product() {
       title: `Sản phẩm`,
       size: `3fr`, 
       render: (collection: collectionType): ReactElement => 
-        <a 
-          href={`/home/${nameToHyphenAndLowercase(ECollectionNames.PRODUCT)}/${collection.product_id}`} 
-          target={`_blank`}
-        >
-          <IconContainer 
-            tooltip={createMoreInfoTooltip(collectionName)}
-            iconLink={externalLinkIcon}
-          >
-          </IconContainer>
-        </a>
+        createCollectionDetailLink(
+          ECollectionNames.PRODUCT, 
+          collection.product_id
+        )
     },
     {
       key: `date_of_manufacture`,
@@ -176,16 +171,10 @@ export default function Product() {
       ref: useRef(null), 
       size: `2fr`, 
       render: (collection: collectionType): ReactElement => 
-        <a 
-          href={`/home/${nameToHyphenAndLowercase(collectionName)}/${collection._id}`} 
-          target={`_blank`}
-        >
-          <IconContainer 
-            tooltip={createMoreInfoTooltip(collectionName)}
-            iconLink={externalLinkIcon}
-          >
-          </IconContainer>
-        </a>
+        createCollectionDetailLink(
+          collectionName, 
+          collection._id
+        )
     },
     {
       title: `Xóa`,
