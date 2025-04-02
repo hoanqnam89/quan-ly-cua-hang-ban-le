@@ -151,7 +151,18 @@ export default function Product() {
       key: `supplier_id`,
       ref: useRef(null), 
       title: `Nhà sản xuất`,
-      size: `6fr`, 
+      size: `4fr`, 
+      render: (collection: collectionType): ReactElement => 
+        <a 
+          href={`/home/${nameToHyphenAndLowercase(ECollectionNames.BUSINESS)}/${collection.supplier_id}`} 
+          target={`_blank`}
+        >
+          <IconContainer 
+            tooltip={createMoreInfoTooltip(collectionName)}
+            iconLink={externalLinkIcon}
+          >
+          </IconContainer>
+        </a>
     },
     {
       key: `name`,

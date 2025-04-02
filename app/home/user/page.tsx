@@ -126,6 +126,17 @@ export default function User() {
       ref: useRef(null), 
       title: `Tài khoản`,
       size: `3fr`, 
+      render: (collection: collectionType): ReactElement => 
+        <a 
+          href={`/home/${nameToHyphenAndLowercase(ECollectionNames.ACCOUNT)}/${collection.account_id}`} 
+          target={`_blank`}
+        >
+          <IconContainer 
+            tooltip={createMoreInfoTooltip(collectionName)}
+            iconLink={externalLinkIcon}
+          >
+          </IconContainer>
+        </a>
     },
     {
       key: `name`,
