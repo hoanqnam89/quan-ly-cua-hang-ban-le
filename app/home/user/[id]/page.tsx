@@ -5,7 +5,7 @@ import { IPageParams } from '@/interfaces/page-params.interface'
 import { getCollectionById } from '@/services/api-service';
 import React, { ReactElement, use, useCallback, useEffect, useState } from 'react'
 import InputSection from '../../components/input-section/input-section';
-import { TextInput, Text, SelectDropdown } from '@/components';
+import { TextInput, Text, SelectDropdown, LoadingScreen } from '@/components';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IAccount, IUser } from '@/interfaces';
@@ -34,7 +34,7 @@ export default function Detail({
   const [collection, setCollection] = useState<collectionType>(
     defaultCollection
   );
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { id } = use(params);
   const [accountOptions, setAccountOptions] = useState<ISelectOption[]>([]);
 
@@ -234,6 +234,8 @@ export default function Detail({
 
       <TimestampTabItem<collectionType> collection={collection}>
       </TimestampTabItem>
+
+      {isLoading && <LoadingScreen></LoadingScreen>}
     </>
   )
 }
