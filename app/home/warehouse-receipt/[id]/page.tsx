@@ -4,12 +4,14 @@ import { Button, LoadingScreen, Text } from '@/components';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 import { COMPANY } from '@/constants/company.constant';
 import { DEFAULT_ORDER_FORM } from '@/constants/order-form.constant';
+import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import { ECollectionNames } from '@/enums';
 import { IOrderForm, IOrderFormProductDetail } from '@/interfaces/order-form.interface';
 import { IPageParams } from '@/interfaces/page-params.interface';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { IProduct } from '@/interfaces/product.interface';
 import { IUnit } from '@/interfaces/unit.interface';
+import { IWarehouseReceipt } from '@/interfaces/warehouse-receipt.interface';
 import { getCollectionById } from '@/services/api-service';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { formatCurrency } from '@/utils/format-currency';
@@ -17,8 +19,8 @@ import { toPdf } from '@/utils/to-pdf';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import React, { ReactElement, use, useEffect, useRef, useState } from 'react'
 
-type collectionType = IOrderForm;
-const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
+type collectionType = IWarehouseReceipt;
+const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;
 const companyAddress: string = `${COMPANY.address.number} ${COMPANY.address.street} ${COMPANY.address.ward} ${COMPANY.address.district} ${COMPANY.address.city} ${COMPANY.address.country}`;
 const date: string = new Date().toLocaleString();
 
@@ -27,8 +29,8 @@ export default function PreviewOrderForm({
 }: IPageParams): ReactElement {
   const { id } = use(params);
   const invoiceRef = useRef<HTMLDivElement>(null);
-  const [orderForm, setOrderForm] = useState<collectionType>(
-    DEFAULT_ORDER_FORM 
+  const [warehouseReceipt, setWarehouseReceipt] = useState<collectionType>(
+    DEFAULT_WAREHOUST_RECEIPT
   );
   const [products, setProducts] = useState<IProduct[]>([]);
   const [productDetails, setProductDetails] = useState<IProductDetail[]>([]);
@@ -39,11 +41,11 @@ export default function PreviewOrderForm({
   const [isUnitLoading, setIsUnitLoading] = useState<boolean>(true);
 
   useEffect((): void => {
-    const getOrderFormById = async () => {
-      const getOrderFormApiResponse: Response = 
+    const getWarehouseReceiptById = async () => {
+      const getWarehouseReceiptApiResponse: Response = 
         await getCollectionById(id, collectionName);
-      const getOrderFormApiJson = await getOrderFormApiResponse.json();
-      setOrderForm(getOrderFormApiJson);
+      const getWarehouseReceiptApiJson = await getWarehouseReceiptApiResponse.json();
+      setWarehouseReceipt(getWarehouseReceiptApiJson);
       setIsOrderFormLoading(false);
     }
     const getProducts = async () => {
@@ -69,7 +71,7 @@ export default function PreviewOrderForm({
       setIsUnitLoading(false);
     }
 
-    getOrderFormById();
+    getWarehouseReceiptById();
     getProducts();
     getProductDetails();
     getUnits();
@@ -97,7 +99,7 @@ export default function PreviewOrderForm({
     return units.find((unit: IUnit): boolean => unit._id === id);
   }
 
-  const getTotalPrice = () => orderForm.product_details.reduce(
+  const getTotalPrice = () => warehouseReceipt.product_details.reduce(
     (accumulator: number, currentValue: IOrderFormProductDetail): number => {
       const foundProduct: IProduct | undefined = getProduct(currentValue._id);
       const foundUnit: IUnit | undefined = getUnit(currentValue.unit_id);
@@ -110,7 +112,7 @@ export default function PreviewOrderForm({
     0
   );
 
-  const getTotalQuantity = (): number => orderForm.product_details.reduce(
+  const getTotalQuantity = (): number => warehouseReceipt.product_details.reduce(
     (accumulator: number, currentValue: IOrderFormProductDetail): number => 
       accumulator + currentValue.quantity, 
     0
@@ -198,7 +200,7 @@ export default function PreviewOrderForm({
                   </tr>
                 </thead>
                 <tbody>
-                  {orderForm.product_details.map((item, index) => (
+                  {warehouseReceipt.product_details.map((item, index) => (
                     <tr 
                       key={index} 
                       className="hover:bg-gray-50 transition-colors duration-150"

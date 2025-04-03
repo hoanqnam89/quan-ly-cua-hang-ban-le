@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, IconContainer, NumberInput, SelectDropdown, Text, TextInput } from '@/components'
+import { Button, IconContainer, NumberInput, SelectDropdown, Text } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
@@ -11,7 +11,7 @@ import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-toolt
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
-import { IReceiptProduct, IWarehouseReceipt } from '@/interfaces/warehouse-receipt.interface';
+import { IWarehouseReceipt } from '@/interfaces/warehouse-receipt.interface';
 import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { translateCollectionName } from '@/utils/translate-collection-name';
