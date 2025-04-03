@@ -23,6 +23,7 @@ import DateInput from '@/components/date-input/date-input';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/utils/format';
+import PaymentModal from '@/app/components/PaymentModal';
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
@@ -48,27 +49,34 @@ interface Order {
 
 const ImportOrderList = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTab, setSelectedTab] = useState('all');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending'>('all');
   const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string>('');
+  const [selectedOrderAmount, setSelectedOrderAmount] = useState<number>(0);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const response = await fetch('/api/order');
-        if (!response.ok) {
-          throw new Error('Không thể tải danh sách đơn hàng');
-        }
-        const data = await response.json();
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch('/api/order?limit=500', {
+        cache: 'default'
+      });
+      const data = await res.json();
+
+      if (Array.isArray(data)) {
         setOrders(data);
-      } catch (err) {
-        console.error('Error fetching orders:', err);
-      } finally {
         setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchOrders();
   }, []);
 
@@ -76,9 +84,7 @@ const ImportOrderList = () => {
     router.push('/home/order/create');
   };
 
-  const handleDeleteOrder = async (e: React.MouseEvent, orderId: string) => {
-    e.stopPropagation();
-
+  const handleDeleteOrder = async (orderId: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa đơn hàng này không?')) {
       try {
         console.log('Đang gửi yêu cầu xóa đơn hàng:', orderId);
@@ -111,18 +117,85 @@ const ImportOrderList = () => {
     }
   };
 
-  // Lọc đơn hàng theo tab
-  const filteredOrders = orders.filter(order => {
-    if (selectedTab === 'all') return true;
-    if (selectedTab === 'completed') return order.payment_status;
-    if (selectedTab === 'new') return !order.payment_status;
-    return true;
+  // Hàm lọc theo ngày
+  const filterByDate = (order: Order) => {
+    const orderDate = new Date(order.created_at);
+    const today = new Date();
+    const weekAgo = new Date();
+    const monthAgo = new Date();
+    weekAgo.setDate(today.getDate() - 7);
+    monthAgo.setMonth(today.getMonth() - 1);
+
+    switch (dateFilter) {
+      case 'today':
+        return orderDate.toDateString() === today.toDateString();
+      case 'week':
+        return orderDate >= weekAgo;
+      case 'month':
+        return orderDate >= monthAgo;
+      default:
+        return true;
+    }
+  };
+
+  // Hàm lọc theo trạng thái
+  const filterByStatus = (order: Order) => {
+    switch (statusFilter) {
+      case 'completed':
+        return order.payment_status === true;
+      case 'pending':
+        return order.payment_status === false;
+      default:
+        return true;
+    }
+  };
+
+  // Hàm sắp xếp đơn hàng
+  const sortOrders = (orders: Order[]) => {
+    return [...orders].sort((a, b) => {
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+  };
+
+  // Hàm đặt lại bộ lọc
+  const handleReset = () => {
+    setDateFilter('all');
+    setStatusFilter('all');
+    setSortOrder('desc');
+    setSearchTerm('');
+  };
+
+  // Áp dụng các bộ lọc và sắp xếp
+  const filteredOrders = statusFilter === 'all'
+    ? sortOrders(orders.filter(filterByDate).filter(filterByStatus))
+    : sortOrders(orders.filter(filterByDate).filter(filterByStatus)).filter(order =>
+      statusFilter === 'completed' ? order.payment_status : !order.payment_status
+    );
+
+  const searchedOrders = sortOrders(filteredOrders).filter(order => {
+    const searchTermLower = searchTerm.toLowerCase().trim();
+    const orderCodeLower = order.order_code.toLowerCase();
+    return orderCodeLower.includes(searchTermLower);
   });
 
-  // Lọc đơn hàng theo từ khóa tìm kiếm
-  const searchedOrders = filteredOrders.filter(order =>
-    order.order_code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const openPaymentModal = (orderId: string, amount: number) => {
+    setSelectedOrderId(orderId);
+    setSelectedOrderAmount(amount);
+    setIsModalOpen(true);
+  };
+
+  const closePaymentModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const handlePaymentComplete = () => {
+    // Refresh danh sách đơn hàng
+    fetchOrders();
+    setIsModalOpen(false);
+    alert('Thanh toán thành công!');
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -130,39 +203,13 @@ const ImportOrderList = () => {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-slate-800 mb-3">
-              Đơn hàng nhập
+              Danh sách đơn hàng
             </h1>
             <p className="text-slate-500 text-lg">
-              Quản lý đơn hàng nhập của bạn
+              Quản lý đơn hàng
             </p>
           </div>
           <div className="flex gap-4">
-            <Button className="flex items-center gap-2.5 px-6 py-3 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 shadow-lg shadow-slate-200/20">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="text-slate-600"
-              >
-                <path
-                  d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M7 10L12 15L17 10"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span className="font-semibold text-slate-700">Xuất Excel</span>
-            </Button>
             <Button
               onClick={handleCreateOrder}
               className="flex items-center gap-2.5 px-6 py-3 bg-white border-2 border-blue-600 rounded-xl hover:border-blue-700 hover:bg-blue-50 transition-all duration-200 shadow-lg shadow-blue-500/20"
@@ -182,40 +229,10 @@ const ImportOrderList = () => {
 
         <nav className="flex gap-8 border-b-2 border-slate-200 mb-8">
           <button
-            className={`pb-4 px-4 font-semibold text-base transition-all duration-200 relative ${selectedTab === 'all'
-              ? 'text-blue-600'
-              : 'text-slate-600 hover:text-slate-900'
-              }`}
-            onClick={() => setSelectedTab('all')}
+            className="pb-4 px-4 font-semibold text-base text-blue-600 relative"
           >
             Tất cả đơn hàng
-            {selectedTab === 'all' && (
-              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full"></div>
-            )}
-          </button>
-          <button
-            className={`pb-4 px-4 font-semibold text-base transition-all duration-200 relative ${selectedTab === 'new'
-              ? 'text-blue-600'
-              : 'text-slate-600 hover:text-slate-900'
-              }`}
-            onClick={() => setSelectedTab('new')}
-          >
-            Đơn mới
-            {selectedTab === 'new' && (
-              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full"></div>
-            )}
-          </button>
-          <button
-            className={`pb-4 px-4 font-semibold text-base transition-all duration-200 relative ${selectedTab === 'completed'
-              ? 'text-blue-600'
-              : 'text-slate-600 hover:text-slate-900'
-              }`}
-            onClick={() => setSelectedTab('completed')}
-          >
-            Hoàn thành
-            {selectedTab === 'completed' && (
-              <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full"></div>
-            )}
+            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full"></div>
           </button>
         </nav>
 
@@ -226,7 +243,7 @@ const ImportOrderList = () => {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Tìm kiếm đơn hàng theo mã, SĐT..."
+                placeholder="Nhập mã đơn hàng (VD: HD-010224-0001)"
                 className="w-full px-5 py-3 pl-12 bg-white border-2 border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all duration-200 text-slate-600 placeholder:text-slate-400"
               />
               <Image
@@ -241,48 +258,233 @@ const ImportOrderList = () => {
           </div>
 
           <div className="flex gap-4">
-            <Button className="flex items-center gap-2 px-5 py-3 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-semibold text-slate-700">
-              <span>Sắp xếp theo ngày</span>
-              <Image
-                src="/icons/arrow-up.svg"
-                alt="arrow-up"
-                width={16}
-                height={16}
-                className="text-slate-500"
-                priority
-              />
-            </Button>
-            <Button className="flex items-center gap-2 px-5 py-3 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-semibold text-slate-700">
-              <span>Trạng thái</span>
-              <Image
-                src="/icons/arrow-up.svg"
-                alt="arrow-up"
-                width={16}
-                height={16}
-                className="text-slate-500"
-                priority
-              />
-            </Button>
-            <Button className="flex items-center gap-2 px-5 py-3 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-semibold text-slate-700">
-              <Image
-                src="/icons/filter.svg"
-                alt="filter"
-                width={16}
-                height={16}
-                className="text-slate-500"
-                priority
-              />
-              <span>Lọc</span>
-            </Button>
-            <Button className="flex items-center gap-2 px-5 py-3 bg-white border-2 border-slate-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-semibold text-slate-700">
-              <span>Lưu bộ lọc</span>
-            </Button>
+            <div className="relative group flex-1">
+              <Button
+                onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
+                  event?.stopPropagation();
+                  setDateFilter(prev => prev === 'all' ? 'today' : prev === 'today' ? 'week' : prev === 'week' ? 'month' : 'all');
+                }}
+                className={`w-full flex items-center gap-2 px-5 py-3 bg-white border ${dateFilter !== 'all' ? 'border-blue-500 text-blue-600' : 'border-slate-200 text-slate-700'} rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={dateFilter !== 'all' ? 'text-blue-500' : 'text-slate-500'}
+                >
+                  <path
+                    d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M16 2V6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M8 2V6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M3 10H21"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>{dateFilter === 'all' ? 'Thời gian' : dateFilter === 'today' ? 'Hôm nay' : dateFilter === 'week' ? '7 ngày qua' : '30 ngày qua'}</span>
+              </Button>
+            </div>
+
+            <div className="relative group flex-1">
+              <Button
+                onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
+                  event?.stopPropagation();
+                  setStatusFilter(prev => prev === 'all' ? 'completed' : prev === 'completed' ? 'pending' : 'all');
+                }}
+                className={`w-full flex items-center gap-2 px-5 py-3 bg-white border ${statusFilter !== 'all' ? 'border-blue-500 text-blue-600' : 'border-slate-200 text-slate-700'} rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={statusFilter !== 'all' ? 'text-blue-500' : 'text-slate-500'}
+                >
+                  <path
+                    d="M9 11L12 14L22 4"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>{statusFilter === 'all' ? 'Trạng thái' : statusFilter === 'completed' ? 'Hoàn thành' : 'Chưa hoàn thành'}</span>
+              </Button>
+            </div>
+
+            <div className="relative group flex-1">
+              <Button
+                onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
+                  event?.stopPropagation();
+                  setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+                }}
+                className={`w-full flex items-center gap-2 px-5 py-3 bg-white border ${sortOrder === 'asc' ? 'border-blue-500 text-blue-600' : 'border-slate-200 text-slate-700'} rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={sortOrder === 'asc' ? 'text-blue-500' : 'text-slate-500'}
+                >
+                  <path
+                    d="M4 17L8 21L12 17"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M4 7L8 3L12 7"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M8 3V21"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M16 7H20"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M16 12H20"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M16 17H20"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>Sắp xếp {sortOrder === 'asc' ? '↑' : '↓'}</span>
+              </Button>
+            </div>
+
+            <div className="relative group flex-1">
+              <Button
+                onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
+                  event?.stopPropagation();
+                  handleReset();
+                }}
+                className="w-full flex items-center gap-2 px-5 py-3 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition-all duration-200 font-medium text-slate-600 justify-center"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="text-slate-500"
+                >
+                  <path
+                    d="M1 4V10H7"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M3.51 15C4.15839 16.8404 5.38734 18.4202 7.01166 19.5014C8.63598 20.5826 10.5677 21.1066 12.5157 20.9945C14.4637 20.8824 16.3226 20.1402 17.8121 18.8798C19.3017 17.6194 20.3413 15.909 20.7742 14.0064C21.2072 12.1037 21.0101 10.112 20.2126 8.33111C19.4152 6.55025 18.0605 5.0768 16.3528 4.13277C14.6451 3.18874 12.6769 2.82527 10.7447 3.09712C8.81245 3.36897 7.02091 4.26142 5.64 5.64L1 10"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>Đặt lại</span>
+              </Button>
+            </div>
           </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-xl shadow-slate-200/20 overflow-hidden">
+            <div className="max-h-[490px]">
+              <table className="w-full">
+                <thead className="sticky top-0 bg-white z-10">
+                  <tr className="border-b-2 border-slate-100">
+                    <th className="px-8 py-5 text-left font-semibold text-slate-600">Mã đơn xuất</th>
+                    <th className="px-8 py-5 text-left font-semibold text-slate-600">Ngày cập nhật</th>
+                    <th className="px-8 py-5 text-left font-semibold text-slate-600">Trạng thái</th>
+                    <th className="px-8 py-5 text-right font-semibold text-slate-600">Thành tiền</th>
+                    <th className="px-8 py-5 text-center font-semibold text-slate-600">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {/* Skeleton loader - hiển thị 5 dòng loading placeholder */}
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <tr key={`skeleton-${index}`} className="animate-pulse">
+                      <td className="px-8 py-5">
+                        <div className="h-5 bg-slate-200 rounded w-32"></div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="h-5 bg-slate-200 rounded w-40"></div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <div className="h-7 bg-slate-200 rounded-full w-28"></div>
+                      </td>
+                      <td className="px-8 py-5 text-right">
+                        <div className="h-5 bg-slate-200 rounded w-24 ml-auto"></div>
+                      </td>
+                      <td className="px-8 py-5 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="h-9 bg-slate-200 rounded w-32"></div>
+                          <div className="h-9 bg-slate-200 rounded-full w-9"></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-8 py-5 border-t-2 border-slate-100 bg-slate-50">
+              <div className="text-sm text-slate-400">Đang tải dữ liệu...</div>
+            </div>
           </div>
         ) : (
           <div className="bg-white rounded-2xl border-2 border-slate-200 shadow-xl shadow-slate-200/20 overflow-hidden">
@@ -306,70 +508,83 @@ const ImportOrderList = () => {
               <table className="w-full">
                 <thead className="sticky top-0 bg-white z-10">
                   <tr className="border-b-2 border-slate-100">
-                    <th className="px-8 py-5 text-left font-semibold text-slate-600">Mã đơn nhập</th>
+                    <th className="px-8 py-5 text-left font-semibold text-slate-600">Mã đơn xuất</th>
                     <th className="px-8 py-5 text-left font-semibold text-slate-600">Ngày cập nhật</th>
                     <th className="px-8 py-5 text-left font-semibold text-slate-600">Trạng thái</th>
                     <th className="px-8 py-5 text-right font-semibold text-slate-600">Thành tiền</th>
                     <th className="px-8 py-5 text-center font-semibold text-slate-600">Hành động</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {searchedOrders.map((order) => (
+                <tbody className="divide-y divide-slate-200">
+                  {filteredOrders.map((order) => (
                     <tr
                       key={order._id}
-                      className="border-b border-slate-100 hover:bg-slate-50/80 transition-colors duration-200"
-                      onClick={() => router.push(`/home/order/${order._id}`)}
+                      className="hover:bg-slate-50 cursor-pointer"
+                      onClick={(event: React.MouseEvent) => {
+                        router.push(`/home/order/${order._id}`);
+                      }}
                     >
                       <td className="px-8 py-5">
-                        <a href="#" className="text-blue-600 hover:text-blue-700 font-semibold text-base">
-                          {order.order_code.replace('SL', 'HD')}
+                        <a
+                          href="#"
+                          className="text-blue-600 hover:text-blue-700 font-semibold"
+                        >
+                          {order.order_code}
                         </a>
                       </td>
                       <td className="px-8 py-5 text-slate-600">
-                        {new Date(order.created_at).toLocaleDateString('vi-VN', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {new Date(order.created_at).toLocaleString('vi-VN')}
                       </td>
                       <td className="px-8 py-5">
-                        <span className="inline-flex px-4 py-1.5 rounded-full text-sm bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100/50">
-                          {order.payment_status ? 'Đã hoàn thành' : 'Chưa hoàn thành'}
-                        </span>
+                        {order.payment_status ? (
+                          <span className="inline-flex px-4 py-1.5 rounded-full text-sm bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100/50">
+                            Đã hoàn thành
+                          </span>
+                        ) : (
+                          <span className="inline-flex px-4 py-1.5 rounded-full text-sm bg-yellow-50 text-yellow-600 font-semibold border border-yellow-100/50">
+                            Chờ thanh toán
+                          </span>
+                        )}
                       </td>
                       <td className="px-8 py-5 text-right font-semibold text-slate-800">
                         {formatCurrency(order.total_amount)}
                       </td>
                       <td className="px-8 py-5 text-center">
-                        <button
-                          onClick={(e) => handleDeleteOrder(e, order._id)}
-                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
-                        >
-                          <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
+                        <div className="flex items-center justify-center gap-2">
+                          {!order.payment_status && (
+                            <Button
+                              onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
+                                event?.stopPropagation();
+                                openPaymentModal(order._id, order.total_amount);
+                              }}
+                              className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors"
+                            >
+                              Hoàn thành thanh toán
+                            </Button>
+                          )}
+                          <Button
+                            onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
+                              event?.stopPropagation();
+                              handleDeleteOrder(order._id);
+                            }}
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full transition-colors duration-200"
                           >
-                            <path
-                              d="M3 6H5H21"
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              fill="none"
+                              viewBox="0 0 24 24"
                               stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                            <path
-                              d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </button>
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -379,7 +594,7 @@ const ImportOrderList = () => {
 
             <div className="px-8 py-5 border-t-2 border-slate-100 bg-slate-50">
               <div className="text-sm text-slate-600">
-                Hiển thị {searchedOrders.length} trên tổng {orders.length} đơn hàng
+                Tổng đơn hàng: {orders.length}
               </div>
             </div>
           </div>
@@ -393,6 +608,15 @@ const ImportOrderList = () => {
             </a>
           </p>
         </div>
+
+        {/* Payment Modal */}
+        <PaymentModal
+          isOpen={isModalOpen}
+          onClose={closePaymentModal}
+          onComplete={handlePaymentComplete}
+          orderId={selectedOrderId}
+          totalAmount={selectedOrderAmount}
+        />
       </div>
     </div>
   );

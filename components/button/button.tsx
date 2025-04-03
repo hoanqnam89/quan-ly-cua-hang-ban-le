@@ -2,13 +2,13 @@ import React, { CSSProperties, ReactElement, ReactNode } from 'react';
 import styles from './style.module.css';
 import { EButtonType } from './interfaces/button-type.interface';
 
-interface IButtonProps 
+interface IButtonProps
 // extends ButtonHTMLAttributes<HTMLButtonElement> 
 {
   children: ReactNode
   isDisable?: boolean
   isLoading?: boolean
-  onClick?: () => void
+  onClick?: (event?: React.MouseEvent<HTMLButtonElement>) => void
   type?: EButtonType
   style?: CSSProperties
   className?: string
@@ -19,14 +19,14 @@ export default function Button({
   children,
   isDisable = false,
   isLoading = false,
-  onClick = () => {},
-  type = EButtonType.TRANSPARENT, 
-  style = {}, 
-  className = ``, 
-  title = ``, 
+  onClick = () => { },
+  type = EButtonType.TRANSPARENT,
+  style = {},
+  className = ``,
+  title = ``,
 }: Readonly<IButtonProps>): ReactElement {
   const buttonStyle: CSSProperties = {
-    ...style, 
+    ...style,
   }
 
   return (

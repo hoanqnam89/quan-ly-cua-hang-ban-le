@@ -4,20 +4,25 @@ import { IBusiness } from "@/interfaces/business.interface";
 import { IProduct } from "@/interfaces/product.interface";
 import { ProductModel } from "@/models";
 import { BusinessModel } from "@/models/Business";
-import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
+import { deleteCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { print } from "@/utils/print";
 import { isValidObjectId } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
+import { cache } from "react";
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
 const collectionModel = ProductModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
+// Cache kết quả API trong 5 phút (300000ms)
+const CACHE_DURATION = 300000;
+let cachedProducts: { data: IProduct[]; timestamp: number } | null = null;
+
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
-  print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow );
+  print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow);
 
   // const cookieStore: ReadonlyRequestCookies = await cookies();
   // const isUserAdmin = await isAdmin(
@@ -42,40 +47,40 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   try {
     connectToDatabase();
 
-    if ( !isValidObjectId(product.supplier_id) )
+    if (!isValidObjectId(product.supplier_id))
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `The ID '${product.supplier_id}' is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.ACCOUNT} ID is correct.`, 
+          path,
+          `Please check if the ${ECollectionNames.ACCOUNT} ID is correct.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
-    const foundBusiness: IBusiness | null = 
+    const foundBusiness: IBusiness | null =
       await BusinessModel.findById(product.supplier_id);
 
-    if (!foundBusiness) 
+    if (!foundBusiness)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `The ${ECollectionNames.ACCOUNT} with the ID '${product.supplier_id}' does not exist in our records.`,
-          path, 
+          path,
           `Please check if the ${ECollectionNames.ACCOUNT} ID is correct.`
-        ),          
+        ),
         { status: EStatusCode.NOT_FOUND }
       );
-    
+
     const newProduct = new collectionModel({
-      created_at: new Date(), 
-      updated_at: new Date(), 
+      created_at: new Date(),
+      updated_at: new Date(),
       supplier_id: product.supplier_id,
       name: product.name,
       description: product.description,
       image_links: product.image_links,
-      input_price: product.input_price, 
-      output_price: product.output_price, 
+      input_price: product.input_price,
+      output_price: product.output_price,
     });
 
     const savedProduct: collectionType = await newProduct.save();
@@ -85,11 +90,14 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           ``,
-          path, 
-          `Please contact for more information.`, 
+          path,
+          `Please contact for more information.`,
         ),
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
+
+    // Khi tạo mới sản phẩm, cần vô hiệu hóa cache để lần tải tiếp theo sẽ lấy dữ liệu mới nhất
+    cachedProducts = null;
 
     return NextResponse.json(savedProduct, { status: EStatusCode.CREATED });
   } catch (error: unknown) {
@@ -99,24 +107,100 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       createErrorMessage(
         `Failed to create ${collectionName}.`,
         error as string,
-        path, 
-        `Please contact for more information.`, 
+        path,
+        `Please contact for more information.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
   }
-}
+};
 
-export const GET = async (): Promise<NextResponse> => 
-  await getCollectionsApi<collectionType>(
-    collectionName, 
-    collectionModel, 
+export const GET = async (req: NextRequest): Promise<NextResponse> => {
+  print(`${collectionName} API - GET ${collectionName}s`, ETerminal.FgGreen);
+
+  // Kiểm tra cache - nếu có dữ liệu trong cache và cache chưa hết hạn, trả về dữ liệu từ cache
+  const now = Date.now();
+  if (cachedProducts && now - cachedProducts.timestamp < CACHE_DURATION) {
+    console.log(`${collectionName} API - Serving from cache`);
+    return NextResponse.json(cachedProducts.data, {
+      status: EStatusCode.OK,
+      headers: {
+        'Cache-Control': 'public, max-age=300', // Cache 5 phút ở client
+        'X-Cached-Response': 'true'
+      }
+    });
+  }
+
+  try {
+    // Kết nối đến database
+    await connectToDatabase();
+
+    // Phân tích URL để lấy các query parameters
+    const url = new URL(req.url);
+    const limit = parseInt(url.searchParams.get('limit') || '1000'); // Mặc định lấy tối đa 1000 sản phẩm
+    const fields = url.searchParams.get('fields'); // Cho phép chỉ định các trường cần lấy
+
+    // Xây dựng projection để chỉ lấy các trường cần thiết
+    let projection = {};
+    if (fields) {
+      projection = fields.split(',').reduce((acc, field) => ({
+        ...acc,
+        [field.trim()]: 1
+      }), {});
+    } else {
+      // Mặc định chỉ lấy các trường cần thiết cho danh sách sản phẩm
+      projection = {
+        _id: 1,
+        name: 1,
+        description: 1,
+        image_links: 1,
+        input_price: 1,
+        output_price: 1,
+        supplier_id: 1,
+        created_at: 1,
+        updated_at: 1
+      };
+    }
+
+    // Query với projection và giới hạn số lượng
+    const products = await collectionModel
+      .find({}, projection)
+      .limit(limit)
+      .lean() // Chuyển kết quả sang plain JavaScript objects để tăng hiệu suất
+      .exec();
+
+    // Lưu kết quả vào cache
+    cachedProducts = { data: products, timestamp: now };
+
+    // Trả về kết quả với Cache-Control header
+    return NextResponse.json(products, {
+      status: EStatusCode.OK,
+      headers: {
+        'Cache-Control': 'public, max-age=300', // Cache 5 phút ở client
+        'X-Cached-Response': 'false'
+      }
+    });
+  } catch (error: unknown) {
+    console.error(error);
+
+    return NextResponse.json(
+      createErrorMessage(
+        `Failed to get ${collectionName}s.`,
+        error as string,
+        path,
+        `Please contact for more information.`,
+      ),
+      { status: EStatusCode.INTERNAL_SERVER_ERROR }
+    );
+  }
+};
+
+export const DELETE = async (): Promise<NextResponse> => {
+  // Vô hiệu hóa cache khi xóa sản phẩm
+  cachedProducts = null;
+  return await deleteCollectionsApi<collectionType>(
+    collectionName,
+    collectionModel,
     path
   );
-
-export const DELETE = async (): Promise<NextResponse> => 
-  await deleteCollectionsApi<collectionType>(
-    collectionName, 
-    collectionModel, 
-    path
-  );
+};

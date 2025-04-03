@@ -9,12 +9,12 @@ export const connectToDatabase = async (): Promise<void> => {
 
   if (isConnected) {
     print(`Already connected to MongoDB`, ETerminal.FgGreen);
-    return; 
+    return;
   }
 
   try {
     await mongoose.connect(process.env.MONGODB_URI ?? ``, {
-      dbName: ``, 
+      dbName: ``,
     });
     isConnected = true;
 

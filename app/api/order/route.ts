@@ -2,6 +2,7 @@ import { connectToDatabase } from "@/utils/database";
 import { NextRequest, NextResponse } from "next/server";
 import { OrderModel } from "@/models/Order";
 import { isValidObjectId } from "mongoose";
+import { CACHE_DURATION, getOrderCache, setOrderCache, invalidateOrderCache } from "./cache";
 
 export async function POST(request: NextRequest) {
     try {
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
 
         // Lấy số thứ tự từ đơn hàng cuối cùng trong ngày
         const lastOrder = await OrderModel.findOne({
-            order_code: new RegExp(`^SL-${dateStr}-`)
+            order_code: new RegExp(`^HD-${dateStr}-`)
         }).sort({ order_code: -1 });
 
         let sequence = 1;
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
             sequence = lastSequence + 1;
         }
 
-        const orderCode = `SL-${dateStr}-${sequence.toString().padStart(4, '0')}`;
+        const orderCode = `HD-${dateStr}-${sequence.toString().padStart(4, '0')}`;
 
         // Tạo đơn hàng mới
         const order = await OrderModel.create({
@@ -57,6 +58,9 @@ export async function POST(request: NextRequest) {
             payment_status: body.payment_status,
             note: body.note
         });
+
+        // Vô hiệu hóa cache khi có đơn hàng mới
+        invalidateOrderCache();
 
         return NextResponse.json(order);
     } catch (error) {
@@ -85,11 +89,60 @@ export async function POST(request: NextRequest) {
     }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
+        console.log('API Order - Requested');
+
+        // Kiểm tra cache - nếu có dữ liệu trong cache và cache chưa hết hạn, trả về dữ liệu từ cache
+        const cachedData = getOrderCache();
+        if (cachedData) {
+            console.log('API Order - Serving from cache');
+            return NextResponse.json(cachedData, {
+                headers: {
+                    'Cache-Control': 'public, max-age=300', // Cache 5 phút ở client
+                    'X-Cached-Response': 'true'
+                }
+            });
+        }
+
+        // Kết nối đến database
         await connectToDatabase();
-        const orders = await OrderModel.find().sort({ created_at: -1 });
-        return NextResponse.json(orders);
+
+        // Phân tích URL để lấy các query parameters
+        const url = new URL(request.url);
+        const limit = parseInt(url.searchParams.get('limit') || '1000'); // Mặc định lấy tối đa 1000 đơn hàng
+
+        // Projection để chỉ lấy các trường cần thiết
+        const projection = {
+            _id: 1,
+            order_code: 1,
+            employee_id: 1,
+            items: 1,
+            total_amount: 1,
+            payment_method: 1,
+            payment_status: 1,
+            note: 1,
+            created_at: 1,
+            updated_at: 1
+        };
+
+        // Thực hiện truy vấn với các tối ưu
+        const orders = await OrderModel.find({}, projection)
+            .sort({ created_at: -1 })
+            .limit(limit)
+            .lean()
+            .exec();
+
+        // Lưu kết quả vào cache
+        setOrderCache(orders);
+
+        // Trả về kết quả với Cache-Control header
+        return NextResponse.json(orders, {
+            headers: {
+                'Cache-Control': 'public, max-age=300', // Cache 5 phút ở client
+                'X-Cached-Response': 'false'
+            }
+        });
     } catch (error) {
         console.error('Error fetching orders:', error);
         return NextResponse.json(

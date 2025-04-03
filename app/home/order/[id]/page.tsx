@@ -126,13 +126,13 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
                     <div className="flex items-center h-14 px-5">
                         <Button
                             onClick={() => router.push('/home/order')}
-                            className="flex items-center justify-center w-[30px] h-[30px] rounded-lg border border-slate-200 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200"
+                            className="flex items-center justify-center w-6 h-6 rounded-md border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200"
                         >
                             <Image
                                 src="/icons/chevron-left.svg"
                                 alt="back"
-                                width={16}
-                                height={16}
+                                width={14}
+                                height={14}
                                 className="text-slate-600"
                                 priority
                             />
