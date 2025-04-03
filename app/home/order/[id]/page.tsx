@@ -38,7 +38,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
     useEffect(() => {
         const fetchOrderDetails = async () => {
             try {
-                const response = await fetch(`/api/order/${resolvedParams.id}`);
+                const response = await fetch(`/api/order/${resolvedParams.id}?t=${Date.now()}`);
                 if (!response.ok) {
                     const errorData = await response.json();
                     throw new Error(errorData.error || 'Không thể lấy thông tin đơn hàng');
@@ -55,7 +55,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
 
                 for (const productId of uniqueProductIds) {
                     try {
-                        const productResponse = await fetch(`/api/product/${productId}`);
+                        const productResponse = await fetch(`/api/product/${productId}?t=${Date.now()}`);
                         if (productResponse.ok) {
                             const product = await productResponse.json();
                             productData[productId as string] = product.name || 'Sản phẩm không xác định';
@@ -71,7 +71,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
 
                 // Lấy thông tin nhân viên
                 try {
-                    const employeeResponse = await fetch(`/api/user/account/${data.employee_id}`);
+                    const employeeResponse = await fetch(`/api/user/account/${data.employee_id}?t=${Date.now()}`);
                     if (employeeResponse.ok) {
                         const employeeData = await employeeResponse.json();
                         const fullName = [
@@ -126,17 +126,17 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
                     <div className="flex items-center h-14 px-5">
                         <Button
                             onClick={() => router.push('/home/order')}
-                            className="flex items-center justify-center w-6 h-6 rounded-md border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200"
+                            className="flex items-center justify-center w-20 h-10 rounded-md bg-white border border-slate-200 hover:bg-slate-50 transition-all duration-200 shadow-sm"
                         >
                             <Image
                                 src="/icons/chevron-left.svg"
-                                alt="back"
-                                width={14}
-                                height={14}
+                                alt="Back"
+                                width={16}
+                                height={16}
                                 className="text-slate-600"
                             />
                         </Button>
-                        <span className="ml-3 text-lg font-medium text-slate-900">Chi tiết đơn hàng</span>
+                        <span className="ml-5 text-lg font-medium text-slate-900">Chi tiết đơn hàng</span>
                     </div>
                 </div>
             </div>

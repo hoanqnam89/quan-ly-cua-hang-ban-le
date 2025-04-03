@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { connectToDatabase } from '@/utils/database';
 import { OrderModel } from '@/models/Order';
-import { invalidateOrderCache } from './cache';
 
 // API tạo đơn hàng nháp
 export async function POST(req: Request) {
@@ -34,9 +33,6 @@ export async function POST(req: Request) {
             created_at: new Date(),
             updated_at: new Date()
         });
-
-        // Vô hiệu hóa cache khi tạo đơn hàng mới
-        invalidateOrderCache();
 
         return NextResponse.json(draftOrder, { status: 201 });
     } catch (error: any) {
@@ -94,9 +90,6 @@ export async function PATCH(req: Request) {
                 { status: 404 }
             );
         }
-
-        // Vô hiệu hóa cache khi cập nhật trạng thái đơn hàng
-        invalidateOrderCache();
 
         return NextResponse.json(updatedOrder);
     } catch (error: any) {

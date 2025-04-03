@@ -58,11 +58,12 @@ const ImportOrderList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [selectedOrderAmount, setSelectedOrderAmount] = useState<number>(0);
+  const [selectedOrderItems, setSelectedOrderItems] = useState<any[]>([]);
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch('/api/order?limit=500', {
-        cache: 'default'
+      const res = await fetch(`/api/order?limit=500&t=${Date.now()}`, {
+        cache: 'no-store'
       });
       const data = await res.json();
 
@@ -89,7 +90,7 @@ const ImportOrderList = () => {
       try {
         console.log('Đang gửi yêu cầu xóa đơn hàng:', orderId);
 
-        const response = await fetch(`/api/order/${orderId}`, {
+        const response = await fetch(`/api/order/${orderId}?t=${Date.now()}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
@@ -168,26 +169,84 @@ const ImportOrderList = () => {
   };
 
   // Áp dụng các bộ lọc và sắp xếp
-  const filteredOrders = statusFilter === 'all'
-    ? sortOrders(orders.filter(filterByDate).filter(filterByStatus))
-    : sortOrders(orders.filter(filterByDate).filter(filterByStatus)).filter(order =>
-      statusFilter === 'completed' ? order.payment_status : !order.payment_status
-    );
+  const filteredOrders = sortOrders(orders.filter(filterByDate).filter(filterByStatus));
 
-  const searchedOrders = sortOrders(filteredOrders).filter(order => {
+  // Tìm kiếm đơn hàng theo mã
+  const searchedOrders = filteredOrders.filter(order => {
+    if (!searchTerm.trim()) return true;
+
     const searchTermLower = searchTerm.toLowerCase().trim();
-    const orderCodeLower = order.order_code.toLowerCase();
-    return orderCodeLower.includes(searchTermLower);
+    return order.order_code.toLowerCase().includes(searchTermLower);
   });
 
-  const openPaymentModal = (orderId: string, amount: number) => {
+  const openPaymentModal = async (orderId: string, amount: number) => {
     setSelectedOrderId(orderId);
     setSelectedOrderAmount(amount);
+    setSelectedOrderItems([]); // Đặt lại danh sách sản phẩm
+
+    // Lấy thông tin chi tiết đơn hàng với thông tin sản phẩm
+    try {
+      // Bước 1: Lấy thông tin đơn hàng
+      const response = await fetch(`/api/order/${orderId}?t=${Date.now()}`);
+      if (!response.ok) {
+        throw new Error('Không thể lấy thông tin đơn hàng');
+      }
+
+      const orderData = await response.json();
+      console.log("Dữ liệu đơn hàng:", orderData);
+
+      if (!orderData.items || orderData.items.length === 0) {
+        console.warn("Đơn hàng không có sản phẩm nào");
+        setIsModalOpen(true);
+        return;
+      }
+
+      // Bước 2: Lấy thông tin chi tiết từng sản phẩm
+      const itemsWithProductDetails = await Promise.all(
+        orderData.items.map(async (item: any) => {
+          try {
+            if (!item.product_id) {
+              console.warn("Sản phẩm không có ID:", item);
+              return item;
+            }
+
+            const productResponse = await fetch(`/api/product/${item.product_id}?t=${Date.now()}`);
+            if (!productResponse.ok) {
+              console.warn(`Không thể lấy thông tin sản phẩm ${item.product_id}`, productResponse.statusText);
+              return item;
+            }
+
+            const productData = await productResponse.json();
+            console.log(`Dữ liệu sản phẩm ${item.product_id}:`, productData);
+
+            return {
+              ...item,
+              product: {
+                _id: productData._id,
+                name: productData.name,
+                image_links: productData.image_links || []
+              }
+            };
+          } catch (error) {
+            console.error(`Lỗi khi lấy thông tin sản phẩm ${item.product_id}:`, error);
+            return item;
+          }
+        })
+      );
+
+      console.log("Chi tiết sản phẩm đã lấy:", itemsWithProductDetails);
+      setSelectedOrderItems(itemsWithProductDetails);
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin đơn hàng:", error);
+      alert("Không thể lấy thông tin chi tiết đơn hàng. Vui lòng thử lại sau.");
+    }
+
     setIsModalOpen(true);
   };
 
   const closePaymentModal = () => {
     setIsModalOpen(false);
+    setSelectedOrderItems([]);
   };
 
   const handlePaymentComplete = () => {
@@ -516,7 +575,7 @@ const ImportOrderList = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
-                  {filteredOrders.map((order) => (
+                  {searchedOrders.map((order) => (
                     <tr
                       key={order._id}
                       className="hover:bg-slate-50 cursor-pointer"
@@ -616,6 +675,7 @@ const ImportOrderList = () => {
           onComplete={handlePaymentComplete}
           orderId={selectedOrderId}
           totalAmount={selectedOrderAmount}
+          orderItems={selectedOrderItems}
         />
       </div>
     </div>

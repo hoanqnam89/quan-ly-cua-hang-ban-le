@@ -25,7 +25,7 @@ const collectionModel = WarehouseReceiptModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
-  print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow );
+  print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow);
 
   // const cookieStore: ReadonlyRequestCookies = await cookies();
   // const isUserAdmin = await isAdmin(
@@ -49,115 +49,115 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
 
   try {
     connectToDatabase();
-    
-    if ( !isValidObjectId(warehouseReceipt.supplier_id) )
+
+    if (!isValidObjectId(warehouseReceipt.supplier_id))
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `The ID '${warehouseReceipt.supplier_id}' is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`, 
+          path,
+          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
-    const foundSupplier: IBusiness | null = 
+    const foundSupplier: IBusiness | null =
       await BusinessModel.findById(warehouseReceipt.supplier_id);
 
-    if (!foundSupplier) 
+    if (!foundSupplier)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `The ${ECollectionNames.BUSINESS} with the ID '${warehouseReceipt.supplier_receipt_id}' does not exist in our records.`,
-          path, 
+          path,
           `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`
-        ),          
+        ),
         { status: EStatusCode.NOT_FOUND }
       );
 
-    if ( !isValidObjectId(warehouseReceipt.supplier_receipt_id) )
+    if (!isValidObjectId(warehouseReceipt.supplier_receipt_id))
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `The ID '${warehouseReceipt.supplier_receipt_id}' is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.SUPPLIER_RECEIPT} ID is correct.`, 
+          path,
+          `Please check if the ${ECollectionNames.SUPPLIER_RECEIPT} ID is correct.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
-    const foundSupplierReceipt: IOrderForm | null = 
+    const foundSupplierReceipt: IOrderForm | null =
       await OrderFormModel.findById(warehouseReceipt.supplier_receipt_id);
 
-    if (!foundSupplierReceipt) 
+    if (!foundSupplierReceipt)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `The ${ECollectionNames.ORDER_FORM} with the ID '${warehouseReceipt.supplier_receipt_id}' does not exist in our records.`,
-          path, 
+          path,
           `Please check if the ${ECollectionNames.ORDER_FORM} ID is correct.`
-        ),          
+        ),
         { status: EStatusCode.NOT_FOUND }
       );
 
     const otherWarehouseReceipts = await collectionModel.find({
-      supplier_receipt_id: warehouseReceipt.supplier_receipt_id, 
+      supplier_receipt_id: warehouseReceipt.supplier_receipt_id,
     });
 
-    if (otherWarehouseReceipts.length > 0) 
+    if (otherWarehouseReceipts.length > 0)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `The ${ECollectionNames.SUPPLIER_RECEIPT} with the ID '${warehouseReceipt.supplier_receipt_id}' is belonging to another warehouse receipt in out record.`,
-          path, 
+          path,
           `Please check if the ${ECollectionNames.SUPPLIER_RECEIPT} ID is correct.`
-        ),          
+        ),
         { status: EStatusCode.CONFLICT }
       );
 
-    const warehouseReceiptProductDetailIds: string[] = 
+    const warehouseReceiptProductDetailIds: string[] =
       warehouseReceipt.product_details.map(
-        (warehouseReceiptProductDetail: IReceiptProduct) => 
+        (warehouseReceiptProductDetail: IReceiptProduct) =>
           warehouseReceiptProductDetail._id
       );
 
-    if ( !isIdsValid(warehouseReceiptProductDetailIds) ) 
+    if (!isIdsValid(warehouseReceiptProductDetailIds))
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `Some of the ID in warehouse receipt's product details is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`, 
+          path,
+          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
-    const isProductDetailIdsExist: boolean = 
+    const isProductDetailIdsExist: boolean =
       await isIdsExist<IProductDetail>(
-        warehouseReceiptProductDetailIds, 
+        warehouseReceiptProductDetailIds,
         ProductDetailModel
       );
 
-    if ( !isProductDetailIdsExist ) 
+    if (!isProductDetailIdsExist)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `Some of the ${ECollectionNames.PRODUCT_DETAIL} in warehouse receipt's product details does not exist in our records.`,
-          path, 
-          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`, 
-        ),          
+          path,
+          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`,
+        ),
         { status: EStatusCode.NOT_FOUND }
       );
 
     const newWarehouseReceipt = new collectionModel({
-      created_at: new Date(), 
-      updated_at: new Date(), 
-      supplier_id: warehouseReceipt.supplier_id, 
-      supplier_receipt_id: warehouseReceipt.supplier_receipt_id, 
+      created_at: new Date(),
+      updated_at: new Date(),
+      supplier_id: warehouseReceipt.supplier_id,
+      supplier_receipt_id: warehouseReceipt.supplier_receipt_id,
       product_details: warehouseReceipt.product_details,
     });
 
-    const savedWarehouseReceipt: collectionType = await 
+    const savedWarehouseReceipt: collectionType = await
       newWarehouseReceipt.save();
 
     if (!savedWarehouseReceipt)
@@ -165,8 +165,8 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           ``,
-          path, 
-          `Please contact for more information.`, 
+          path,
+          `Please contact for more information.`,
         ),
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
@@ -176,32 +176,36 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     ): Promise<void> => {
       const unit = await UnitModel.findById(productDetail.unit_id);
       const foundProductDetail = await ProductDetailModel.findById(productDetail._id);
-      const sum = foundProductDetail.input_quantity 
-        + productDetail.quantity * unit.equal;
-      let inp = 0;
 
-      if (sum % 2 === 0) {
-        inp = sum / 2;
-      } else {
-        inp = (sum - 1) / 2;
-      }
+      // Tính số lượng nhập thêm
+      const additionalQuantity = productDetail.quantity * unit.equal;
 
-      const out: number = sum - inp;
+      // Tính tổng số lượng sau khi nhập
+      const totalQuantity = foundProductDetail.input_quantity + additionalQuantity;
+
+      // Tính số lượng tồn kho (10% tổng số lượng)
+      const stockQuantity = Math.floor(totalQuantity * 0.1);
+
+      // Số lượng đang bán
+      const newOutputQuantity = totalQuantity - stockQuantity;
+
+      // Đảm bảo số lượng trong kho CHÍNH XÁC bằng số lượng đang bán + số lượng tồn kho
+      const newInputQuantity = newOutputQuantity + stockQuantity;
 
       await ProductDetailModel.findOneAndUpdate(
-        { _id: productDetail._id }, 
+        { _id: productDetail._id },
         {
           $set: {
-            input_quantity: inp, 
-            output_quantity: out, 
-            updated_at: new Date(), 
+            input_quantity: newInputQuantity,
+            output_quantity: newOutputQuantity,
+            updated_at: new Date(),
           }
         }
       );
     });
 
     return NextResponse.json(
-      savedWarehouseReceipt, 
+      savedWarehouseReceipt,
       { status: EStatusCode.CREATED }
     );
   } catch (error: unknown) {
@@ -211,24 +215,24 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       createErrorMessage(
         `Failed to create ${collectionName}.`,
         error as string,
-        path, 
-        `Please contact for more information.`, 
+        path,
+        `Please contact for more information.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
   }
 }
 
-export const GET = async (): Promise<NextResponse> => 
+export const GET = async (): Promise<NextResponse> =>
   await getCollectionsApi<collectionType>(
-    collectionName, 
-    collectionModel, 
+    collectionName,
+    collectionModel,
     path
   );
 
-export const DELETE = async (): Promise<NextResponse> => 
+export const DELETE = async (): Promise<NextResponse> =>
   await deleteCollectionsApi<collectionType>(
-    collectionName, 
-    collectionModel, 
+    collectionName,
+    collectionModel,
     path
   );

@@ -4,10 +4,10 @@ import { Button } from '@/components';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import ProductList from '../../../components/ProductList';
-import ProductSelectModal from '../../../components/ProductSelectModal';
 import type { IProduct } from '../../../interfaces/product.interface';
 import { useEffect, useState } from 'react';
 import { formatCurrency } from '../../../utils/format';
+import { IProductDetail } from '@/interfaces/product-detail.interface';
 
 interface OrderItem {
     product: IProduct;
@@ -16,10 +16,10 @@ interface OrderItem {
 
 export default function CreateOrder() {
     const router = useRouter();
+    const [selectedTab, setSelectedTab] = useState<'products' | 'cart'>('products');
     const [products, setProducts] = useState<IProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
     const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
     const [employee, setEmployee] = useState<string>('');
     const [employeeName, setEmployeeName] = useState<string>('');
@@ -31,7 +31,7 @@ export default function CreateOrder() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSavingDraft, setIsSavingDraft] = useState(false);
     const [searchTerm, setSearchTerm] = useState<string>('');
-    const [productInventory, setProductInventory] = useState<Record<string, number>>({});
+    const [productStockInfo, setProductStockInfo] = useState<Record<string, number>>({});
 
     const totalAmount = orderItems.reduce(
         (sum, item) => sum + item.product.output_price * item.quantity,
@@ -84,68 +84,79 @@ export default function CreateOrder() {
         fetchEmployee();
     }, []);
 
+    // Lấy dữ liệu sản phẩm và inventory ban đầu
     useEffect(() => {
-        const fetchProducts = async () => {
+        const fetchInitialData = async () => {
             try {
                 // Giới hạn số lượng sản phẩm tải về trong 1 request (1000 là đủ cho hầu hết trường hợp)
-                const response = await fetch('/api/product?limit=1000');
+                const response = await fetch(`/api/product?limit=1000&t=${Date.now()}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch products');
                 }
                 const data = await response.json();
                 setProducts(data);
                 setLoading(false);
-
-                // Fetch tồn kho tách biệt để cho phép hiển thị giao diện sớm hơn
-                fetchProductInventory();
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Không thể tải danh sách sản phẩm');
                 setLoading(false);
             }
         };
 
-        fetchProducts();
+        fetchInitialData();
     }, []);
 
-    // Hàm lấy thông tin tồn kho cho tất cả sản phẩm
-    const fetchProductInventory = async () => {
-        try {
-            // Gọi API endpoint mới để lấy tồn kho cho tất cả sản phẩm trong một request
-            const response = await fetch('/api/product-detail/inventory');
+    // Lấy thông tin số lượng đang bán của tất cả sản phẩm một lần duy nhất
+    useEffect(() => {
+        const fetchProductStockInfo = async () => {
+            if (!products.length) return;
 
-            if (!response.ok) {
-                console.warn('Không thể lấy thông tin tồn kho sản phẩm');
-                return;
+            try {
+                // Lấy tất cả thông tin chi tiết sản phẩm
+                const response = await fetch(`/api/product-detail?t=${Date.now()}`);
+                if (response.ok) {
+                    const allProductDetails: IProductDetail[] = await response.json();
+
+                    // Nhóm chi tiết sản phẩm theo product_id và tính tổng số lượng đang bán
+                    const stockInfo: Record<string, number> = {};
+
+                    allProductDetails.forEach(detail => {
+                        if (!stockInfo[detail.product_id]) {
+                            stockInfo[detail.product_id] = 0;
+                        }
+                        stockInfo[detail.product_id] += detail.output_quantity || 0;
+                    });
+
+                    setProductStockInfo(stockInfo);
+                }
+            } catch (error) {
+                console.error('Lỗi khi lấy thông tin số lượng đang bán:', error);
             }
+        };
 
-            // Lấy dữ liệu tồn kho dạng map: product_id -> số lượng
-            const inventoryData = await response.json();
-            setProductInventory(inventoryData);
-        } catch (error) {
-            console.error('Lỗi khi lấy thông tin tồn kho sản phẩm:', error);
-        }
-    };
+        fetchProductStockInfo();
+    }, [products]);
+
+    // Lọc sản phẩm theo từ khóa tìm kiếm
+    const filteredProducts = products.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const handleBack = () => {
         router.push('/home/order');
     };
 
     const handleAddToOrder = (product: IProduct) => {
-        // Kiểm tra số lượng sản phẩm trong kho từ state đã lưu
-        const availableQuantity = productInventory[product._id] || 0;
+        // Kiểm tra số lượng đang bán của sản phẩm
+        const availableQuantity = productStockInfo[product._id] || 0;
 
-        if (availableQuantity <= 0) {
-            alert('Sản phẩm không còn trong kho!');
-            return;
-        }
-
+        // Thêm sản phẩm trực tiếp vào đơn hàng với số lượng mặc định là 1
         setOrderItems((prev) => {
             const existingItem = prev.find((item) => item.product._id === product._id);
 
             if (existingItem) {
-                // Kiểm tra nếu số lượng hiện tại đã đạt giới hạn tồn kho
+                // Nếu tổng số lượng sau khi thêm vượt quá số lượng đang bán, hiển thị thông báo
                 if (existingItem.quantity >= availableQuantity) {
-                    alert(`Số lượng sản phẩm "${product.name}" trong kho chỉ còn ${availableQuantity}!`);
+                    alert(`Sản phẩm "${product.name}" chỉ còn ${availableQuantity} sản phẩm đang bán!`);
                     return prev;
                 }
 
@@ -154,6 +165,12 @@ export default function CreateOrder() {
                         ? { ...item, quantity: item.quantity + 1 }
                         : item
                 );
+            }
+
+            // Nếu số lượng đang bán bằng 0, hiển thị thông báo
+            if (availableQuantity === 0) {
+                alert(`Sản phẩm "${product.name}" đã hết hàng!`);
+                return prev;
             }
 
             return [...prev, { product, quantity: 1 }];
@@ -206,7 +223,7 @@ export default function CreateOrder() {
 
         setIsSubmitting(true);
         try {
-            const response = await fetch('/api/order', {
+            const response = await fetch(`/api/order?t=${Date.now()}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -229,60 +246,8 @@ export default function CreateOrder() {
                 throw new Error('Không thể tạo đơn hàng');
             }
 
-            // ---- START: Cập nhật số lượng tồn kho ----
-            try {
-                const updatedInventory = { ...productInventory };
-
-                for (const item of orderItems) {
-                    // Tìm thông tin chi tiết sản phẩm để cập nhật kho
-                    const productDetailResponse = await fetch(`/api/product-detail/by-product/${item.product._id}`);
-
-                    if (!productDetailResponse.ok) {
-                        console.warn(`Không thể lấy thông tin chi tiết sản phẩm ${item.product.name} (${item.product._id}). Status: ${productDetailResponse.status}`);
-                        continue;
-                    }
-
-                    const productDetails = await productDetailResponse.json();
-
-                    if (!productDetails || productDetails.length === 0) {
-                        console.warn(`Không tìm thấy thông tin chi tiết cho sản phẩm ${item.product.name} (${item.product._id})`);
-                        continue;
-                    }
-
-                    // Sử dụng productDetail đầu tiên nếu có nhiều
-                    const productDetail = productDetails[0];
-
-                    // Cập nhật số lượng trong kho và số lượng đang bán
-                    const newInputQuantity = Math.max(0, productDetail.input_quantity - item.quantity);
-
-                    const stockUpdateResponse = await fetch(`/api/product-detail/${productDetail._id}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            _id: productDetail._id,
-                            input_quantity: newInputQuantity, // Giảm số lượng trong kho
-                            output_quantity: productDetail.output_quantity + item.quantity, // Tăng số lượng đang bán
-                            date_of_manufacture: productDetail.date_of_manufacture,
-                            expiry_date: productDetail.expiry_date
-                        }),
-                    });
-
-                    if (!stockUpdateResponse.ok) {
-                        console.warn(`Không thể cập nhật tồn kho cho sản phẩm ${item.product.name} (${item.product._id}). Status: ${stockUpdateResponse.status}`);
-                    } else {
-                        // Cập nhật lại state tồn kho nếu thành công
-                        updatedInventory[item.product._id] = newInputQuantity;
-                    }
-                }
-
-                // Cập nhật lại state tồn kho sau khi đã cập nhật tất cả sản phẩm
-                setProductInventory(updatedInventory);
-            } catch (stockError) {
-                console.error('Lỗi khi cập nhật tồn kho:', stockError);
-            }
-            // ---- END: Cập nhật số lượng tồn kho ----
+            // Cập nhật số lượng sản phẩm đang bán sau khi tạo đơn hàng thành công
+            await updateProductQuantities();
 
             alert('Tạo đơn hàng thành công!');
             router.push('/home/order');
@@ -294,6 +259,117 @@ export default function CreateOrder() {
         }
     };
 
+    // Hàm cập nhật số lượng sản phẩm đang bán
+    const updateProductQuantities = async () => {
+        try {
+            console.log("Bắt đầu cập nhật số lượng sản phẩm...");
+            // Lấy tất cả thông tin chi tiết sản phẩm hiện tại
+            const response = await fetch(`/api/product-detail?t=${Date.now()}`);
+            if (!response.ok) {
+                throw new Error('Không thể lấy thông tin chi tiết sản phẩm');
+            }
+
+            const productDetails: IProductDetail[] = await response.json();
+            console.log(`Đã lấy ${productDetails.length} chi tiết sản phẩm`);
+
+            // Tạo bản đồ chi tiết sản phẩm theo product_id
+            const productDetailsMap: Record<string, IProductDetail[]> = {};
+
+            productDetails.forEach(detail => {
+                if (!productDetailsMap[detail.product_id]) {
+                    productDetailsMap[detail.product_id] = [];
+                }
+                productDetailsMap[detail.product_id].push(detail);
+            });
+
+            // Cập nhật số lượng cho từng sản phẩm trong đơn hàng
+            for (const orderItem of orderItems) {
+                const productId = orderItem.product._id;
+                const quantityToDecrease = orderItem.quantity;
+                console.log(`Cập nhật sản phẩm ${orderItem.product.name} - ID: ${productId} - Số lượng: ${quantityToDecrease}`);
+
+                if (productDetailsMap[productId] && productDetailsMap[productId].length > 0) {
+                    // Sắp xếp chi tiết sản phẩm theo ngày hết hạn (cũ nhất trước)
+                    const sortedDetails = productDetailsMap[productId].sort(
+                        (a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime()
+                    );
+
+                    console.log(`Tìm thấy ${sortedDetails.length} chi tiết cho sản phẩm ${productId}`);
+
+                    let remainingQuantity = quantityToDecrease;
+
+                    // Giảm số lượng từ các chi tiết sản phẩm, bắt đầu từ sản phẩm sắp hết hạn nhất
+                    for (const detail of sortedDetails) {
+                        if (remainingQuantity <= 0) break;
+
+                        // Số lượng có thể giảm từ chi tiết này
+                        const currentOutput = detail.output_quantity || 0;
+                        const newOutput = Math.max(0, currentOutput - remainingQuantity);
+                        const decreaseAmount = currentOutput - newOutput;
+
+                        console.log(`Chi tiết sản phẩm ID: ${detail._id} - Số lượng hiện tại: ${currentOutput} - Giảm: ${decreaseAmount} - Còn lại: ${newOutput}`);
+
+                        if (decreaseAmount > 0) {
+                            // Cập nhật số lượng đã bán trong chi tiết sản phẩm
+                            try {
+                                const detailId = detail._id.toString();
+                                console.log(`Gửi request PATCH đến /api/product-detail/${detailId}`);
+
+                                const updateResponse = await fetch(`/api/product-detail/${detailId}?t=${Date.now()}`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        output_quantity: newOutput
+                                    }),
+                                });
+
+                                if (!updateResponse.ok) {
+                                    const errorText = await updateResponse.text();
+                                    console.error(`Lỗi khi cập nhật chi tiết sản phẩm ${detailId}:`, errorText);
+                                    throw new Error(`Không thể cập nhật chi tiết sản phẩm: ${updateResponse.status} ${updateResponse.statusText}`);
+                                } else {
+                                    const responseData = await updateResponse.json();
+                                    console.log(`Đã cập nhật thành công chi tiết sản phẩm ${detailId}`, responseData);
+                                }
+
+                                remainingQuantity -= decreaseAmount;
+                            } catch (updateError) {
+                                console.error(`Lỗi khi gửi request PATCH:`, updateError);
+                                throw updateError;
+                            }
+                        }
+                    }
+
+                    if (remainingQuantity > 0) {
+                        console.warn(`Không đủ số lượng cho sản phẩm ${productId}. Còn lại ${remainingQuantity} không thể giảm.`);
+                    }
+                } else {
+                    console.warn(`Không tìm thấy chi tiết sản phẩm cho ID: ${productId}`);
+                }
+            }
+
+            // Cập nhật lại thông tin số lượng trong state
+            const updatedStockInfo = { ...productStockInfo };
+
+            orderItems.forEach(item => {
+                const productId = item.product._id;
+                if (updatedStockInfo[productId] !== undefined) {
+                    updatedStockInfo[productId] = Math.max(0, updatedStockInfo[productId] - item.quantity);
+                    console.log(`Cập nhật state: Sản phẩm ${item.product.name} - Số lượng mới: ${updatedStockInfo[productId]}`);
+                }
+            });
+
+            setProductStockInfo(updatedStockInfo);
+            console.log("Hoàn thành cập nhật số lượng sản phẩm");
+
+        } catch (error) {
+            console.error('Lỗi khi cập nhật số lượng sản phẩm:', error);
+            alert('Đơn hàng đã được tạo nhưng có lỗi khi cập nhật số lượng sản phẩm. Vui lòng kiểm tra lại.');
+        }
+    };
+
     const handleSaveDraft = async () => {
         if (orderItems.length === 0) {
             alert('Vui lòng thêm sản phẩm vào đơn hàng');
@@ -302,7 +378,7 @@ export default function CreateOrder() {
 
         setIsSavingDraft(true);
         try {
-            const response = await fetch('/api/order', {
+            const response = await fetch(`/api/order?t=${Date.now()}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -337,11 +413,6 @@ export default function CreateOrder() {
         }
     };
 
-    // Lọc sản phẩm theo từ khóa tìm kiếm
-    const filteredProducts = products.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
     };
@@ -353,18 +424,17 @@ export default function CreateOrder() {
                     <div className="flex items-center h-16 px-5">
                         <Button
                             onClick={handleBack}
-                            className="flex items-center justify-center w-6 h-6 rounded-md border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200"
+                            className="flex items-center justify-center w6 h-10 rounded-md bg-white border border-slate-200 hover:bg-slate-50 transition-all duration-200 shadow-sm"
                         >
                             <Image
                                 src="/icons/chevron-left.svg"
-                                alt="back"
-                                width={14}
-                                height={14}
-                                className="text-slate-600"
-                                priority
+                                alt="Back"
+                                width={16}
+                                height={16}
+                                className="text-slate-500"
                             />
                         </Button>
-                        <span className="ml-3 text-xl font-medium text-slate-900">Tạo đơn hàng</span>
+                        <span className="ml-5 text-xl font-medium text-slate-900">Tạo đơn hàng</span>
                     </div>
                 </div>
             </div>
@@ -436,11 +506,13 @@ export default function CreateOrder() {
                                                     {formatCurrency(item.product.output_price)}
                                                 </div>
                                             </div>
-                                            <div className="inline-flex h-10 border border-slate-200 rounded-lg overflow-hidden divide-x divide-slate-200">
+                                            <div className="flex items-center border rounded-md overflow-hidden">
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
+
                                                         if (item.quantity > 1) {
+                                                            // Giảm số lượng sản phẩm nhưng không dưới 1
                                                             setOrderItems(prev =>
                                                                 prev.map(i =>
                                                                     i.product._id === item.product._id
@@ -465,28 +537,29 @@ export default function CreateOrder() {
                                                         className="text-slate-600"
                                                     />
                                                 </button>
-                                                <div className="w-12 h-10 flex items-center justify-center bg-white font-medium text-base text-slate-900">
+                                                <div className="w-14 h-10 flex items-center justify-center border-l border-r text-sm text-black font-medium">
                                                     {item.quantity}
                                                 </div>
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
 
-                                                        // Kiểm tra số lượng sản phẩm trong kho từ state
-                                                        const availableQuantity = productInventory[item.product._id] || 0;
-
-                                                        if (item.quantity >= availableQuantity) {
-                                                            alert(`Số lượng sản phẩm "${item.product.name}" trong kho chỉ còn ${availableQuantity}!`);
-                                                            return;
-                                                        }
-
                                                         // Tăng số lượng sản phẩm
                                                         setOrderItems(prev =>
-                                                            prev.map(i =>
-                                                                i.product._id === item.product._id
-                                                                    ? { ...i, quantity: i.quantity + 1 }
-                                                                    : i
-                                                            )
+                                                            prev.map(i => {
+                                                                if (i.product._id === item.product._id) {
+                                                                    const availableQuantity = productStockInfo[item.product._id] || 0;
+
+                                                                    // Kiểm tra nếu số lượng sau khi tăng vượt quá số lượng đang bán
+                                                                    if (i.quantity >= availableQuantity) {
+                                                                        alert(`Sản phẩm "${item.product.name}" chỉ còn ${availableQuantity} sản phẩm đang bán!`);
+                                                                        return i;
+                                                                    }
+
+                                                                    return { ...i, quantity: i.quantity + 1 };
+                                                                }
+                                                                return i;
+                                                            })
                                                         );
                                                     }}
                                                     className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 transition-colors"
@@ -612,6 +685,7 @@ export default function CreateOrder() {
                                     <ProductList
                                         products={filteredProducts}
                                         onSelect={handleAddToOrder}
+                                        productStockInfo={productStockInfo}
                                     />
                                 )}
                             </div>

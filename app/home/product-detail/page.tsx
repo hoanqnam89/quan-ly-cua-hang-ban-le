@@ -33,26 +33,26 @@ export default function Product() {
     DEFAULT_PROCDUCT_DETAIL
   );
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
-  const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
-    id: ``, 
-    isClicked: false
-  });
-  const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({
-    id: ``, 
-    isClicked: false
-  });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [productOptions, setProductOptions] = useState<ISelectOption[]>([]);
+  const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
+    id: '',
+    isClicked: false,
+  });
+  const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({
+    id: '',
+    isClicked: false,
+  });
 
   const getProducts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
       const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
-        ECollectionNames.PRODUCT, 
+        ECollectionNames.PRODUCT,
       );
 
       setProductDetail({
-        ...productDetail, 
-        product_id: newProducts[0]._id, 
+        ...productDetail,
+        product_id: newProducts[0]._id,
       });
       setProductOptions([
         ...newProducts.map((product: IProduct): ISelectOption => ({
@@ -61,10 +61,10 @@ export default function Product() {
         }))
       ]);
       setIsLoading(false);
-    }, 
+    },
     [],
   );
-  
+
   useEffect((): void => {
     getProducts();
   }, []);
@@ -72,136 +72,161 @@ export default function Product() {
   const columns: Array<IColumnProps<collectionType>> = [
     {
       key: `index`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `#`,
       size: `1fr`,
     },
     {
       key: `_id`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Mã`,
       size: `6fr`,
       isVisible: false
     },
     {
       key: `product_id`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Sản phẩm`,
-      size: `3fr`, 
-      render: (collection: collectionType): ReactElement => 
-        createCollectionDetailLink(
-          ECollectionNames.PRODUCT, 
-          collection.product_id
-        )
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement => {
+        const productOption = productOptions.find(
+          (option) => option.value === collection.product_id
+        );
+
+        const productName = productOption?.label || 'Không xác định';
+        // Cắt ngắn tên sản phẩm nếu quá dài
+        const displayName = productName.length > 20
+          ? productName.substring(0, 30) + '...'
+          : productName;
+
+        return (
+          <div className="flex flex-col">
+            <div
+              className="cursor-pointer hover:text-blue-500 transition-colors"
+              onClick={() => {
+                window.location.href = `/home/product/${collection.product_id}`;
+              }}
+            >
+              <Text isEllipsis={false} className="font-medium" tooltip={productName}>
+                {displayName}
+              </Text>
+            </div>
+          </div>
+        );
+      }
     },
     {
       key: `date_of_manufacture`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Ngày sản xuất`,
-      size: `4fr`, 
+      size: `3fr`,
       render: (collection: collectionType): ReactElement => {
-        const date: string = 
+        const date: string =
           new Date(collection.date_of_manufacture).toLocaleString();
-        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+        return <Text isEllipsis={true} className="text-center" tooltip={date}>{date}</Text>
       }
     },
     {
       key: `expiry_date`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Hạn sử dụng`,
-      size: `4fr`, 
+      size: `3fr`,
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.expiry_date).toLocaleString();
-        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+        return <Text isEllipsis={true} className="text-center" tooltip={date}>{date}</Text>
       }
     },
     {
       key: `input_quantity`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Số lượng trong kho`,
-      size: `3fr`, 
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement => (
+        <div className="w-full flex justify-center">
+          <Text isEllipsis={false} className="text-center font-medium" tooltip={`${collection.input_quantity}`}>
+            {collection.input_quantity}
+          </Text>
+        </div>
+      )
     },
     {
       key: `output_quantity`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Số lượng đang bán`,
-      size: `3fr`, 
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement => (
+        <div className="w-full flex justify-center">
+          <Text isEllipsis={false} className="text-center font-medium" tooltip={`${collection.output_quantity}`}>
+            {collection.output_quantity}
+          </Text>
+        </div>
+      )
     },
     {
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Số lượng tồn kho`,
-      size: `3fr`, 
-      render: (collection: collectionType): ReactElement => 
-        <Text isEllipsis={true} tooltip={``}>
-          {collection.input_quantity + collection.output_quantity}
-        </Text>
-    },
-    {
-      key: `created_at`,
-      ref: useRef(null), 
-      title: `Ngày tạo`,
-      size: `4fr`, 
+      size: `2fr`,
       render: (collection: collectionType): ReactElement => {
-        const date: string = new Date(collection.created_at).toLocaleString();
-        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
-      }
-    },
-    {
-      key: `updated_at`,
-      ref: useRef(null), 
-      title: `Ngày cập nhật`,
-      size: `4fr`, 
-      render: (collection: collectionType): ReactElement => {
-        const date: string = new Date(collection.updated_at).toLocaleString();
-        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+        const inventory = collection.input_quantity - collection.output_quantity;
+        return (
+          <div className="w-full flex justify-center">
+            <Text isEllipsis={false} className={`text-center font-medium ${inventory > 0 ? 'text-green-600' : inventory === 0 ? 'text-yellow-500' : 'text-red-600'}`} tooltip={`${inventory}`}>
+              {inventory}
+            </Text>
+          </div>
+        );
       }
     },
     {
       title: `Xem thêm`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => <Button 
+      ref: useRef(null),
+      size: `1.5fr`,
+      render: (collection: collectionType): ReactElement => <Button
         title={createMoreInfoTooltip(collectionName)}
         onClick={(): void => {
           setIsClickShowMore({
-            id: collection._id, 
-            isClicked: !isClickShowMore.isClicked, 
+            id: collection._id,
+            isClicked: !isClickShowMore.isClicked,
           });
         }}
       >
-        <IconContainer 
+        <IconContainer
           tooltip={createMoreInfoTooltip(collectionName)}
           iconLink={infoIcon}
+          className="flex justify-center"
         >
         </IconContainer>
       </Button>
     },
     {
       title: `Xem chi tiết`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => 
-        createCollectionDetailLink(
-          collectionName, 
-          collection._id
-        )
+      ref: useRef(null),
+      size: `1.5fr`,
+      render: (collection: collectionType): ReactElement =>
+        <div className="flex justify-center">
+          {createCollectionDetailLink(
+            collectionName,
+            collection._id
+          )}
+        </div>
     },
     {
       title: `Xóa`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => <Button 
+      ref: useRef(null),
+      size: `1.5fr`,
+      render: (collection: collectionType): ReactElement => <Button
         title={createDeleteTooltip(collectionName)}
         onClick={(): void => {
           setIsClickDelete({
-            id: collection._id, 
-            isClicked: !isClickShowMore.isClicked, 
+            id: collection._id,
+            isClicked: !isClickDelete.isClicked,
           });
         }}
       >
-        <IconContainer 
+        <IconContainer
           tooltip={createDeleteTooltip(collectionName)}
           iconLink={trashIcon}
+          className="flex justify-center"
         >
         </IconContainer>
       </Button>
@@ -210,15 +235,15 @@ export default function Product() {
 
   const handleChangeProductDetail = (e: ChangeEvent<HTMLInputElement>): void => {
     setProductDetail({
-      ...productDetail, 
-      [e.target.name]: e.target.value, 
+      ...productDetail,
+      [e.target.name]: e.target.value,
     });
   }
-  
+
   const handleChangeProductId = (e: ChangeEvent<HTMLSelectElement>): void => {
     setProductDetail({
-      ...productDetail, 
-      product_id: e.target.value, 
+      ...productDetail,
+      product_id: e.target.value,
     });
   }
 
@@ -245,7 +270,7 @@ export default function Product() {
       defaultCollection={DEFAULT_PROCDUCT_DETAIL}
       collection={productDetail}
       setCollection={setProductDetail}
-      isModalReadonly={isModalReadOnly} 
+      isModalReadonly={isModalReadOnly}
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
@@ -293,7 +318,7 @@ export default function Product() {
             <InputSection label={`Số lượng trong kho`} gridColumns={gridColumns}>
               <NumberInput
                 isDisable={true}
-                value={productDetail.input_quantity + ``}
+                value={productDetail.output_quantity + Math.floor(productDetail.input_quantity * 0.1) + ``}
                 max={MAX_PRICE}
               >
               </NumberInput>
@@ -303,6 +328,15 @@ export default function Product() {
               <NumberInput
                 isDisable={true}
                 value={productDetail.output_quantity + ``}
+                max={MAX_PRICE}
+              >
+              </NumberInput>
+            </InputSection>
+
+            <InputSection label={`Số lượng tồn kho`} gridColumns={gridColumns}>
+              <NumberInput
+                isDisable={true}
+                value={productDetail.input_quantity - productDetail.output_quantity + ``}
                 max={MAX_PRICE}
               >
               </NumberInput>

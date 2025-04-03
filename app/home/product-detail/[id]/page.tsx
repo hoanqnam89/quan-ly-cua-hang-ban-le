@@ -5,7 +5,7 @@ import { IPageParams } from '@/interfaces/page-params.interface'
 import { getCollectionById } from '@/services/api-service';
 import React, { ReactElement, use, useCallback, useEffect, useState } from 'react'
 import InputSection from '../../components/input-section/input-section';
-import { Text, NumberInput, SelectDropdown, LoadingScreen } from '@/components';
+import { Text, NumberInput, SelectDropdown, LoadingScreen, Button } from '@/components';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
@@ -16,6 +16,8 @@ import { ISelectOption } from '@/components/select-dropdown/interfaces/select-op
 import { IProduct } from '@/interfaces/product.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
+import { ENotificationType } from '@/components/notify/notification/notification';
+import useNotificationsHook from '@/hooks/notifications-hook';
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
@@ -25,50 +27,86 @@ const gridColumns: string = `200px 1fr`;
 export default function Detail({
   params
 }: Readonly<IPageParams>): ReactElement {
-  const [collection, setCollection] = useState<collectionType>(
-    defaultCollection
-  );
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const { id } = use(params);
+  const { createNotification, notificationElements } = useNotificationsHook();
+  const [collection, setCollection] = useState<collectionType>(defaultCollection);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [productOptions, setProductOptions] = useState<ISelectOption[]>([]);
 
-  const getProducts: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
-        ECollectionNames.PRODUCT, 
-      );
-
-      setCollection({
-        ...collection, 
-        product_id: newProducts[0]._id, 
+  const getProducts = useCallback(async () => {
+    try {
+      const getCollectionApiResponse = await getCollectionById(id, collectionName);
+      const productDetail = await getCollectionApiResponse.json();
+      setCollection(productDetail);
+    } catch (error) {
+      console.error('Lỗi khi tải dữ liệu:', error);
+      createNotification({
+        type: ENotificationType.ERROR,
+        children: 'Không thể tải dữ liệu: ' + (error as Error).message,
+        isAutoClose: true,
+        id: 0
       });
-      setProductOptions([
-        ...newProducts.map((product: IProduct): ISelectOption => ({
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  const getCollectionNameById = useCallback(async () => {
+    try {
+      const products = await fetchGetCollections<IProduct>(ECollectionNames.PRODUCT);
+      setProductOptions(
+        products.map((product: IProduct): ISelectOption => ({
           label: `${product.name}`,
           value: product._id,
         }))
-      ]);
-      setIsLoading(false);
-    }, 
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
-    [],
-  );
-  
-  useEffect((): void => {
-    getProducts();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+      );
+    } catch (error) {
+      console.error('Lỗi khi tải danh sách sản phẩm:', error);
+    }
   }, []);
 
-  useEffect((): void => {
-    const getCollectionNameById = async () => {
-      const getCollectionApiResponse: Response = 
-        await getCollectionById(id, collectionName);
-      const getCollectionApiJson = await getCollectionApiResponse.json();
-      setCollection(getCollectionApiJson);
-      setIsLoading(false);
+  const handleTransferStock = async () => {
+    try {
+      const response = await fetch(`/api/product-detail/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input_quantity: 0,
+          output_quantity: collection.input_quantity
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Không thể chuyển tồn kho');
+      }
+
+      const updatedProduct = await response.json();
+      setCollection(updatedProduct);
+      createNotification({
+        type: ENotificationType.SUCCESS,
+        children: 'Đã chuyển tồn kho sang đang bán thành công',
+        isAutoClose: true,
+        id: 0
+      });
+    } catch (error) {
+      createNotification({
+        type: ENotificationType.ERROR,
+        children: 'Không thể chuyển tồn kho: ' + (error as Error).message,
+        isAutoClose: true,
+        id: 0
+      });
     }
+  };
+
+  useEffect(() => {
+    getProducts();
+  }, [getProducts]);
+
+  useEffect(() => {
     getCollectionNameById();
-  }, []);
+  }, [getCollectionNameById]);
 
   return (
     <>
@@ -77,7 +115,7 @@ export default function Detail({
       <InputSection label={`Cho sản phẩm`}>
         <div className={`flex items-center justify-center gap-2`}>
           {createCollectionDetailLink(
-            ECollectionNames.PRODUCT, 
+            ECollectionNames.PRODUCT,
             collection.product_id
           )}
 
@@ -120,17 +158,25 @@ export default function Detail({
       </InputSection>
 
       <InputSection label={`Số lượng đang bán`} gridColumns={gridColumns}>
-        <NumberInput
-          isDisable={true}
-          value={collection.output_quantity + ``}
-        >
-        </NumberInput>
+        <div className="flex items-center gap-2">
+          <NumberInput
+            isDisable={true}
+            value={collection.output_quantity + ``}
+          >
+          </NumberInput>
+          {collection.output_quantity === 0 && collection.input_quantity > 0 && (
+            <Button onClick={handleTransferStock}>
+              Chuyển
+            </Button>
+          )}
+        </div>
       </InputSection>
 
       <TimestampTabItem<collectionType> collection={collection}>
       </TimestampTabItem>
 
       {isLoading && <LoadingScreen></LoadingScreen>}
+      {notificationElements}
     </>
   )
 }
