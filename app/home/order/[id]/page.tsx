@@ -134,7 +134,6 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
                                 width={14}
                                 height={14}
                                 className="text-slate-600"
-                                priority
                             />
                         </Button>
                         <span className="ml-3 text-lg font-medium text-slate-900">Chi tiết đơn hàng</span>
