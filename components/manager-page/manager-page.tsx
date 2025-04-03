@@ -31,6 +31,7 @@ interface IManagerPageProps<T> {
   isLoaded?: boolean
   handleOpenModal?: (isOpen: boolean) => boolean
   onExitModalForm?: () => void
+  name?: string
 }
 
 export default function ManagerPage<T extends {_id: string, index?: number}>({
@@ -46,7 +47,8 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   isClickDelete, 
   isLoaded = false, 
   handleOpenModal = (isOpen: boolean): boolean => !isOpen, 
-  onExitModalForm = () => {}
+  onExitModalForm = () => {}, 
+  name = translateCollectionName(collectionName), 
 }: Readonly<IManagerPageProps<T>>): ReactElement {
   const translatedCollectionName: string = 
     translateCollectionName(collectionName);
@@ -313,7 +315,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   const managerPage: ReactElement = isLoading 
     ? <LoadingScreen></LoadingScreen>
     : <>
-      <title>{`Quản lý ${translatedCollectionName}`}</title>
+      <title>{`Quản lý ${name}`}</title>
 
       <Table<T>
         name={translatedCollectionName}
