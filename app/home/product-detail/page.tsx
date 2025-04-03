@@ -81,6 +81,7 @@ export default function Product() {
       ref: useRef(null), 
       title: `Mã`,
       size: `6fr`,
+      isVisible: false
     },
     {
       key: `product_id`,
@@ -117,7 +118,7 @@ export default function Product() {
     {
       key: `input_quantity`,
       ref: useRef(null), 
-      title: `Số lượng tồn kho`,
+      title: `Số lượng trong kho`,
       size: `3fr`, 
     },
     {
@@ -128,7 +129,7 @@ export default function Product() {
     },
     {
       ref: useRef(null), 
-      title: `Số lượng trong kho`,
+      title: `Số lượng tồn kho`,
       size: `3fr`, 
       render: (collection: collectionType): ReactElement => 
         <Text isEllipsis={true} tooltip={``}>
@@ -222,15 +223,15 @@ export default function Product() {
   }
 
   const handleOpenModal = (prev: boolean): boolean => {
-    if (productOptions.length === 0) {
-      createNotification({
-        id: 0,
-        children: <Text>Thêm sản phẩm vào trước khi thêm chi tiết sản phẩm!</Text>,
-        type: ENotificationType.ERROR,
-        isAutoClose: true, 
-      });
-      return prev;
-    }
+    // if (productOptions.length === 0) {
+    //   createNotification({
+    //     id: 0,
+    //     children: <Text>Thêm sản phẩm vào trước khi thêm chi tiết sản phẩm!</Text>,
+    //     type: ENotificationType.ERROR,
+    //     isAutoClose: true, 
+    //   });
+    //   return prev;
+    // }
 
     return !prev;
   }

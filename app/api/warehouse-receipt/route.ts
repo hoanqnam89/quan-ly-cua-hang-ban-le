@@ -3,10 +3,12 @@ import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { IBusiness } from "@/interfaces/business.interface";
 import { IOrderForm, IOrderFormProductDetail } from "@/interfaces/order-form.interface";
 import { IProductDetail } from "@/interfaces/product-detail.interface";
+import { IUnit } from "@/interfaces/unit.interface";
 import { IReceiptProduct, IWarehouseReceipt } from "@/interfaces/warehouse-receipt.interface";
 import { BusinessModel } from "@/models/Business";
 import { OrderFormModel } from "@/models/OrderForm";
 import { ProductDetailModel } from "@/models/ProductDetail";
+import { UnitModel } from "@/models/Unit";
 import { WarehouseReceiptModel } from "@/models/WarehouseReceipt";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
@@ -172,11 +174,26 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     warehouseReceipt.product_details.forEach(async (
       productDetail: IOrderFormProductDetail
     ): Promise<void> => {
+      const unit = await UnitModel.findById(productDetail.unit_id);
+      const foundProductDetail = await ProductDetailModel.findById(productDetail._id);
+      const sum = foundProductDetail.input_quantity 
+        + productDetail.quantity * unit.equal;
+      let inp = 0;
+
+      if (sum % 2 === 0) {
+        inp = sum / 2;
+      } else {
+        inp = (sum - 1) / 2;
+      }
+
+      const out: number = sum - inp;
+
       await ProductDetailModel.findOneAndUpdate(
         { _id: productDetail._id }, 
         {
           $set: {
-            input_quantity: productDetail.quantity, 
+            input_quantity: inp, 
+            output_quantity: out, 
             updated_at: new Date(), 
           }
         }

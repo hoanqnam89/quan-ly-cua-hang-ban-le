@@ -314,15 +314,15 @@ export default function Product() {
   const gridColumns: string = `200px 1fr`;
 
   const handleOpenModal = (prev: boolean): boolean => {
-    if (supplierOptions.length === 0) {
-      createNotification({
-        id: 0,
-        children: <Text>Thêm nhà cung cấp vào trước khi thêm sản phẩm!</Text>,
-        type: ENotificationType.ERROR,
-        isAutoClose: true, 
-      });
-      return prev;
-    }
+    // if (supplierOptions.length === 0) {
+    //   createNotification({
+    //     id: 0,
+    //     children: <Text>Thêm nhà cung cấp vào trước khi thêm sản phẩm!</Text>,
+    //     type: ENotificationType.ERROR,
+    //     isAutoClose: true, 
+    //   });
+    //   return prev;
+    // }
 
     return !prev;
   }

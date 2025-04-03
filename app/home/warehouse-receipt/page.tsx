@@ -406,35 +406,35 @@ export default function Product() {
   const gridColumns: string = `200px 1fr`;
 
   const handleOpenModal = (prev: boolean): boolean => {
-    if (supplierOptions.length === 0) {
-      createNotification({
-        id: 0,
-        children: <Text>Thêm doanh nghiệp vào trước khi thêm phiếu nhập kho!</Text>,
-        type: ENotificationType.ERROR,
-        isAutoClose: true, 
-      });
-      return prev;
-    }
+    // if (supplierOptions.length === 0) {
+    //   createNotification({
+    //     id: 0,
+    //     children: <Text>Thêm doanh nghiệp vào trước khi thêm phiếu nhập kho!</Text>,
+    //     type: ENotificationType.ERROR,
+    //     isAutoClose: true, 
+    //   });
+    //   return prev;
+    // }
 
-    if (unitOptions.length === 0) {
-      createNotification({
-        id: 0,
-        children: <Text>Thêm đơn vị vào trước khi thêm phiếu nhập kho!</Text>,
-        type: ENotificationType.ERROR,
-        isAutoClose: true, 
-      });
-      return prev;
-    }
+    // if (unitOptions.length === 0) {
+    //   createNotification({
+    //     id: 0,
+    //     children: <Text>Thêm đơn vị vào trước khi thêm phiếu nhập kho!</Text>,
+    //     type: ENotificationType.ERROR,
+    //     isAutoClose: true, 
+    //   });
+    //   return prev;
+    // }
 
-    if (productDetailOptions.length === 0) {
-      createNotification({
-        id: 0,
-        children: <Text>Thêm chi tiết vào trước khi thêm phiếu nhập kho!</Text>,
-        type: ENotificationType.ERROR,
-        isAutoClose: true, 
-      });
-      return prev;
-    }
+    // if (productDetailOptions.length === 0) {
+    //   createNotification({
+    //     id: 0,
+    //     children: <Text>Thêm chi tiết vào trước khi thêm phiếu nhập kho!</Text>,
+    //     type: ENotificationType.ERROR,
+    //     isAutoClose: true, 
+    //   });
+    //   return prev;
+    // }
 
     return !prev;
   }
