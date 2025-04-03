@@ -30,7 +30,7 @@ export default function SelectDropdown({
         disabled={isDisable}
         className={`p-2 outline outline-1 ${styles.select}`} 
         onChange={onInputChange}
-        value={options.length > 0 ? options[defaultOptionIndex].value : ``}
+        value={options.length > 0 ? options[defaultOptionIndex].value : `No Value`}
         multiple={isSelectMultiple}
       >
         {options.map((option: ISelectOption, index: number): ReactElement => 

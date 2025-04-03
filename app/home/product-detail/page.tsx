@@ -6,7 +6,7 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { ECollectionNames } from '@/enums'
 import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { externalLinkIcon, infoIcon, trashIcon } from '@/public';
+import { infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
@@ -60,13 +60,11 @@ export default function Product() {
       ]);
       setIsLoading(false);
     }, 
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
     [],
   );
   
   useEffect((): void => {
     getProducts();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
   const columns: Array<IColumnProps<collectionType>> = [
@@ -117,7 +115,7 @@ export default function Product() {
     {
       key: `input_quantity`,
       ref: useRef(null), 
-      title: `Số lượng trong kho`,
+      title: `Số lượng tồn kho`,
       size: `3fr`, 
     },
     {
@@ -125,6 +123,15 @@ export default function Product() {
       ref: useRef(null), 
       title: `Số lượng đang bán`,
       size: `3fr`, 
+    },
+    {
+      ref: useRef(null), 
+      title: `Số lượng trong kho`,
+      size: `3fr`, 
+      render: (collection: collectionType): ReactElement => 
+        <Text isEllipsis={true} tooltip={``}>
+          {collection.input_quantity + collection.output_quantity}
+        </Text>
     },
     {
       key: `created_at`,
