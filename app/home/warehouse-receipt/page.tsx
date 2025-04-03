@@ -28,11 +28,14 @@ import { EBusinessType } from '@/enums/business-type.enum';
 import { IUnit } from '@/interfaces/unit.interface';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 import Textarea from '@/components/textarea/Textarea';
+import useNotificationsHook from '@/hooks/notifications-hook';
+import { ENotificationType } from '@/components/notify/notification/notification';
 
 type collectionType = IWarehouseReceipt;
 const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;
 
 export default function Product() {
+  const { createNotification, notificationElements } = useNotificationsHook();
   const [warehouseReceipt, setWarehouseReceipt] = useState<collectionType>(
     DEFAULT_WAREHOUST_RECEIPT
   );
@@ -402,6 +405,41 @@ export default function Product() {
 
   const gridColumns: string = `200px 1fr`;
 
+  const handleOpenModal = (prev: boolean): boolean => {
+    if (supplierOptions.length === 0) {
+      createNotification({
+        id: 0,
+        children: <Text>Thêm doanh nghiệp vào trước khi thêm phiếu nhập kho!</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true, 
+      });
+      return prev;
+    }
+
+    if (unitOptions.length === 0) {
+      createNotification({
+        id: 0,
+        children: <Text>Thêm đơn vị vào trước khi thêm phiếu nhập kho!</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true, 
+      });
+      return prev;
+    }
+
+    if (productDetailOptions.length === 0) {
+      createNotification({
+        id: 0,
+        children: <Text>Thêm chi tiết vào trước khi thêm phiếu nhập kho!</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true, 
+      });
+      return prev;
+    }
+
+    return !prev;
+  }
+
+
   return (
     <ManagerPage<collectionType>
       columns={columns}
@@ -419,201 +457,206 @@ export default function Product() {
         isUnitLoading || 
         orderForm.product_details.length === 0
       }
+      handleOpenModal={handleOpenModal}
     >
-      <Tabs>
+      <>
+        <Tabs>
 
-        <TabItem label={`${translateCollectionName(collectionName)}`}>
-          <InputSection label={`Chọn phiếu đặt hàng`} gridColumns={gridColumns}>
-            <SelectDropdown
-              isLoading={isLoading}
-              isDisable={isModalReadOnly}
-              options={orderFormOptions}
-              defaultOptionIndex={currentOrderFormOptionIndex}
-              onInputChange={(e): void => handleChangeOrderForm(e)}
-            >
-            </SelectDropdown>
-          </InputSection>
+          <TabItem label={`${translateCollectionName(collectionName)}`}>
+            <InputSection label={`Chọn phiếu đặt hàng`} gridColumns={gridColumns}>
+              <SelectDropdown
+                isLoading={isLoading}
+                isDisable={isModalReadOnly}
+                options={orderFormOptions}
+                defaultOptionIndex={currentOrderFormOptionIndex}
+                onInputChange={(e): void => handleChangeOrderForm(e)}
+              >
+              </SelectDropdown>
+            </InputSection>
 
-          <div className={`flex items-center justify-between gap-2`}>
-            <div className={`flex flex-col gap-2`}>
-              <InputSection label={`Nhà cung cấp`}>
-                <SelectDropdown
-                  isLoading={isSupplierLoading}
-                  isDisable={true}
-                  options={supplierOptions}
-                  defaultOptionIndex={getSelectedOptionIndex(
-                    supplierOptions, 
-                    (orderForm.supplier_id
-                      ? orderForm.supplier_id
-                      : 0
-                    ) as unknown as string
-                  )}
-                >
-                </SelectDropdown>
-              </InputSection>
-
-              <div className={`grid items-center ${styles[`order-form-product-table`]}`}>
-                <Text>#</Text>
-                <Text>Sản phẩm</Text>
-                <Text>Đơn vị tính</Text>
-                <Text>Số lượng</Text>
-              </div>
-
-              {orderForm.product_details.map((
-                orderFormProductDetail: IOrderFormProductDetail, 
-                index: number
-              ): ReactElement => {
-                return <div 
-                  key={index} 
-                  className={`grid items-center ${styles[`order-form-product-table`]}`}
-                >
-                  <Text>{index + 1}</Text>
-
+            <div className={`flex items-center justify-between gap-2`}>
+              <div className={`flex flex-col gap-2`}>
+                <InputSection label={`Nhà cung cấp`}>
                   <SelectDropdown
                     isLoading={isSupplierLoading}
                     isDisable={true}
-                    options={productDetailOptions}
+                    options={supplierOptions}
                     defaultOptionIndex={getSelectedOptionIndex(
-                      productDetailOptions, 
-                      (orderFormProductDetail._id
-                        ? orderFormProductDetail._id
+                      supplierOptions, 
+                      (orderForm.supplier_id
+                        ? orderForm.supplier_id
                         : 0
                       ) as unknown as string
                     )}
                   >
                   </SelectDropdown>
-                  
-                  <SelectDropdown
-                    isLoading={isUnitLoading}
-                    isDisable={true}
-                    options={unitOptions}
-                    defaultOptionIndex={getSelectedOptionIndex(
-                      unitOptions, 
-                      (orderFormProductDetail.unit_id
-                        ? orderFormProductDetail.unit_id
-                        : 0
-                      ) as unknown as string
-                    )}
-                  >
-                  </SelectDropdown>
-                  
-                  <NumberInput
-                    min={1}
-                    max={100}
-                    name={`quantity`}
-                    isDisable={true}
-                    value={orderFormProductDetail.quantity + ``}
-                  >
-                  </NumberInput>
+                </InputSection>
+
+                <div className={`grid items-center ${styles[`order-form-product-table`]}`}>
+                  <Text>#</Text>
+                  <Text>Sản phẩm</Text>
+                  <Text>Đơn vị tính</Text>
+                  <Text>Số lượng</Text>
                 </div>
-              })}
-            </div>
 
-            <div className={`flex flex-col gap-2`}>
-              <InputSection label={`Nhà cung cấp`}>
-                <SelectDropdown
-                  isLoading={isSupplierLoading}
-                  isDisable={true}
-                  options={supplierOptions}
-                  defaultOptionIndex={getSelectedOptionIndex(
-                    supplierOptions, 
-                    (warehouseReceipt.supplier_id
-                      ? warehouseReceipt.supplier_id
-                      : 0
-                    ) as unknown as string
-                  )}
-                  onInputChange={(e): void => 
-                    handleChangeWarehouseReceiptSupplierId(e)
-                  }
-                >
-                </SelectDropdown>
-              </InputSection>
+                {orderForm.product_details.map((
+                  orderFormProductDetail: IOrderFormProductDetail, 
+                  index: number
+                ): ReactElement => {
+                  return <div 
+                    key={index} 
+                    className={`grid items-center ${styles[`order-form-product-table`]}`}
+                  >
+                    <Text>{index + 1}</Text>
 
-              <div className={`grid items-center ${styles[`warehouse-receipt-product-table`]}`}>
-                <Text>#</Text>
-                <Text>Sản phẩm</Text>
-                <Text>Đơn vị tính</Text>
-                <Text>Số lượng</Text>
-                <Text>Ghi chú</Text>
+                    <SelectDropdown
+                      isLoading={isSupplierLoading}
+                      isDisable={true}
+                      options={productDetailOptions}
+                      defaultOptionIndex={getSelectedOptionIndex(
+                        productDetailOptions, 
+                        (orderFormProductDetail._id
+                          ? orderFormProductDetail._id
+                          : 0
+                        ) as unknown as string
+                      )}
+                    >
+                    </SelectDropdown>
+                    
+                    <SelectDropdown
+                      isLoading={isUnitLoading}
+                      isDisable={true}
+                      options={unitOptions}
+                      defaultOptionIndex={getSelectedOptionIndex(
+                        unitOptions, 
+                        (orderFormProductDetail.unit_id
+                          ? orderFormProductDetail.unit_id
+                          : 0
+                        ) as unknown as string
+                      )}
+                    >
+                    </SelectDropdown>
+                    
+                    <NumberInput
+                      min={1}
+                      max={100}
+                      name={`quantity`}
+                      isDisable={true}
+                      value={orderFormProductDetail.quantity + ``}
+                    >
+                    </NumberInput>
+                  </div>
+                })}
               </div>
 
-              {warehouseReceipt.product_details.map((
-                warehouseProductDetail: IOrderFormProductDetail, 
-                index: number
-              ): ReactElement => {
-                return <div 
-                  key={index} 
-                  className={`grid items-center ${styles[`warehouse-receipt-product-table`]}`}
-                >
-                  <Text>{index + 1}</Text>
-
+              <div className={`flex flex-col gap-2`}>
+                <InputSection label={`Nhà cung cấp`}>
                   <SelectDropdown
                     isLoading={isSupplierLoading}
                     isDisable={true}
-                    options={productDetailOptions}
+                    options={supplierOptions}
                     defaultOptionIndex={getSelectedOptionIndex(
-                      productDetailOptions, 
-                      (warehouseProductDetail._id
-                        ? warehouseProductDetail._id
+                      supplierOptions, 
+                      (warehouseReceipt.supplier_id
+                        ? warehouseReceipt.supplier_id
                         : 0
                       ) as unknown as string
                     )}
                     onInputChange={(e): void => 
-                      handleChangeWarehouseReceiptProductId(e, index)
+                      handleChangeWarehouseReceiptSupplierId(e)
                     }
                   >
                   </SelectDropdown>
-                  
-                  <SelectDropdown
-                    isLoading={isUnitLoading}
-                    isDisable={true}
-                    options={unitOptions}
-                    defaultOptionIndex={getSelectedOptionIndex(
-                      unitOptions, 
-                      (warehouseProductDetail.unit_id
-                        ? warehouseProductDetail.unit_id
-                        : 0
-                      ) as unknown as string
-                    )}
-                    onInputChange={(e): void => 
-                      handleChangeWarehouseReceiptProductUnitId(e, index)
-                    }
-                  >
-                  </SelectDropdown>
-                  
-                  <NumberInput
-                    min={1}
-                    max={100}
-                    name={`quantity`}
-                    isDisable={isModalReadOnly}
-                    value={warehouseProductDetail.quantity + ``}
-                    onInputChange={(e): void => 
-                      handleChangeWarehouseReceiptProductQuantity(e, index)
-                    }
-                  >
-                  </NumberInput>
+                </InputSection>
 
-                  <Textarea
-                    name={`note`}
-                    isDisable={isModalReadOnly}
-                    value={warehouseProductDetail.note ?? ``}
-                    onInputChange={(e: ChangeEvent<HTMLTextAreaElement>): void => 
-                      handleChangeWarehouseReceiptProductNote(e, index)
-                    }
-                  >
-                  </Textarea>
+                <div className={`grid items-center ${styles[`warehouse-receipt-product-table`]}`}>
+                  <Text>#</Text>
+                  <Text>Sản phẩm</Text>
+                  <Text>Đơn vị tính</Text>
+                  <Text>Số lượng</Text>
+                  <Text>Ghi chú</Text>
                 </div>
-              })}
+
+                {warehouseReceipt.product_details.map((
+                  warehouseProductDetail: IOrderFormProductDetail, 
+                  index: number
+                ): ReactElement => {
+                  return <div 
+                    key={index} 
+                    className={`grid items-center ${styles[`warehouse-receipt-product-table`]}`}
+                  >
+                    <Text>{index + 1}</Text>
+
+                    <SelectDropdown
+                      isLoading={isSupplierLoading}
+                      isDisable={true}
+                      options={productDetailOptions}
+                      defaultOptionIndex={getSelectedOptionIndex(
+                        productDetailOptions, 
+                        (warehouseProductDetail._id
+                          ? warehouseProductDetail._id
+                          : 0
+                        ) as unknown as string
+                      )}
+                      onInputChange={(e): void => 
+                        handleChangeWarehouseReceiptProductId(e, index)
+                      }
+                    >
+                    </SelectDropdown>
+                    
+                    <SelectDropdown
+                      isLoading={isUnitLoading}
+                      isDisable={true}
+                      options={unitOptions}
+                      defaultOptionIndex={getSelectedOptionIndex(
+                        unitOptions, 
+                        (warehouseProductDetail.unit_id
+                          ? warehouseProductDetail.unit_id
+                          : 0
+                        ) as unknown as string
+                      )}
+                      onInputChange={(e): void => 
+                        handleChangeWarehouseReceiptProductUnitId(e, index)
+                      }
+                    >
+                    </SelectDropdown>
+                    
+                    <NumberInput
+                      min={1}
+                      max={100}
+                      name={`quantity`}
+                      isDisable={isModalReadOnly}
+                      value={warehouseProductDetail.quantity + ``}
+                      onInputChange={(e): void => 
+                        handleChangeWarehouseReceiptProductQuantity(e, index)
+                      }
+                    >
+                    </NumberInput>
+
+                    <Textarea
+                      name={`note`}
+                      isDisable={isModalReadOnly}
+                      value={warehouseProductDetail.note ?? ``}
+                      onInputChange={(e: ChangeEvent<HTMLTextAreaElement>): void => 
+                        handleChangeWarehouseReceiptProductNote(e, index)
+                      }
+                    >
+                    </Textarea>
+                  </div>
+                })}
+              </div>
             </div>
-          </div>
-        </TabItem>
+          </TabItem>
 
-        <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
-          <TimestampTabItem<collectionType> collection={warehouseReceipt}>
-          </TimestampTabItem>
-        </TabItem>
+          <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
+            <TimestampTabItem<collectionType> collection={warehouseReceipt}>
+            </TimestampTabItem>
+          </TabItem>
 
-      </Tabs>
+        </Tabs>
+
+        {notificationElements}
+      </>
     </ManagerPage>
   );
 }

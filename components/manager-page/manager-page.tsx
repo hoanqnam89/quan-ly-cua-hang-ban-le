@@ -29,6 +29,7 @@ interface IManagerPageProps<T> {
   isClickShowMore: ICollectionIdNotify
   isClickDelete: ICollectionIdNotify
   isLoaded?: boolean
+  handleOpenModal?: (isOpen: boolean) => boolean
   onExitModalForm?: () => void
 }
 
@@ -44,6 +45,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   isClickShowMore,
   isClickDelete, 
   isLoaded = false, 
+  handleOpenModal = (isOpen: boolean): boolean => !isOpen, 
   onExitModalForm = () => {}
 }: Readonly<IManagerPageProps<T>>): ReactElement {
   const translatedCollectionName: string = 
@@ -79,7 +81,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
       // }
 
       setIsModalReadonly(!isReadOnly);
-      setIsAddCollectionModalOpen((prev: boolean): boolean => !prev);
+      setIsAddCollectionModalOpen((prev: boolean): boolean => handleOpenModal(prev));
     }, 
     [
       defaultCollection, 

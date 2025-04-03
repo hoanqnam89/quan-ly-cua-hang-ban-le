@@ -20,13 +20,15 @@ import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { DEFAULT_PROCDUCT_DETAIL } from '@/constants/product-detail.constant';
 import DateInput from '@/components/date-input/date-input';
-import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
+import { ENotificationType } from '@/components/notify/notification/notification';
+import useNotificationsHook from '@/hooks/notifications-hook';
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
 
 export default function Product() {
+  const { createNotification, notificationElements } = useNotificationsHook();
   const [productDetail, setProductDetail] = useState<collectionType>(
     DEFAULT_PROCDUCT_DETAIL
   );
@@ -219,6 +221,20 @@ export default function Product() {
     });
   }
 
+  const handleOpenModal = (prev: boolean): boolean => {
+    if (productOptions.length === 0) {
+      createNotification({
+        id: 0,
+        children: <Text>Thêm sản phẩm vào trước khi thêm chi tiết sản phẩm!</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true, 
+      });
+      return prev;
+    }
+
+    return !prev;
+  }
+
   const gridColumns: string = `200px 1fr`;
 
   return (
@@ -233,69 +249,74 @@ export default function Product() {
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
       isLoaded={isLoading}
+      handleOpenModal={handleOpenModal}
     >
-      <Tabs>
-        <TabItem label={`${translateCollectionName(collectionName)}`}>
-          <InputSection label={`Cho sản phẩm`}>
-            <SelectDropdown
-              isLoading={isLoading}
-              isDisable={isModalReadOnly}
-              options={productOptions}
-              defaultOptionIndex={getSelectedOptionIndex(
-                productOptions, productDetail.product_id
-              )}
-              onInputChange={handleChangeProductId}
-            >
-            </SelectDropdown>
-          </InputSection>
+      <>
+        <Tabs>
+          <TabItem label={`${translateCollectionName(collectionName)}`}>
+            <InputSection label={`Cho sản phẩm`}>
+              <SelectDropdown
+                isLoading={isLoading}
+                isDisable={isModalReadOnly}
+                options={productOptions}
+                defaultOptionIndex={getSelectedOptionIndex(
+                  productOptions, productDetail.product_id
+                )}
+                onInputChange={handleChangeProductId}
+              >
+              </SelectDropdown>
+            </InputSection>
 
-          <InputSection label={`Ngày sản xuất`} gridColumns={gridColumns}>
-            <DateInput
-              name={`date_of_manufacture`}
-              isDisable={isModalReadOnly}
-              value={productDetail.date_of_manufacture}
-              onInputChange={handleChangeProductDetail}
-            >
-            </DateInput>
-          </InputSection>
+            <InputSection label={`Ngày sản xuất`} gridColumns={gridColumns}>
+              <DateInput
+                name={`date_of_manufacture`}
+                isDisable={isModalReadOnly}
+                value={productDetail.date_of_manufacture}
+                onInputChange={handleChangeProductDetail}
+              >
+              </DateInput>
+            </InputSection>
 
-          <InputSection label={`Hạn sử dụng`} gridColumns={gridColumns}>
-            <DateInput
-              name={`expiry_date`}
-              isDisable={isModalReadOnly}
-              value={productDetail.expiry_date}
-              onInputChange={handleChangeProductDetail}
-            >
-            </DateInput>
-          </InputSection>
-        </TabItem>
+            <InputSection label={`Hạn sử dụng`} gridColumns={gridColumns}>
+              <DateInput
+                name={`expiry_date`}
+                isDisable={isModalReadOnly}
+                value={productDetail.expiry_date}
+                onInputChange={handleChangeProductDetail}
+              >
+              </DateInput>
+            </InputSection>
+          </TabItem>
 
-        <TabItem label={`Số lượng`} isDisable={!isModalReadOnly}>
-          <InputSection label={`Số lượng trong kho`} gridColumns={gridColumns}>
-            <NumberInput
-              isDisable={true}
-              value={productDetail.input_quantity + ``}
-              max={MAX_PRICE}
-            >
-            </NumberInput>
-          </InputSection>
+          <TabItem label={`Số lượng`} isDisable={!isModalReadOnly}>
+            <InputSection label={`Số lượng trong kho`} gridColumns={gridColumns}>
+              <NumberInput
+                isDisable={true}
+                value={productDetail.input_quantity + ``}
+                max={MAX_PRICE}
+              >
+              </NumberInput>
+            </InputSection>
 
-          <InputSection label={`Số lượng đang bán`} gridColumns={gridColumns}>
-            <NumberInput
-              isDisable={true}
-              value={productDetail.output_quantity + ``}
-              max={MAX_PRICE}
-            >
-            </NumberInput>
-          </InputSection>
-        </TabItem>
+            <InputSection label={`Số lượng đang bán`} gridColumns={gridColumns}>
+              <NumberInput
+                isDisable={true}
+                value={productDetail.output_quantity + ``}
+                max={MAX_PRICE}
+              >
+              </NumberInput>
+            </InputSection>
+          </TabItem>
 
-        <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
-          <TimestampTabItem<collectionType> collection={productDetail}>
-          </TimestampTabItem>
-        </TabItem>
+          <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
+            <TimestampTabItem<collectionType> collection={productDetail}>
+            </TimestampTabItem>
+          </TabItem>
 
-      </Tabs>
+        </Tabs>
+
+        {notificationElements}
+      </>
     </ManagerPage>
   );
 }

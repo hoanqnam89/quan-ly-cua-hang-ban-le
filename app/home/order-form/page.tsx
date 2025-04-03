@@ -32,6 +32,7 @@ type collectionType = IOrderForm;
 const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
 
 export default function Product() {
+  const { createNotification, notificationElements } = useNotificationsHook();
   const [orderForm, setOrderForm] = useState<collectionType>(
     DEFAULT_ORDER_FORM 
   );
@@ -52,7 +53,6 @@ export default function Product() {
   const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
   const [unitOptions, setUnitOptions] = useState<ISelectOption[]>([]);
   const [productDetailCount, setProductDetailCount] = useState<number>(-1);
-  const { createNotification, notificationElements } = useNotificationsHook();
 
   const setCollectionCount = async (
     collectionName: ECollectionNames, 
@@ -375,6 +375,40 @@ export default function Product() {
     });
   }
 
+  const handleOpenModal = (prev: boolean): boolean => {
+    if (supplierOptions.length === 0) {
+      createNotification({
+        id: 0,
+        children: <Text>Thêm doanh nghiệp vào trước khi thêm phiếu đặt hàng!</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true, 
+      });
+      return prev;
+    }
+
+    if (unitOptions.length === 0) {
+      createNotification({
+        id: 0,
+        children: <Text>Thêm đơn vị vào trước khi thêm phiếu đặt hàng!</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true, 
+      });
+      return prev;
+    }
+
+    if (productDetailCount === 0) {
+      createNotification({
+        id: 0,
+        children: <Text>Thêm chi tiết vào trước khi thêm phiếu đặt hàng!</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true, 
+      });
+      return prev;
+    }
+
+    return !prev;
+  }
+
   return (
     <>
       <ManagerPage<collectionType>
@@ -393,6 +427,7 @@ export default function Product() {
           isUnitLoading || 
           orderForm.product_details.length === 0
         }
+        handleOpenModal={handleOpenModal}
       >
         <>
           <Tabs>

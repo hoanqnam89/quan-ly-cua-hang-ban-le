@@ -6,7 +6,7 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { DEFAULT_USER } from '@/constants/user.constant'
 import { ECollectionNames } from '@/enums'
 import { IAccount, IUser } from '@/interfaces'
-import { externalLinkIcon, infoIcon, trashIcon } from '@/public'
+import { infoIcon, trashIcon } from '@/public'
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip'
 import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
@@ -25,13 +25,15 @@ import { getDate } from '@/utils/get-date';
 import { getSameDayOfYear } from '@/utils/get-same-date-of-year';
 import { MINIMUM_WORKING_AGE } from '@/constants/minimum-working-age.constant';
 import { MAXIMUM_WORKING_AGE } from '@/constants/maximum-working-age.constant';
-import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
+import { ENotificationType } from '@/components/notify/notification/notification';
+import useNotificationsHook from '@/hooks/notifications-hook';
 
 type collectionType = IUser;
 const collectionName: ECollectionNames = ECollectionNames.USER;
 
 export default function User() {
+  const { createNotification, notificationElements } = useNotificationsHook();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [user, setUser] = useState<IUser>(DEFAULT_USER);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
@@ -339,6 +341,21 @@ export default function User() {
       value: array[1], 
     }));
 
+  const handleOpenModal = (prev: boolean): boolean => {
+    if (accountOptions.length === 0) {
+      createNotification({
+        id: 0,
+        children: <Text>Thêm tài khoản vào trước khi thêm người dùng!</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true, 
+      });
+      return prev;
+    }
+
+    return !prev;
+  }
+
+
   return (
     <ManagerPage<collectionType>
       columns={columns} 
@@ -352,207 +369,210 @@ export default function User() {
       isClickDelete={isClickDelete}
       isLoaded={isLoading}
     >
-      <Tabs>
+      <>
+        <Tabs>
 
-        <TabItem label={`Tài khoản`}>
+          <TabItem label={`Tài khoản`}>
 
-          <InputSection label={`Cho tài khoản`}>
-            <SelectDropdown
-              name={`account_id`}
-              isLoading={isLoading}
-              isDisable={isModalReadOnly}
-              options={accountOptions}
-              defaultOptionIndex={getSelectedOptionIndex(
-                accountOptions, user.account_id
-              )}
-              onInputChange={handleChangeAccountId}
-            >
-            </SelectDropdown>
-          </InputSection>
-
-          <InputSection label={`Họ`}>
-            <TextInput
-              name={`first`}
-              isDisable={isModalReadOnly}
-              value={user.name.first}
-              onInputChange={handleChangeName}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Tên đệm`}>
-            <TextInput
-              name={`middle`}
-              isDisable={isModalReadOnly}
-              value={user.name.middle}
-              onInputChange={handleChangeName}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Tên`}>
-            <TextInput
-              name={`last`}
-              isDisable={isModalReadOnly}
-              value={user.name.last}
-              onInputChange={handleChangeName}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Số nhà`}>
-            <TextInput
-              name={`number`}
-              isDisable={isModalReadOnly}
-              value={user.address.number}
-              onInputChange={handleChangeAddress}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Đường`}>
-            <TextInput
-              name={`street`}
-              isDisable={isModalReadOnly}
-              value={user.address.street}
-              onInputChange={handleChangeAddress}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Phường`}>
-            <TextInput
-              name={`ward`}
-              isDisable={isModalReadOnly}
-              value={user.address.ward}
-              onInputChange={handleChangeAddress}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Quận`}>
-            <TextInput
-              name={`district`}
-              isDisable={isModalReadOnly}
-              value={user.address.district}
-              onInputChange={handleChangeAddress}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Thành phố`}>
-            <TextInput
-              name={`city`}
-              isDisable={isModalReadOnly}
-              value={user.address.city}
-              onInputChange={handleChangeAddress}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Quốc gia`}>
-            <TextInput
-              name={`country`}
-              isDisable={isModalReadOnly}
-              value={user.address.country}
-              onInputChange={handleChangeAddress}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Email`}>
-            <TextInput
-              textType={`email`}
-              name={`email`}
-              isDisable={isModalReadOnly}
-              value={user.email}
-              onInputChange={handleChangeEmail}
-            >
-            </TextInput>
-          </InputSection>
-
-          {user.birthday ? 
-            <InputSection label={`Ngày sinh`}>
-              <DateInput
-                min={getDate(getSameDayOfYear(
-                  new Date(), -MAXIMUM_WORKING_AGE
-                ))}
-                max={getDate(getSameDayOfYear(
-                  new Date(), -MINIMUM_WORKING_AGE
-                ))}
-                name={`birthday`}
+            <InputSection label={`Cho tài khoản`}>
+              <SelectDropdown
+                name={`account_id`}
+                isLoading={isLoading}
                 isDisable={isModalReadOnly}
-                value={user.birthday}
-                onInputChange={handleChangeBirthday}
+                options={accountOptions}
+                defaultOptionIndex={getSelectedOptionIndex(
+                  accountOptions, user.account_id
+                )}
+                onInputChange={handleChangeAccountId}
               >
-              </DateInput>
-            </InputSection> : <Text>{user.birthday}</Text>
-          }
+              </SelectDropdown>
+            </InputSection>
 
-          <InputSection label={`Giới tính`}>
-            <SelectDropdown
-              isDisable={isModalReadOnly}
-              options={genderOptions}
-              defaultOptionIndex={getSelectedOptionIndex(
-                genderOptions, 
-                (user.gender 
-                  ? user.gender 
-                  : EUserGender.FEMALE
-                ) as unknown as string
-              )}
-              onInputChange={handleChangeGender}
-            >
-            </SelectDropdown>
-          </InputSection>
-        
-          <InputSection label={`Hình đại diện của nhân viên`}>
-            <div>
-              {!isModalReadOnly ? <input
-                type={`file`}
-                accept={`image/*`}
-                multiple={true}
-                onChange={handleChangeImage}
-                disabled={isModalReadOnly}
+            <InputSection label={`Họ`}>
+              <TextInput
+                name={`first`}
+                isDisable={isModalReadOnly}
+                value={user.name.first}
+                onInputChange={handleChangeName}
               >
-              </input> : null}
+              </TextInput>
+            </InputSection>
 
-              <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
-                {
-                  user.avatar ? <div 
-                    className={`relative ${styles[`image-container`]}`}
-                  >
-                    <Image 
-                      className={`w-full max-w-full max-h-full`}
-                      src={user.avatar} 
-                      alt={``}
-                      width={0}
-                      height={0}
-                      quality={10}
+            <InputSection label={`Tên đệm`}>
+              <TextInput
+                name={`middle`}
+                isDisable={isModalReadOnly}
+                value={user.name.middle}
+                onInputChange={handleChangeName}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Tên`}>
+              <TextInput
+                name={`last`}
+                isDisable={isModalReadOnly}
+                value={user.name.last}
+                onInputChange={handleChangeName}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Số nhà`}>
+              <TextInput
+                name={`number`}
+                isDisable={isModalReadOnly}
+                value={user.address.number}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Đường`}>
+              <TextInput
+                name={`street`}
+                isDisable={isModalReadOnly}
+                value={user.address.street}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Phường`}>
+              <TextInput
+                name={`ward`}
+                isDisable={isModalReadOnly}
+                value={user.address.ward}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Quận`}>
+              <TextInput
+                name={`district`}
+                isDisable={isModalReadOnly}
+                value={user.address.district}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Thành phố`}>
+              <TextInput
+                name={`city`}
+                isDisable={isModalReadOnly}
+                value={user.address.city}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Quốc gia`}>
+              <TextInput
+                name={`country`}
+                isDisable={isModalReadOnly}
+                value={user.address.country}
+                onInputChange={handleChangeAddress}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Email`}>
+              <TextInput
+                textType={`email`}
+                name={`email`}
+                isDisable={isModalReadOnly}
+                value={user.email}
+                onInputChange={handleChangeEmail}
+              >
+              </TextInput>
+            </InputSection>
+
+            {user.birthday ? 
+              <InputSection label={`Ngày sinh`}>
+                <DateInput
+                  min={getDate(getSameDayOfYear(
+                    new Date(), -MAXIMUM_WORKING_AGE
+                  ))}
+                  max={getDate(getSameDayOfYear(
+                    new Date(), -MINIMUM_WORKING_AGE
+                  ))}
+                  name={`birthday`}
+                  isDisable={isModalReadOnly}
+                  value={user.birthday}
+                  onInputChange={handleChangeBirthday}
+                >
+                </DateInput>
+              </InputSection> : <Text>{user.birthday}</Text>
+            }
+
+            <InputSection label={`Giới tính`}>
+              <SelectDropdown
+                isDisable={isModalReadOnly}
+                options={genderOptions}
+                defaultOptionIndex={getSelectedOptionIndex(
+                  genderOptions, 
+                  (user.gender 
+                    ? user.gender 
+                    : EUserGender.FEMALE
+                  ) as unknown as string
+                )}
+                onInputChange={handleChangeGender}
+              >
+              </SelectDropdown>
+            </InputSection>
+          
+            <InputSection label={`Hình đại diện của nhân viên`}>
+              <div>
+                {!isModalReadOnly ? <input
+                  type={`file`}
+                  accept={`image/*`}
+                  multiple={true}
+                  onChange={handleChangeImage}
+                  disabled={isModalReadOnly}
+                >
+                </input> : null}
+
+                <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
+                  {
+                    user.avatar ? <div 
+                      className={`relative ${styles[`image-container`]}`}
                     >
-                    </Image>
-
-                    {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
-                      <Button 
-                        className={`absolute top-0 right-0`} 
-                        onClick={() => handleDeleteImage()}
+                      <Image 
+                        className={`w-full max-w-full max-h-full`}
+                        src={user.avatar} 
+                        alt={``}
+                        width={0}
+                        height={0}
+                        quality={10}
                       >
-                        <IconContainer iconLink={trashIcon}>
-                        </IconContainer>
-                      </Button>
-                    </div> : null}
-                  </div> : <></>
-                }
-              </div> 
-            </div>
-          </InputSection>
-        </TabItem>
+                      </Image>
 
-        <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
-          <TimestampTabItem<collectionType> collection={user}>
-          </TimestampTabItem>
-        </TabItem>
-      </Tabs>
+                      {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
+                        <Button 
+                          className={`absolute top-0 right-0`} 
+                          onClick={() => handleDeleteImage()}
+                        >
+                          <IconContainer iconLink={trashIcon}>
+                          </IconContainer>
+                        </Button>
+                      </div> : null}
+                    </div> : <></>
+                  }
+                </div> 
+              </div>
+            </InputSection>
+          </TabItem>
 
+          <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
+            <TimestampTabItem<collectionType> collection={user}>
+            </TimestampTabItem>
+          </TabItem>
+        </Tabs>
+
+        {notificationElements}
+      </>
     </ManagerPage>
   )
 }

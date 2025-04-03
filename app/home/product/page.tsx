@@ -6,7 +6,7 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { ECollectionNames } from '@/enums'
 import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { externalLinkIcon, infoIcon, trashIcon } from '@/public';
+import { infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
@@ -26,11 +26,14 @@ import { translateCollectionName } from '@/utils/translate-collection-name';
 import { formatCurrency } from '@/utils/format-currency';
 import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
+import useNotificationsHook from '@/hooks/notifications-hook';
+import { ENotificationType } from '@/components/notify/notification/notification';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
 
 export default function Product() {
+  const { createNotification, notificationElements } = useNotificationsHook();
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [product, setProduct] = useState<collectionType>(DEFAULT_PROCDUCT);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
@@ -68,19 +71,13 @@ export default function Product() {
           value: supplier._id,
         }))
       ]);
-      setProduct({
-        ...product, 
-        supplier_id: newSuppliers[0]._id
-      })
       setIsLoading(false);
     }, 
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
-    [product.supplier_id],
+    [],
   );
   
   useEffect((): void => {
     getSuppliers();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
@@ -316,6 +313,20 @@ export default function Product() {
 
   const gridColumns: string = `200px 1fr`;
 
+  const handleOpenModal = (prev: boolean): boolean => {
+    if (supplierOptions.length === 0) {
+      createNotification({
+        id: 0,
+        children: <Text>Thêm nhà cung cấp vào trước khi thêm sản phẩm!</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true, 
+      });
+      return prev;
+    }
+
+    return !prev;
+  }
+
   return (
     <ManagerPage<collectionType>
       columns={columns}
@@ -328,118 +339,123 @@ export default function Product() {
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
       isLoaded={isLoading}
+      handleOpenModal={handleOpenModal}
     >
-      <Tabs>
-        <TabItem label={`${translateCollectionName(collectionName)}`}>
-          <InputSection label={`Cho nhà sản xuất`}>
-            <SelectDropdown
-              name={`supplier_id`}
-              isLoading={isLoading}
-              isDisable={isModalReadOnly}
-              options={supplierOptions}
-              defaultOptionIndex={getSelectedOptionIndex(
-                supplierOptions, product.supplier_id
-              )}
-              onInputChange={handleChangeSupplierId}
-            >
-            </SelectDropdown>
-          </InputSection>
-
-          <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>
-            <TextInput
-              name={`name`}
-              isDisable={isModalReadOnly}
-              value={product.name}
-              onInputChange={handleChangeProduct}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Mô tả`} gridColumns={gridColumns}>
-            <TextInput
-              name={`description`}
-              isDisable={isModalReadOnly}
-              value={product.description}
-              onInputChange={handleChangeProduct}
-            >
-            </TextInput>
-          </InputSection>
-
-          <InputSection label={`Giá nhập (VNĐ)`} gridColumns={gridColumns}>
-            <NumberInput
-              name={`input_price`}
-              isDisable={isModalReadOnly}
-              value={product.input_price + ``}
-              onInputChange={handleChangeProduct}
-              max={MAX_PRICE}
-              step={VND_UNIT}
-            >
-            </NumberInput>
-          </InputSection>
-
-          <InputSection label={`Giá bán (VNĐ)`} gridColumns={gridColumns}>
-            <NumberInput
-              name={`output_price`}
-              isDisable={isModalReadOnly}
-              value={product.output_price + ``}
-              onInputChange={handleChangeProduct}
-              max={MAX_PRICE}
-              step={VND_UNIT}
-            >
-            </NumberInput>
-          </InputSection>
-
-          <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>
-            <div>
-              {!isModalReadOnly ? <input
-                type={`file`}
-                accept={`image/*`}
-                multiple={true}
-                onChange={handleChangeImage}
-                disabled={isModalReadOnly}
+      <>
+        <Tabs>
+          <TabItem label={`${translateCollectionName(collectionName)}`}>
+            <InputSection label={`Cho nhà sản xuất`}>
+              <SelectDropdown
+                name={`supplier_id`}
+                isLoading={isLoading}
+                isDisable={isModalReadOnly}
+                options={supplierOptions}
+                defaultOptionIndex={getSelectedOptionIndex(
+                  supplierOptions, product.supplier_id
+                )}
+                onInputChange={handleChangeSupplierId}
               >
-              </input> : null}
+              </SelectDropdown>
+            </InputSection>
 
-              <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
-                {
-                  product.image_links.map((image: string, index: number) => 
-                    <div 
-                      key={index} 
-                      className={`relative ${styles[`image-container`]}`}
-                    >
-                      <Image 
-                        className={`w-full max-w-full max-h-full`}
-                        src={image} 
-                        alt={``}
-                        width={0}
-                        height={0}
-                        quality={10}
+            <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>
+              <TextInput
+                name={`name`}
+                isDisable={isModalReadOnly}
+                value={product.name}
+                onInputChange={handleChangeProduct}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Mô tả`} gridColumns={gridColumns}>
+              <TextInput
+                name={`description`}
+                isDisable={isModalReadOnly}
+                value={product.description}
+                onInputChange={handleChangeProduct}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Giá nhập (VNĐ)`} gridColumns={gridColumns}>
+              <NumberInput
+                name={`input_price`}
+                isDisable={isModalReadOnly}
+                value={product.input_price + ``}
+                onInputChange={handleChangeProduct}
+                max={MAX_PRICE}
+                step={VND_UNIT}
+              >
+              </NumberInput>
+            </InputSection>
+
+            <InputSection label={`Giá bán (VNĐ)`} gridColumns={gridColumns}>
+              <NumberInput
+                name={`output_price`}
+                isDisable={isModalReadOnly}
+                value={product.output_price + ``}
+                onInputChange={handleChangeProduct}
+                max={MAX_PRICE}
+                step={VND_UNIT}
+              >
+              </NumberInput>
+            </InputSection>
+
+            <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>
+              <div>
+                {!isModalReadOnly ? <input
+                  type={`file`}
+                  accept={`image/*`}
+                  multiple={true}
+                  onChange={handleChangeImage}
+                  disabled={isModalReadOnly}
+                >
+                </input> : null}
+
+                <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
+                  {
+                    product.image_links.map((image: string, index: number) => 
+                      <div 
+                        key={index} 
+                        className={`relative ${styles[`image-container`]}`}
                       >
-                      </Image>
-
-                      {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
-                        <Button 
-                          className={`absolute top-0 right-0`} 
-                          onClick={() => handleDeleteImage(index)}
+                        <Image 
+                          className={`w-full max-w-full max-h-full`}
+                          src={image} 
+                          alt={``}
+                          width={0}
+                          height={0}
+                          quality={10}
                         >
-                          <IconContainer iconLink={trashIcon}>
-                          </IconContainer>
-                        </Button>
-                      </div> : null}
-                    </div>
-                  )
-                }
-              </div> 
-            </div>
-          </InputSection>
-        </TabItem>
+                        </Image>
 
-        <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
-          <TimestampTabItem<collectionType> collection={product}>
-          </TimestampTabItem>
-        </TabItem>
+                        {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
+                          <Button 
+                            className={`absolute top-0 right-0`} 
+                            onClick={() => handleDeleteImage(index)}
+                          >
+                            <IconContainer iconLink={trashIcon}>
+                            </IconContainer>
+                          </Button>
+                        </div> : null}
+                      </div>
+                    )
+                  }
+                </div> 
+              </div>
+            </InputSection>
+          </TabItem>
 
-      </Tabs>
+          <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
+            <TimestampTabItem<collectionType> collection={product}>
+            </TimestampTabItem>
+          </TabItem>
+
+        </Tabs>
+
+        {notificationElements}
+      </>
     </ManagerPage>
   );
 }
