@@ -221,18 +221,16 @@ export default function PreviewOrderForm({
                       <td 
                         className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
                       >
-                        {new Date(
-                          getProductDetail(item._id)?.date_of_manufacture || 
-                          new Date()
-                        ).toLocaleDateString()}
+                        {getProductDetail(item._id)?.date_of_manufacture 
+                          ? new Date(String(getProductDetail(item._id)?.date_of_manufacture)).toLocaleDateString()
+                          : new Date().toLocaleDateString()}
                       </td>
                       <td 
                         className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
                       >
-                        {new Date(
-                          getProductDetail(item._id)?.expiry_date || 
-                          new Date()
-                        ).toLocaleDateString()}
+                        {getProductDetail(item._id)?.expiry_date 
+                          ? new Date(String(getProductDetail(item._id)?.expiry_date)).toLocaleDateString()
+                          : new Date().toLocaleDateString()}
                       </td>
                       <td 
                         className="py-2 px-3 text-right border-b-2 border-gray-300 text-gray-700 font-medium"

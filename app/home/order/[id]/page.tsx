@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { formatCurrency } from '@/app/utils/format';
+import { generatePDF } from '@/app/utils/generatePDF';
 import { use } from 'react';
 
 interface OrderItem {
@@ -126,7 +127,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
                     <div className="flex items-center h-14 px-5">
                         <Button
                             onClick={() => router.push('/home/order')}
-                            className="flex items-center justify-center w-20 h-10 rounded-md bg-white border border-slate-200 hover:bg-slate-50 transition-all duration-200 shadow-sm"
+                            className="flex items-center justify-center h-10 rounded-md bg-white border border-slate-200 hover:bg-slate-50 transition-all duration-200 shadow-sm w-[220px] p-10 "
                         >
                             <Image
                                 src="/icons/chevron-left.svg"
@@ -136,7 +137,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
                                 className="text-slate-600"
                             />
                         </Button>
-                        <span className="ml-5 text-lg font-medium text-slate-900">Chi tiết đơn hàng</span>
+                        <span className=" flex ml-5 text-lg font-medium text-slate-900 w-[200px] ">Chi tiết đơn hàng</span>
                     </div>
                 </div>
             </div>
@@ -304,17 +305,32 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
 
                         <div className="mt-5 flex gap-3">
                             <Button
-                                onClick={() => window.print()}
+                                onClick={() => {
+                                    if (order) {
+                                        // Prepare order data for PDF generation
+                                        const orderData = {
+                                            orderId: order.order_code,
+                                            employeeName: employeeName,
+                                            items: order.items.map(item => ({
+                                                product: {
+                                                    name: productNames[item.product_id] || 'Sản phẩm không xác định',
+                                                    output_price: item.price
+                                                },
+                                                quantity: item.quantity
+                                            })),
+                                            totalAmount: order.total_amount,
+                                            customerPayment: formatCurrency(order.total_amount).replace(' ₫', ''),
+                                            changeAmount: '0',
+                                            note: order.note
+                                        };
+                                        generatePDF(orderData);
+                                    }
+                                }}
                                 className="flex-1 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50"
                             >
                                 In đơn hàng
                             </Button>
-                            <Button
-                                onClick={() => {/* TODO: Implement PDF export */ }}
-                                className="flex-1 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg hover:bg-slate-50"
-                            >
-                                Xuất PDF
-                            </Button>
+                            
                         </div>
                     </div>
                 </div>

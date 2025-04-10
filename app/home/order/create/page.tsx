@@ -504,10 +504,10 @@ export default function CreateOrder() {
         <div className="min-h-screen bg-white pb-24">
             <div className="bg-white border-b border-slate-200 sticky top-0 z-40">
                 <div className="max-w-[1500px] mx-auto">
-                    <div className="flex items-center h-16 px-5">
+                    <div className="flex items-center h-14 px-5">
                         <Button
                             onClick={handleBack}
-                            className="flex items-center justify-center  h-10 rounded-md bg-white border border-slate-200 hover:bg-slate-50 transition-all duration-200 shadow-sm w-[60px]"
+                            className="flex items-center justify-center h-10 rounded-md bg-white border border-slate-200 hover:bg-slate-50 transition-all duration-200 shadow-sm w-[220px] p-10 "
                         >
                             <Image
                                 src="/icons/chevron-left.svg"
@@ -517,7 +517,7 @@ export default function CreateOrder() {
                                 className="text-slate-500"
                             />
                         </Button>
-                        <span className=" text-xl font-medium text-slate-900 flex items-center justify-center  transition-all  w-[200px] p-5">Tạo đơn hàng</span>
+                        <span className=" flex ml-5 text-lg font-medium text-slate-900 w-[200px]">Tạo đơn hàng</span>
                     </div>
                 </div>
             </div>

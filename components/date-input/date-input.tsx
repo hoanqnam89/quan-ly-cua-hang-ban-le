@@ -15,11 +15,28 @@ function DateInput({
   onInputBlur = () => {},
 }: Readonly<IInputProps<Date>>): ReactElement {
   // Format the date as YYYY-MM-DD to ensure only date is shown
-  const formatDateOnly = (date: Date): string => {
+  const formatDateOnly = (date: Date | string): string => {
+    // If date is null, undefined or invalid
     if (!date) return '';
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    
+    // Convert string date to Date object if needed
+    let dateObj: Date;
+    
+    if (typeof date === 'string') {
+      // Parse the string date
+      dateObj = new Date(date);
+    } else if (date instanceof Date) {
+      dateObj = date;
+    } else {
+      return '';
+    }
+    
+    // Check if date is valid
+    if (isNaN(dateObj.getTime())) return '';
+    
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
 
