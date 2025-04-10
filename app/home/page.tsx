@@ -28,6 +28,11 @@ interface ICustomerData {
   value: number;
 }
 
+interface IProductInventoryData {
+  date: string;
+  value: number;
+}
+
 interface IDateRangeType {
   startDate: string;
   endDate: string;
@@ -44,15 +49,15 @@ interface IStatCardData {
 export default function Home(): ReactElement {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
-  const [totalCustomers, setTotalCustomers] = useState<number>(0);
   const [totalProducts, setTotalProducts] = useState<number>(0);
   const [totalProductDetails, setTotalProductDetails] = useState<number>(0);
   const [totalEmployees, setTotalEmployees] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
+  const [totalInventory, setTotalInventory] = useState<number>(0);
   const [revenueGrowth, setRevenueGrowth] = useState<number>(0);
-  const [customerGrowth, setCustomerGrowth] = useState<number>(0);
+  const [inventoryGrowth, setInventoryGrowth] = useState<number>(0);
   const [revenueData, setRevenueData] = useState<IRevenueData[]>([]);
-  const [customerData, setCustomerData] = useState<ICustomerData[]>([]);
+  const [productInventoryData, setProductInventoryData] = useState<IProductInventoryData[]>([]);
   const [dateRange, setDateRange] = useState<IDateRangeType>({
     startDate: '01/02/2023',
     endDate: '28/02/2023'
@@ -80,142 +85,173 @@ export default function Home(): ReactElement {
     }
   };
 
-  // Hàm lấy dữ liệu doanh thu theo thời gian
-  // const fetchRevenueData = async (): Promise<void> => {
-  //   try {
-  //     const response = await fetch('/api/order-form/revenue-stats');
-  //     if (response.ok) {
-  //       const data = await response.json();
+  // Hàm lấy tổng doanh thu từ đơn hàng
+  const fetchTotalRevenue = async (startDateStr?: string, endDateStr?: string): Promise<{total: number, byDate: {[key: string]: number}}> => {
+    try {
+      const response = await fetch('/api/order');
+      if (response.ok) {
+        const orders = await response.json();
+        
+        // Phân tích ngày bắt đầu và kết thúc nếu có
+        let startDate: Date | null = null;
+        let endDate: Date | null = null;
+        
+        if (startDateStr && endDateStr) {
+          startDate = parseDate(startDateStr);
+          endDate = parseDate(endDateStr);
+          // Đặt giờ của endDate thành cuối ngày để bao gồm toàn bộ ngày kết thúc
+          endDate.setHours(23, 59, 59, 999);
+        }
+        
+        // Tính doanh thu theo ngày
+        const revenueByDate: {[key: string]: number} = {};
+        let total = 0;
+        
+        orders.forEach((order: any) => {
+          if (order.created_at && order.total_amount) {
+            const orderDate = new Date(order.created_at);
+            
+            // Nếu có khoảng thời gian, kiểm tra xem đơn hàng có nằm trong khoảng không
+            if (startDate && endDate) {
+              if (orderDate < startDate || orderDate > endDate) {
+                return; // Bỏ qua đơn hàng nếu không nằm trong khoảng thời gian
+              }
+            }
+            
+            const dateKey = `${orderDate.getDate()}/${orderDate.getMonth() + 1}`;
+            
+            if (!revenueByDate[dateKey]) {
+              revenueByDate[dateKey] = 0;
+            }
+            revenueByDate[dateKey] += order.total_amount;
+            total += order.total_amount;
+          }
+        });
+        
+        console.log('Tổng doanh thu trong khoảng thời gian:', total);
+        console.log('Doanh thu theo ngày:', revenueByDate);
+        
+        return { total, byDate: revenueByDate };
+      } else {
+        throw new Error('Lỗi khi lấy dữ liệu đơn hàng');
+      }
+    } catch (error) {
+      console.error('Lỗi khi tính tổng doanh thu:', error);
+      return { total: 0, byDate: {} };
+    }
+  };
 
-  //       setTotalRevenue(data.monthly || 0);
+  // Hàm lấy dữ liệu tổng kho từ chi tiết sản phẩm
+  const fetchTotalProductDetailStock = async (startDateStr?: string, endDateStr?: string): Promise<{total: number, byDate: {[key: string]: number}, onSaleQuantity: number, stockQuantity: number}> => {
+    try {
+      const response = await fetch('/api/product-detail');
+      if (response.ok) {
+        const productDetails = await response.json();
+        
+        // Tính tổng số lượng trong kho
+        let totalStockQuantity = 0;
+        let onSaleQuantity = 0;
+        let stockQuantity = 0;
+        
+        // Tính tổng kho từ chi tiết sản phẩm (input_quantity)
+        productDetails.forEach((detail: any) => {
+          const inputQuantity = detail.input_quantity || 0;
+          const outputQuantity = detail.output_quantity || 0;
+          const remainingQuantity = inputQuantity - outputQuantity;
 
-  //       const today = new Date();
-  //       const sampleData: IRevenueData[] = [];
-  //       for (let i = 0; i < 7; i++) {
-  //         const date = new Date();
-  //         date.setDate(today.getDate() - (6 - i));
-  //         sampleData.push({
-  //           date: `${date.getDate()}/${date.getMonth() + 1}`,
-  //           value: Math.floor(Math.random() * 5000000) + 1000000
-  //         });
-  //       }
-  //       setRevenueData(sampleData);
-
-  //       setRevenueGrowth(((data.monthly - (data.monthly / 1.2)) / (data.monthly / 1.2)) * 100);
-  //     } else {
-  //       throw new Error('Lỗi khi lấy dữ liệu doanh thu theo thời gian');
-  //     }
-  //   } catch (error) {
-  //     console.error('Lỗi khi lấy dữ liệu doanh thu theo thời gian:', error);
-  //     // Dữ liệu mẫu doanh thu
-  //     setRevenueData([
-  //       { date: '01/02', value: 2500000 },
-  //       { date: '05/02', value: 2500000 },
-  //       { date: '09/02', value: 2500000 },
-  //       { date: '13/02', value: 500000 },
-  //       { date: '17/02', value: 5000000 },
-  //       { date: '21/02', value: 7500000 },
-  //       { date: '25/02', value: 1000000 },
-  //     ]);
-  //   }
-  // };
-
-  // Hàm lấy dữ liệu khách hàng theo thời gian
-  // const fetchCustomerData = async (): Promise<void> => {
-  //   try {
-  //     const userCountResponse = await getCollectionCount(ECollectionNames.USER);
-  //     const userCount = await userCountResponse.json();
-  //     setTotalCustomers(userCount);
-  //     const today = new Date();
-  //     const sampleData: ICustomerData[] = [];
-  //     for (let i = 0; i < 7; i++) {
-  //       const date = new Date();
-  //       date.setDate(today.getDate() - (6 - i));
-  //       sampleData.push({
-  //         date: `${date.getDate()}/${date.getMonth() + 1}`,
-  //         value: Math.floor(Math.random() * 3)
-  //       });
-  //     }
-  //     setCustomerData(sampleData);
-
-  //     setCustomerGrowth(5);
-  //   } catch (error) {
-  //     console.error('Lỗi khi lấy dữ liệu khách hàng theo thời gian:', error);
-  //     // Dữ liệu mẫu khách hàng nhân viênviên
-  //     setCustomerData([
-  //       { date: '01/02', value: 2 },
-  //       { date: '05/02', value: 0 },
-  //       { date: '09/02', value: 1 },
-  //       { date: '13/02', value: 0 },
-  //       { date: '17/02', value: 2 },
-  //       { date: '21/02', value: 0 },
-  //       { date: '25/02', value: 2 },
-  //     ]);
-  //   }
-  // };
-
-  // Hàm cập nhật các thẻ thống kê
-  // const updateStatsCards = useCallback(() => {
-  //   setStatsCards([
-  //     {
-  //       title: 'Tổng sản phẩm',
-  //       value: totalProducts,
-  //       icon: 'product',
-  //       iconColor: 'text-pink-600',
-  //       iconBgColor: 'bg-pink-100'
-  //     },
-  //     {
-  //       title: 'Tổng nhân viên',
-  //       value: totalEmployees,
-  //       icon: 'employee',
-  //       iconColor: 'text-indigo-600',
-  //       iconBgColor: 'bg-indigo-100'
-  //     },
-  //     {
-  //       title: 'Đơn hàng',
-  //       value: totalOrders,
-  //       icon: 'order',
-  //       iconColor: 'text-blue-600',
-  //       iconBgColor: 'bg-blue-100'
-  //     },
-  //     {
-  //       title: 'Chi tiết sản phẩm',
-  //       value: totalProductDetails,
-  //       icon: 'product-detail',
-  //       iconColor: 'text-amber-600',
-  //       iconBgColor: 'bg-amber-100'
-  //     }
-  //   ]);
-  // }, [totalProducts, totalEmployees, totalOrders, totalProductDetails]);
+          totalStockQuantity += inputQuantity;
+          onSaleQuantity += outputQuantity; // Số lượng đang bán trên quầy
+          stockQuantity += remainingQuantity; // Số lượng tồn kho
+        });
+        
+        // Tạo dữ liệu mẫu theo ngày
+        const byDate: {[key: string]: number} = {};
+        
+        if (startDateStr && endDateStr) {
+          const startDate = parseDate(startDateStr);
+          const endDate = parseDate(endDateStr);
+          const dateArray = generateDatesBetween(startDate, endDate, 7);
+          
+          // Phân bổ tổng kho đều cho các ngày
+          dateArray.forEach((date, index) => {
+            const dateKey = `${date.getDate()}/${date.getMonth() + 1}`;
+            byDate[dateKey] = totalStockQuantity;
+          });
+        } else {
+          // Nếu không có khoảng thời gian, sử dụng ngày hiện tại
+          const today = new Date();
+          const dateKey = `${today.getDate()}/${today.getMonth() + 1}`;
+          byDate[dateKey] = totalStockQuantity;
+        }
+        
+        console.log('Tổng kho từ chi tiết sản phẩm:', totalStockQuantity);
+        console.log('Số lượng đang bán:', onSaleQuantity);
+        console.log('Số lượng tồn kho:', stockQuantity);
+        console.log('Tổng kho theo ngày:', byDate);
+        
+        return { 
+          total: totalStockQuantity, 
+          byDate: byDate,
+          onSaleQuantity: onSaleQuantity,
+          stockQuantity: stockQuantity
+        };
+      } else {
+        throw new Error('Lỗi khi lấy dữ liệu chi tiết sản phẩm');
+      }
+    } catch (error) {
+      console.error('Lỗi khi tính tổng kho từ chi tiết sản phẩm:', error);
+      return { 
+        total: 0, 
+        byDate: {},
+        onSaleQuantity: 0,
+        stockQuantity: 0
+      };
+    }
+  };
 
   // Hàm tổng hợp để lấy tất cả dữ liệu
   const fetchAllData = useCallback(async (startDate?: string, endDate?: string): Promise<void> => {
     setIsLoading(true);
     try {
+      const currentStartDate = startDate || dateRange.startDate;
+      const currentEndDate = endDate || dateRange.endDate;
+      
       const [
         productCount,
         productDetailCount,
         employeeCount,
-        orderCount
+        orderCount,
+        revenueData,
+        inventoryData
       ] = await Promise.all([
         fetchCollectionCount(ECollectionNames.PRODUCT),
         fetchCollectionCount(ECollectionNames.PRODUCT_DETAIL),
         fetchCollectionCount(ECollectionNames.USER),
         fetchCollectionCount(ECollectionNames.ORDER_FORM),
+        fetchTotalRevenue(currentStartDate, currentEndDate),
+        fetchTotalProductDetailStock(currentStartDate, currentEndDate)
       ]);
 
       setTotalProducts(productCount);
       setTotalProductDetails(productDetailCount);
       setTotalEmployees(employeeCount);
       setTotalOrders(orderCount);
+      
+      // Đặt tổng tồn kho từ dữ liệu thực tế (nếu có) hoặc tính toán từ sản phẩm + chi tiết sản phẩm
+      const totalInventoryCount = inventoryData.total > 0 ? 
+        inventoryData.total : 
+        productCount + productDetailCount;
+      
+      setTotalInventory(totalInventoryCount);
 
       console.log('Kết quả API đã lấy được:', {
         products: productCount,
         productDetails: productDetailCount,
         employees: employeeCount,
-        orders: orderCount
+        orders: orderCount,
+        totalInventory: totalInventoryCount,
+        actualRevenue: revenueData.total
       });
-
 
       if (startDate && endDate) {
         setDateRange({
@@ -224,43 +260,93 @@ export default function Home(): ReactElement {
         });
       }
 
-      // Dữ liệu mẫu còn lại, sử dụng trực tiếp giá trị API
-      const calculatedRevenue = Math.max(orderCount * 500000, 1000000);
+      // Sử dụng doanh thu thực tế từ đơn hàng, nếu có; nếu không, tính toán ước tính
+      const calculatedRevenue = revenueData.total > 0 ? revenueData.total : Math.max(orderCount * 750000, 1500000);
       setTotalRevenue(calculatedRevenue);
-      setTotalCustomers(employeeCount);
-      setRevenueGrowth(15.7);
-      setCustomerGrowth(5.2);
+      setRevenueGrowth(18.3);
+      setInventoryGrowth(7.8);
 
-      const currentStartDate = startDate || dateRange.startDate;
-      const currentEndDate = endDate || dateRange.endDate;
       const startDateObj = parseDate(currentStartDate);
       const endDateObj = parseDate(currentEndDate);
       const dateArray = generateDatesBetween(startDateObj, endDateObj, 7);
 
       const newRevenueData: IRevenueData[] = [];
 
-      const coefficients = generateRandomCoefficients(dateArray.length);
-
-      dateArray.forEach((date, index) => {
-        newRevenueData.push({
-          date: `${date.getDate()}/${date.getMonth() + 1}`,
-          value: Math.round(calculatedRevenue * coefficients[index])
+      // Nếu có dữ liệu doanh thu theo ngày, sử dụng; nếu không, tạo dữ liệu ngẫu nhiên
+      if (Object.keys(revenueData.byDate).length > 0) {
+        // Tính toán doanh thu trung bình mỗi ngày
+        let totalDaysWithRevenue = 0;
+        let totalRevenue = 0;
+        
+        dateArray.forEach((date) => {
+          const dateKey = `${date.getDate()}/${date.getMonth() + 1}`;
+          // Ngày nào không có doanh thu thì gán giá trị 0
+          const value = revenueData.byDate[dateKey] || 0;
+          newRevenueData.push({
+            date: dateKey,
+            value: value
+          });
+          
+          if (value > 0) {
+            totalDaysWithRevenue++;
+          }
+          totalRevenue += value;
         });
-      });
+        
+        // Doanh thu trung bình hàng ngày (chỉ tính những ngày có doanh thu)
+        const avgDailyRevenue = totalDaysWithRevenue > 0 
+          ? Math.round(totalRevenue / totalDaysWithRevenue) 
+          : 0;
+          
+        // Đặt tổng doanh thu từ dữ liệu thực tế trong khoảng thời gian
+        setTotalRevenue(totalRevenue);
+      } else {
+        const coefficients = generateRandomCoefficients(dateArray.length);
+        dateArray.forEach((date, index) => {
+          newRevenueData.push({
+            date: `${date.getDate()}/${date.getMonth() + 1}`,
+            value: Math.round(calculatedRevenue * coefficients[index])
+          });
+        });
+      }
+      
       setRevenueData(newRevenueData);
 
-      // Dữ liệu cho biểu đồ khách hàng - tính toán dựa trên số nhân viên thực
-      const customerPerDay = Math.max(Math.ceil(employeeCount / dateArray.length), 1);
-      const newCustomerData: ICustomerData[] = [];
-
-      dateArray.forEach((date, index) => {
-        const customerFactor = (Math.sin(index * 0.9) + 1) / 2 + 0.1;
-        newCustomerData.push({
-          date: `${date.getDate()}/${date.getMonth() + 1}`,
-          value: Math.max(Math.round(customerPerDay * customerFactor), 0)
+      // Dữ liệu cho biểu đồ tồn kho theo thời gian
+      const newInventoryData: IProductInventoryData[] = [];
+      
+      // Nếu có dữ liệu tồn kho theo ngày, sử dụng; nếu không, tạo dữ liệu ngẫu nhiên
+      if (Object.keys(inventoryData.byDate).length > 0) {
+        dateArray.forEach((date) => {
+          const dateKey = `${date.getDate()}/${date.getMonth() + 1}`;
+          // Ngày nào không có tồn kho thì gán giá trị từ ngày trước đó hoặc 0
+          let value = inventoryData.byDate[dateKey] || 0;
+          
+          // Nếu ngày hiện tại không có dữ liệu nhưng có tồn kho từ ngày trước
+          if (value === 0 && newInventoryData.length > 0) {
+            // Sử dụng giá trị tồn kho từ ngày trước đó (tồn kho thường không thay đổi nhiều giữa các ngày)
+            value = newInventoryData[newInventoryData.length - 1].value;
+          }
+          
+          newInventoryData.push({
+            date: dateKey,
+            value: value
+          });
         });
-      });
-      setCustomerData(newCustomerData);
+      } else {
+        // Sử dụng dữ liệu ước tính nếu không có dữ liệu thực tế
+        const inventoryPerDay = Math.max(Math.ceil(totalInventoryCount / dateArray.length), 5);
+        
+        dateArray.forEach((date, index) => {
+          const inventoryFactor = (Math.sin(index * 0.8) + 1) / 2 + 0.3;
+          newInventoryData.push({
+            date: `${date.getDate()}/${date.getMonth() + 1}`,
+            value: Math.max(Math.round(inventoryPerDay * inventoryFactor), 0)
+          });
+        });
+      }
+      
+      setProductInventoryData(newInventoryData);
 
       setStatsCards([
         {
@@ -300,13 +386,37 @@ export default function Home(): ReactElement {
       setTotalEmployees(15);
       setTotalProductDetails(250);
       setTotalOrders(45);
+      setTotalInventory(370); // Tổng products + product details
 
-      // Tính toán doanh thu dựa trên đơn hàng
-      const sampleRevenue = 45 * 500000;
-      setTotalRevenue(sampleRevenue);
-      setTotalCustomers(15);
-      setRevenueGrowth(15.7);
-      setCustomerGrowth(5.2);
+      // Ước tính doanh thu mẫu
+      const estimatedRevenue = 45 * 750000;
+
+      try {
+        // Vẫn thử lấy dữ liệu thực tế nếu có thể
+        const [actualRevenue, actualInventory] = await Promise.all([
+          fetchTotalRevenue(dateRange.startDate, dateRange.endDate),
+          fetchTotalProductDetailStock(dateRange.startDate, dateRange.endDate)
+        ]);
+        
+        // Nếu có doanh thu thực tế, sử dụng
+        if (actualRevenue.total > 0) {
+          setTotalRevenue(actualRevenue.total);
+        } else {
+          // Nếu không, sử dụng dữ liệu ước tính
+          setTotalRevenue(estimatedRevenue);
+        }
+        
+        // Nếu có dữ liệu tồn kho thực tế, sử dụng
+        if (actualInventory.total > 0) {
+          setTotalInventory(actualInventory.total);
+        }
+      } catch (revenueError) {
+        // Nếu không lấy được doanh thu, sử dụng dữ liệu ước tính
+        setTotalRevenue(estimatedRevenue);
+      }
+      
+      setRevenueGrowth(18.3);
+      setInventoryGrowth(7.8);
 
       const currentStartDate = startDate || dateRange.startDate;
       const currentEndDate = endDate || dateRange.endDate;
@@ -314,11 +424,11 @@ export default function Home(): ReactElement {
       const endDateObj = parseDate(currentEndDate);
       const sampleDates = generateDatesBetween(startDateObj, endDateObj, 7);
 
-      // Dữ liệu giả cho biểu đồ doanh thu và khách hàng theo khoảng thời gian
+      // Dữ liệu giả cho biểu đồ doanh thu và tồn kho
       const dailyCoefficients = generateRandomCoefficients(sampleDates.length);
 
       const newRevenueData: IRevenueData[] = [];
-      const newCustomerData: ICustomerData[] = [];
+      const newInventoryData: IProductInventoryData[] = [];
 
       sampleDates.forEach((date, index) => {
         const formattedDate = `${date.getDate()}/${date.getMonth() + 1}`;
@@ -326,18 +436,18 @@ export default function Home(): ReactElement {
         // Doanh thu
         newRevenueData.push({
           date: formattedDate,
-          value: Math.round(sampleRevenue * dailyCoefficients[index])
+          value: Math.round(estimatedRevenue * dailyCoefficients[index])
         });
 
-        // Khách hàng
-        newCustomerData.push({
+        // Tồn kho
+        newInventoryData.push({
           date: formattedDate,
-          value: Math.floor(Math.random() * 3)
+          value: Math.floor(Math.random() * 50) + 320
         });
       });
 
       setRevenueData(newRevenueData);
-      setCustomerData(newCustomerData);
+      setProductInventoryData(newInventoryData);
 
       setStatsCards([
         {
@@ -587,29 +697,71 @@ export default function Home(): ReactElement {
         revenueChart.draw(revenueData, revenueOptions);
       }
 
-      // Biểu đồ phân bổ khách hàng theo độ tuổi
-      if (document.getElementById('customer-pie-chart')) {
-        // Tính toán phân bổ khách hàng dựa trên số lượng nhân viên
-        const customerTotal = totalEmployees || 5; // Dùng số nhân viên làm cơ sở
+      // Biểu đồ phân bổ sản phẩm trong kho
+      drawInventoryChart();
+    };
 
-        const customerData = window.google.visualization.arrayToDataTable([
-          ['Nhóm khách hàng', 'Số lượng'],
-          ['Nhân viên', Math.round(customerTotal * 0.6)], // 60% là nhân viên
-          ['Khách VIP', Math.round(customerTotal * 0.2)], // 20% là khách VIP
-          ['Khách thường', Math.round(customerTotal * 0.15)], // 15% là khách thường
-          ['Khác', Math.round(customerTotal * 0.05)]  // 5% khác
+    // Vẽ biểu đồ tổng kho
+    const drawInventoryChart = async () => {
+      if (document.getElementById('inventory-pie-chart')) {
+        // Tính toán tổng kho hiện tại từ chi tiết sản phẩm
+        const productDetails = productInventoryData;
+        
+        // Phân loại tổng kho theo danh mục
+        let totalInventory = 0;
+        let onSaleQuantity = 0;
+        let stockQuantity = 0;
+        
+        try {
+          // Gọi API để lấy dữ liệu chi tiết sản phẩm mới nhất
+          const response = await fetch('/api/product-detail');
+          if (response.ok) {
+            const productDetailData = await response.json();
+            
+            // Tính số lượng trên quầy và số lượng tồn kho
+            productDetailData.forEach((detail: any) => {
+              const inputQuantity = detail.input_quantity || 0;
+              const outputQuantity = detail.output_quantity || 0;
+              const remaining = inputQuantity - outputQuantity;
+              
+              totalInventory += inputQuantity;
+              onSaleQuantity += outputQuantity;
+              stockQuantity += remaining;
+            });
+          }
+        } catch (error) {
+          console.error('Lỗi khi lấy dữ liệu chi tiết sản phẩm:', error);
+          
+          if (productDetails && productDetails.length > 0) {
+            // Sử dụng dữ liệu tổng kho từ ngày cuối cùng trong khoảng thời gian
+            totalInventory = productDetails[productDetails.length - 1].value;
+            
+            // Ước tính phân loại nếu không có dữ liệu chi tiết
+            onSaleQuantity = Math.round(totalInventory * 0.7); // 70% tổng kho đang bán
+            stockQuantity = Math.round(totalInventory * 0.3); // 30% tổng kho trong kho
+          } else {
+            totalInventory = totalProducts + totalProductDetails;
+            onSaleQuantity = Math.round(totalInventory * 0.7);
+            stockQuantity = Math.round(totalInventory * 0.3);
+          }
+        }
+
+        const inventoryData = window.google.visualization.arrayToDataTable([
+          ['Loại tổng kho', 'Số lượng'],
+          ['Số lượng trên quầy', onSaleQuantity],
+          ['Số lượng tồn kho', stockQuantity]
         ]);
 
-        const customerOptions = {
-          title: 'Phân loại người dùng',
-          colors: ['#fbbf24', '#f97316', '#ec4899', '#8b5cf6'],
+        const inventoryOptions = {
+          title: 'Phân loại tổng kho',
+          colors: ['#22c55e', '#f59e0b'],
           chartArea: { width: '100%', height: '80%' },
           legend: { position: 'bottom' },
           pieHole: 0.4,
         };
 
-        const customerChart = new window.google.visualization.PieChart(document.getElementById('customer-pie-chart'));
-        customerChart.draw(customerData, customerOptions);
+        const inventoryChart = new window.google.visualization.PieChart(document.getElementById('inventory-pie-chart'));
+        inventoryChart.draw(inventoryData, inventoryOptions);
       }
     };
 
@@ -629,7 +781,7 @@ export default function Home(): ReactElement {
         window.removeEventListener('google-charts-loaded', initGoogleCharts);
       }
     };
-  }, [isLoading, totalRevenue, totalCustomers, totalProducts, totalProductDetails, totalOrders, totalEmployees]);
+  }, [isLoading, totalRevenue, totalProducts, totalProductDetails, totalOrders, totalInventory]);
 
   // Hàm format số tiền
   const formatCurrency = (amount: number): string => {
@@ -716,18 +868,18 @@ export default function Home(): ReactElement {
     );
   };
 
-  // Hàm vẽ biểu đồ khách hàng
-  const renderCustomerChart = () => {
-    const maxValue = Math.max(...customerData.map(item => item.value), 3);
+  // Hàm vẽ biểu đồ sản phẩm trong kho
+  const renderInventoryChart = () => {
+    const maxValue = Math.max(...productInventoryData.map(item => item.value));
     const chartHeight = 150;
 
     return (
       <div className="relative h-[150px] w-full mt-4">
         {/* Trục Y - giá trị */}
         <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500">
-          <div>3</div>
-          <div>2</div>
-          <div>1</div>
+          <div>{maxValue}</div>
+          <div>{Math.round(maxValue * 0.66)}</div>
+          <div>{Math.round(maxValue * 0.33)}</div>
           <div>0</div>
         </div>
 
@@ -742,10 +894,10 @@ export default function Home(): ReactElement {
 
             {/* Vẽ biểu đồ */}
             <div className="absolute inset-0">
-              {customerData.map((item, index) => {
+              {productInventoryData.map((item, index) => {
                 const heightPercent = (item.value / maxValue) * 100;
                 const isFirst = index === 0;
-                const width = 100 / (customerData.length - 1);
+                const width = 100 / (productInventoryData.length - 1);
 
                 return (
                   <div
@@ -760,7 +912,7 @@ export default function Home(): ReactElement {
                     {/* Vùng màu dưới đường */}
                     {!isFirst && (
                       <div
-                        className="absolute bottom-0 left-0 w-full bg-yellow-100 opacity-40"
+                        className="absolute bottom-0 left-0 w-full bg-green-100 opacity-40"
                         style={{
                           height: `${heightPercent}%`
                         }}
@@ -769,22 +921,22 @@ export default function Home(): ReactElement {
 
                     {/* Điểm dữ liệu */}
                     <div
-                      className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-yellow-500 rounded-full transition-all duration-300 hover:bg-yellow-600 hover:scale-110"
+                      className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-green-500 rounded-full transition-all duration-300 hover:bg-green-600 hover:scale-110"
                       style={{ bottom: `${heightPercent}%` }}
                     >
                       {/* Tooltip */}
                       <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap transition-opacity duration-200">
-                        {item.value} khách
+                        {item.value} sản phẩm
                       </div>
                     </div>
 
                     {/* Đường nối các điểm */}
                     {!isFirst && (
                       <div
-                        className="absolute bottom-0 right-1/2 w-full h-px bg-yellow-500"
+                        className="absolute bottom-0 right-1/2 w-full h-px bg-green-500"
                         style={{
                           transform: `rotate(${Math.atan2(
-                            (customerData[index].value - customerData[index - 1].value) / maxValue * chartHeight,
+                            (productInventoryData[index].value - productInventoryData[index - 1].value) / maxValue * chartHeight,
                             width
                           )}rad)`,
                           transformOrigin: 'right bottom',
@@ -907,7 +1059,7 @@ export default function Home(): ReactElement {
           {/* Khung doanh thu */}
           <div className="border border-gray-100 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 bg-white overflow-hidden">
             <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-100">
-              <h2 className="font-semibold text-gray-700 uppercase text-sm">TỔNG DOANH THU</h2>
+              <h2 className="font-semibold text-gray-700 uppercase text-sm">DOANH THU TRONG KHOẢNG THỜI GIAN</h2>
               <div className="flex items-center mt-3">
                 <span className="text-blue-700 text-2xl font-bold">{formatCurrency(totalRevenue)}Đ</span>
                 <span className="ml-4 text-green-600 flex items-center bg-green-50 px-3 py-1.5 rounded-full text-sm font-medium">
@@ -922,6 +1074,7 @@ export default function Home(): ReactElement {
                   {revenueGrowth.toFixed(1)}%
                 </span>
               </div>
+              <div className="text-sm text-gray-600 mt-2">{dateRange.startDate} - {dateRange.endDate}</div>
             </div>
 
             <div className="p-6">
@@ -947,12 +1100,12 @@ export default function Home(): ReactElement {
             </div>
           </div>
 
-          {/* Khung khách hàng */}
+          {/* Khung sản phẩm trong kho */}
           <div className="border border-gray-100 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 bg-white overflow-hidden">
-            <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-yellow-50 to-yellow-100">
-              <h2 className="font-semibold text-gray-700 uppercase text-sm">TỔNG KHÁCH HÀNG</h2>
+            <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-green-50 to-green-100">
+              <h2 className="font-semibold text-gray-700 uppercase text-sm">TỔNG KHO THEO THỜI GIAN</h2>
               <div className="flex items-center mt-3">
-                <span className="text-yellow-700 text-2xl font-bold">{totalCustomers}</span>
+                <span className="text-green-700 text-2xl font-bold">{totalInventory}</span>
                 <span className="ml-4 text-green-600 flex items-center bg-green-50 px-3 py-1.5 rounded-full text-sm font-medium">
                   <Image
                     src="/icons/arrow-up.svg"
@@ -962,45 +1115,46 @@ export default function Home(): ReactElement {
                     className="mr-1"
                     priority
                   />
-                  {customerGrowth.toFixed(1)}%
+                  {inventoryGrowth.toFixed(1)}%
                 </span>
               </div>
+              <div className="text-sm text-gray-600 mt-2">{dateRange.startDate} - {dateRange.endDate}</div>
             </div>
 
             <div className="p-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-4">Khách hàng theo thời gian</h3>
+              <h3 className="text-sm font-medium text-gray-700 mb-4">Số lượng tổng kho theo ngày</h3>
 
               <div className="bg-white rounded-lg p-4 mb-4 border border-gray-100 shadow-sm">
                 <div className="flex flex-wrap text-sm">
                   <div className="flex items-center mr-6 mb-1">
-                    <span className="inline-block w-3 h-3 bg-yellow-600 mr-2 rounded-full"></span>
+                    <span className="inline-block w-3 h-3 bg-green-600 mr-2 rounded-full"></span>
                     <span className="font-medium text-gray-700">{dateRange.startDate} - {dateRange.endDate}</span>
                   </div>
                   <div className="flex items-center">
-                    <span className="inline-block w-3 h-3 border border-yellow-600 mr-2"></span>
+                    <span className="inline-block w-3 h-3 border border-green-600 mr-2"></span>
                     <span className="text-gray-600">{prevDateRange.startDate} - {prevDateRange.endDate}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-yellow-50 p-5 rounded-lg">
-                {renderCustomerChart()}
+              <div className="bg-green-50 p-5 rounded-lg">
+                {renderInventoryChart()}
               </div>
 
               <div className="flex justify-center mt-6 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
                 <div className="flex items-center mr-6">
-                  <span className="block w-4 h-1 bg-yellow-600 mr-2 rounded-full"></span>
+                  <span className="block w-4 h-1 bg-green-600 mr-2 rounded-full"></span>
                   <span className="font-medium">{dateRange.startDate} - {dateRange.endDate}</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="block w-4 h-1 border-b border-yellow-600 border-dashed mr-2"></span>
+                  <span className="block w-4 h-1 border-b border-green-600 border-dashed mr-2"></span>
                   <span>{prevDateRange.startDate} - {prevDateRange.endDate}</span>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 bg-gradient-to-r from-white to-yellow-50">
-              <div id="customer-pie-chart" className="h-64 w-full"></div>
+            <div className="p-6 border-t border-gray-100 bg-gradient-to-r from-white to-green-50">
+              <div id="inventory-pie-chart" className="h-64 w-full"></div>
             </div>
           </div>
         </div>
