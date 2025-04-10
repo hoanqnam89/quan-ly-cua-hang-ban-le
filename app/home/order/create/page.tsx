@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import ProductList from '../../../components/ProductList';
 import type { IProduct } from '../../../interfaces/product.interface';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { formatCurrency } from '../../../utils/format';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { generatePDF } from '../../../utils/generatePDF';
@@ -44,6 +44,7 @@ export default function CreateOrder() {
         detailId: string
     }>>>({});
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>('');
 
     const totalAmount = orderItems.reduce(
         (sum, item) => sum + item.product.output_price * item.quantity,
@@ -168,10 +169,28 @@ export default function CreateOrder() {
         fetchProductStockInfo();
     }, [products]);
 
-    // Lọc sản phẩm theo từ khóa tìm kiếm
-    const filteredProducts = products.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    const filteredProducts = products.filter(product => {
+        const search = debouncedSearchTerm.trim().toLowerCase();
+        if (!search) return true;
+
+        const productId = product._id.toLowerCase();
+        const productName = product.name.toLowerCase();
+        
+        // Split search term into words for more flexible matching
+        const searchTerms = search.split(/\s+/);
+        
+        return searchTerms.every(term => 
+            productName.includes(term) || productId.includes(term)
+        );
+    });
 
     const handleBack = () => {
         router.push('/home/order');
@@ -492,8 +511,30 @@ export default function CreateOrder() {
     };
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(e.target.value);
+        const value = e.target.value;
+        setSearchTerm(value);
+        setIsDropdownVisible(true);
     };
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // F3 key pressed
+            if (e.key === 'F3') {
+                e.preventDefault();
+                const searchInput = document.getElementById('product-search');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+            // Escape key pressed
+            if (e.key === 'Escape') {
+                setIsDropdownVisible(false);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -540,12 +581,14 @@ export default function CreateOrder() {
                                 <div id="search-container" className="w-full relative">
                                     <div className="relative">
                                         <input
+                                            id="product-search"
                                             type="text"
-                                            placeholder="Tìm theo tên sản phẩm... (F3)"
+                                            placeholder="Tìm theo tên hoặc mã sản phẩm... (F3)"
                                             className="w-full h-12 px-4 pl-12 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-base text-slate-900 placeholder:text-slate-400 transition-all duration-200"
                                             value={searchTerm}
                                             onChange={handleSearchChange}
                                             onFocus={() => setIsDropdownVisible(true)}
+                                            autoComplete="off"
                                         />
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2">
                                             <Image
