@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components';
 import Image from 'next/image';
-import { formatCurrency } from '@/utils/format';
+import { formatCurrency } from '@/app/utils/format';
 
 interface OrderItem {
     product_id: string;

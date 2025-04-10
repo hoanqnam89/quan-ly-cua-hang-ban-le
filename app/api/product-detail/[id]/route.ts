@@ -73,16 +73,22 @@ export const PATCH = async (
       updateData.expiry_date = productDetail.expiry_date;
     }
 
-    // Nếu cung cấp input_quantity, tính toán output_quantity
-    if (productDetail.input_quantity !== undefined) {
+    // Xử lý input_quantity và output_quantity
+    if (productDetail.input_quantity !== undefined && productDetail.output_quantity !== undefined) {
+      // Nếu cả hai trường đều được cung cấp, sử dụng cả hai giá trị như nhận được
+      updateData.input_quantity = productDetail.input_quantity;
+      updateData.output_quantity = productDetail.output_quantity;
+      console.log(`Cập nhật cả input_quantity (${productDetail.input_quantity}) và output_quantity (${productDetail.output_quantity})`);
+    } else if (productDetail.input_quantity !== undefined) {
+      // Chỉ cung cấp input_quantity, tính toán output_quantity theo công thức cũ
       const stockQuantity = Math.floor(productDetail.input_quantity * 0.1);
       const outputQuantity = productDetail.input_quantity - stockQuantity;
 
       updateData.input_quantity = productDetail.input_quantity;
       updateData.output_quantity = outputQuantity;
-    }
-    // Nếu cung cấp output_quantity, sử dụng giá trị từ request
-    else if (productDetail.output_quantity !== undefined) {
+      console.log(`Cập nhật input_quantity thành ${productDetail.input_quantity} và tính toán output_quantity thành ${outputQuantity}`);
+    } else if (productDetail.output_quantity !== undefined) {
+      // Chỉ cung cấp output_quantity
       updateData.output_quantity = productDetail.output_quantity;
       console.log(`Cập nhật trực tiếp output_quantity thành ${productDetail.output_quantity}`);
     }

@@ -4,7 +4,7 @@ import { Button } from '@/components';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { formatCurrency } from '@/utils/format';
+import { formatCurrency } from '@/app/utils/format';
 import { use } from 'react';
 
 interface OrderItem {

@@ -1,7 +1,6 @@
 import React, { memo, ReactElement } from 'react';
 import { IInputProps } from '../interfaces/input-props.interface';
 import Input from '../input/input';
-import { getDate } from '@/utils/get-date';
 
 function DateInput({
   min = undefined,
@@ -15,11 +14,20 @@ function DateInput({
   onInputChange = () => {},
   onInputBlur = () => {},
 }: Readonly<IInputProps<Date>>): ReactElement {
+  // Format the date as YYYY-MM-DD to ensure only date is shown
+  const formatDateOnly = (date: Date): string => {
+    if (!date) return '';
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   return (
     <Input 
       type={`date`}
       name={name}
-      value={getDate(value)}
+      value={formatDateOnly(value)}
       isDisable={isDisable}
       className={className}
       style={style}

@@ -94,10 +94,6 @@ export default function Product() {
         );
 
         const productName = productOption?.label || 'Không xác định';
-        // Cắt ngắn tên sản phẩm nếu quá dài
-        const displayName = productName.length > 20
-          ? productName.substring(0, 30) + '...'
-          : productName;
 
         return (
           <div className="flex flex-col">
@@ -108,7 +104,7 @@ export default function Product() {
               }}
             >
               <Text isEllipsis={false} className="font-medium" tooltip={productName}>
-                {displayName}
+                {productName}
               </Text>
             </div>
           </div>
@@ -121,8 +117,8 @@ export default function Product() {
       title: `Ngày sản xuất`,
       size: `3fr`,
       render: (collection: collectionType): ReactElement => {
-        const date: string =
-          new Date(collection.date_of_manufacture).toLocaleString();
+        const date: string = collection.date_of_manufacture ?
+          new Date(collection.date_of_manufacture).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' }) : 'Không có';
         return <Text isEllipsis={true} className="text-center" tooltip={date}>{date}</Text>
       }
     },
@@ -132,14 +128,15 @@ export default function Product() {
       title: `Hạn sử dụng`,
       size: `3fr`,
       render: (collection: collectionType): ReactElement => {
-        const date: string = new Date(collection.expiry_date).toLocaleString();
+        const date: string = collection.expiry_date ?
+          new Date(collection.expiry_date).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' }) : 'Không có';
         return <Text isEllipsis={true} className="text-center" tooltip={date}>{date}</Text>
       }
     },
     {
       key: `input_quantity`,
       ref: useRef(null),
-      title: `Số lượng trong kho`,
+      title: `Tổng kho`,
       size: `2fr`,
       render: (collection: collectionType): ReactElement => (
         <div className="w-full flex justify-center">
@@ -152,7 +149,7 @@ export default function Product() {
     {
       key: `output_quantity`,
       ref: useRef(null),
-      title: `Số lượng đang bán`,
+      title: `Số lượng trên quầy`,
       size: `2fr`,
       render: (collection: collectionType): ReactElement => (
         <div className="w-full flex justify-center">
@@ -247,19 +244,6 @@ export default function Product() {
     });
   }
 
-  const handleOpenModal = (prev: boolean): boolean => {
-    // if (productOptions.length === 0) {
-    //   createNotification({
-    //     id: 0,
-    //     children: <Text>Thêm sản phẩm vào trước khi thêm chi tiết sản phẩm!</Text>,
-    //     type: ENotificationType.ERROR,
-    //     isAutoClose: true, 
-    //   });
-    //   return prev;
-    // }
-
-    return !prev;
-  }
 
   const gridColumns: string = `200px 1fr`;
 
@@ -275,7 +259,6 @@ export default function Product() {
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
       isLoaded={isLoading}
-      handleOpenModal={handleOpenModal}
     >
       <>
         <Tabs>
@@ -315,16 +298,16 @@ export default function Product() {
           </TabItem>
 
           <TabItem label={`Số lượng`} isDisable={!isModalReadOnly}>
-            <InputSection label={`Số lượng trong kho`} gridColumns={gridColumns}>
+            <InputSection label={`Tổng kho`} gridColumns={gridColumns}>
               <NumberInput
                 isDisable={true}
-                value={productDetail.output_quantity + Math.floor(productDetail.input_quantity * 0.1) + ``}
+                value={productDetail.output_quantity + (productDetail.input_quantity - productDetail.output_quantity) + ``}
                 max={MAX_PRICE}
               >
               </NumberInput>
             </InputSection>
 
-            <InputSection label={`Số lượng đang bán`} gridColumns={gridColumns}>
+            <InputSection label={`Số lượng trên quầy`} gridColumns={gridColumns}>
               <NumberInput
                 isDisable={true}
                 value={productDetail.output_quantity + ``}

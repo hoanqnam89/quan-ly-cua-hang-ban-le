@@ -5,10 +5,10 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import ProductList from '../../../components/ProductList';
 import type { IProduct } from '../../../interfaces/product.interface';
-import { useEffect, useState, useCallback } from 'react';
-import { formatCurrency } from '../../../utils/format';
+import { useEffect, useState } from 'react';
+import { formatCurrency } from '@/app/utils/format';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
-import { generatePDF } from '../../../utils/generatePDF';
+import { generatePDF } from '@/app/utils/generatePDF';
 
 interface OrderItem {
     product: IProduct;
@@ -44,7 +44,6 @@ export default function CreateOrder() {
         detailId: string
     }>>>({});
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
-    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState<string>('');
 
     const totalAmount = orderItems.reduce(
         (sum, item) => sum + item.product.output_price * item.quantity,
@@ -169,28 +168,10 @@ export default function CreateOrder() {
         fetchProductStockInfo();
     }, [products]);
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearchTerm(searchTerm);
-        }, 300);
-
-        return () => clearTimeout(timer);
-    }, [searchTerm]);
-
-    const filteredProducts = products.filter(product => {
-        const search = debouncedSearchTerm.trim().toLowerCase();
-        if (!search) return true;
-
-        const productId = product._id.toLowerCase();
-        const productName = product.name.toLowerCase();
-        
-        // Split search term into words for more flexible matching
-        const searchTerms = search.split(/\s+/);
-        
-        return searchTerms.every(term => 
-            productName.includes(term) || productId.includes(term)
-        );
-    });
+    // Lọc sản phẩm theo từ khóa tìm kiếm
+    const filteredProducts = products.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     const handleBack = () => {
         router.push('/home/order');
@@ -198,9 +179,12 @@ export default function CreateOrder() {
 
     const handleAddToOrder = (product: IProduct, detailId?: string) => {
         const stockDetails = productStockInfo[product._id] || [];
-        const totalQuantity = stockDetails.reduce((sum, detail) => sum + detail.quantity, 0);
+        const totalAvailableQuantity = stockDetails.reduce((sum, detail) => {
+            // Tổng số lượng = số lượng đang bán trên quầy + số lượng tồn kho (input_quantity - output_quantity)
+            return sum + detail.quantity;
+        }, 0);
 
-        if (totalQuantity === 0) {
+        if (totalAvailableQuantity === 0) {
             alert(`Sản phẩm "${product.name}" đã hết hàng!`);
             return;
         }
@@ -223,8 +207,8 @@ export default function CreateOrder() {
                         alert(`Lô hàng này chỉ còn ${selectedBatch.quantity} sản phẩm!`);
                         return prev;
                     }
-                } else if (existingItem.quantity >= totalQuantity) {
-                    alert(`Sản phẩm "${product.name}" chỉ còn ${totalQuantity} sản phẩm đang bán!`);
+                } else if (existingItem.quantity >= totalAvailableQuantity) {
+                    alert(`Sản phẩm "${product.name}" chỉ còn ${totalAvailableQuantity} sản phẩm có sẵn!`);
                     return prev;
                 }
 
@@ -321,8 +305,8 @@ export default function CreateOrder() {
             if (response.ok) {
                 const orderData = await response.json();
 
-                // Cập nhật số lượng sản phẩm đang bán
-            await updateProductQuantities();
+                // Cập nhật số lượng sản phẩm đang bán và tổng kho
+                await updateProductQuantities();
 
                 // Tạo dữ liệu cho PDF
                 const pdfData = {
@@ -353,117 +337,6 @@ export default function CreateOrder() {
             alert('Có lỗi xảy ra khi tạo đơn hàng');
         } finally {
             setIsSubmitting(false);
-        }
-    };
-
-    // Hàm cập nhật số lượng sản phẩm đang bán
-    const updateProductQuantities = async () => {
-        try {
-            console.log("Bắt đầu cập nhật số lượng sản phẩm...");
-            // Lấy tất cả thông tin chi tiết sản phẩm hiện tại
-            const response = await fetch(`/api/product-detail?t=${Date.now()}`);
-            if (!response.ok) {
-                throw new Error('Không thể lấy thông tin chi tiết sản phẩm');
-            }
-
-            const productDetails: IProductDetail[] = await response.json();
-            console.log(`Đã lấy ${productDetails.length} chi tiết sản phẩm`);
-
-            // Tạo bản đồ chi tiết sản phẩm theo product_id
-            const productDetailsMap: Record<string, IProductDetail[]> = {};
-
-            productDetails.forEach(detail => {
-                if (!productDetailsMap[detail.product_id]) {
-                    productDetailsMap[detail.product_id] = [];
-                }
-                productDetailsMap[detail.product_id].push(detail);
-            });
-
-            // Cập nhật số lượng cho từng sản phẩm trong đơn hàng
-            for (const orderItem of orderItems) {
-                const productId = orderItem.product._id;
-                const quantityToDecrease = orderItem.quantity;
-                console.log(`Cập nhật sản phẩm ${orderItem.product.name} - ID: ${productId} - Số lượng: ${quantityToDecrease}`);
-
-                if (productDetailsMap[productId] && productDetailsMap[productId].length > 0) {
-                    // Sắp xếp chi tiết sản phẩm theo ngày hết hạn (cũ nhất trước)
-                    const sortedDetails = productDetailsMap[productId].sort(
-                        (a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime()
-                    );
-
-                    console.log(`Tìm thấy ${sortedDetails.length} chi tiết cho sản phẩm ${productId}`);
-
-                    let remainingQuantity = quantityToDecrease;
-
-                    // Giảm số lượng từ các chi tiết sản phẩm, bắt đầu từ sản phẩm sắp hết hạn nhất
-                    for (const detail of sortedDetails) {
-                        if (remainingQuantity <= 0) break;
-
-                        // Số lượng có thể giảm từ chi tiết này
-                        const currentOutput = detail.output_quantity || 0;
-                        const newOutput = Math.max(0, currentOutput - remainingQuantity);
-                        const decreaseAmount = currentOutput - newOutput;
-
-                        console.log(`Chi tiết sản phẩm ID: ${detail._id} - Số lượng hiện tại: ${currentOutput} - Giảm: ${decreaseAmount} - Còn lại: ${newOutput}`);
-
-                        if (decreaseAmount > 0) {
-                            // Cập nhật số lượng đã bán trong chi tiết sản phẩm
-                            try {
-                                const detailId = detail._id.toString();
-                                console.log(`Gửi request PATCH đến /api/product-detail/${detailId}`);
-
-                                const updateResponse = await fetch(`/api/product-detail/${detailId}?t=${Date.now()}`, {
-                                    method: 'PATCH',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                    },
-                                    body: JSON.stringify({
-                                        output_quantity: newOutput
-                                    }),
-                                });
-
-                                if (!updateResponse.ok) {
-                                    const errorText = await updateResponse.text();
-                                    console.error(`Lỗi khi cập nhật chi tiết sản phẩm ${detailId}:`, errorText);
-                                    throw new Error(`Không thể cập nhật chi tiết sản phẩm: ${updateResponse.status} ${updateResponse.statusText}`);
-                                } else {
-                                    const responseData = await updateResponse.json();
-                                    console.log(`Đã cập nhật thành công chi tiết sản phẩm ${detailId}`, responseData);
-                                }
-
-                                remainingQuantity -= decreaseAmount;
-                            } catch (updateError) {
-                                console.error(`Lỗi khi gửi request PATCH:`, updateError);
-                                throw updateError;
-                            }
-                        }
-                    }
-
-                    if (remainingQuantity > 0) {
-                        console.warn(`Không đủ số lượng cho sản phẩm ${productId}. Còn lại ${remainingQuantity} không thể giảm.`);
-                    }
-                } else {
-                    console.warn(`Không tìm thấy chi tiết sản phẩm cho ID: ${productId}`);
-                }
-            }
-
-            // Cập nhật lại thông tin số lượng trong state
-            const updatedStockInfo = { ...productStockInfo };
-
-            orderItems.forEach(item => {
-                const productId = item.product._id;
-                if (updatedStockInfo[productId] !== undefined) {
-                    updatedStockInfo[productId] = item.quantity > 0 ? updatedStockInfo[productId].filter(d => d.quantity > 0) : [];
-                    console.log(`Cập nhật state: Sản phẩm ${item.product.name} - Số lượng mới: ${updatedStockInfo[productId].length}`);
-                }
-            });
-
-            setProductStockInfo(updatedStockInfo);
-            console.log("Hoàn thành cập nhật số lượng sản phẩm");
-
-        } catch (error) {
-            console.error('Lỗi khi cập nhật số lượng sản phẩm:', error);
-            alert('Đơn hàng đã được tạo nhưng có lỗi khi cập nhật số lượng sản phẩm. Vui lòng kiểm tra lại.');
         }
     };
 
@@ -500,6 +373,9 @@ export default function CreateOrder() {
                 throw new Error(errorData.error || 'Không thể lưu đơn hàng');
             }
 
+            // Cập nhật số lượng sản phẩm đang bán và tổng kho
+            await updateProductQuantities();
+
             alert('Đã lưu đơn hàng nháp thành công!');
             router.push('/home/order');
         } catch (error) {
@@ -511,30 +387,8 @@ export default function CreateOrder() {
     };
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setSearchTerm(value);
-        setIsDropdownVisible(true);
+        setSearchTerm(e.target.value);
     };
-
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // F3 key pressed
-            if (e.key === 'F3') {
-                e.preventDefault();
-                const searchInput = document.getElementById('product-search');
-                if (searchInput) {
-                    searchInput.focus();
-                }
-            }
-            // Escape key pressed
-            if (e.key === 'Escape') {
-                setIsDropdownVisible(false);
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -549,6 +403,102 @@ export default function CreateOrder() {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    // Hàm cập nhật số lượng sản phẩm đang bán và tổng kho
+    const updateProductQuantities = async () => {
+        try {
+            console.log("Bắt đầu cập nhật số lượng sản phẩm...");
+            // Lấy tất cả thông tin chi tiết sản phẩm hiện tại
+            const response = await fetch(`/api/product-detail?t=${Date.now()}`);
+            if (!response.ok) {
+                throw new Error('Không thể lấy thông tin chi tiết sản phẩm');
+            }
+
+            const productDetails: IProductDetail[] = await response.json();
+            console.log(`Đã lấy ${productDetails.length} chi tiết sản phẩm`);
+
+            // Tạo bản đồ chi tiết sản phẩm theo product_id
+            const productDetailsMap: Record<string, IProductDetail[]> = {};
+
+            productDetails.forEach(detail => {
+                if (!productDetailsMap[detail.product_id]) {
+                    productDetailsMap[detail.product_id] = [];
+                }
+                productDetailsMap[detail.product_id].push(detail);
+            });
+
+            // Cập nhật số lượng cho từng sản phẩm trong đơn hàng
+            for (const orderItem of orderItems) {
+                const productId = orderItem.product._id;
+                const quantityToDecrease = orderItem.quantity;
+                console.log(`Cập nhật sản phẩm ${orderItem.product.name} - ID: ${productId} - Số lượng: ${quantityToDecrease}`);
+
+                if (productDetailsMap[productId] && productDetailsMap[productId].length > 0) {
+                    // Chọn chi tiết sản phẩm đầu tiên để cập nhật
+                    const detail = productDetailsMap[productId][0];
+                    
+                    // Tính toán số lượng cần giảm
+                    const currentOutput = detail.output_quantity || 0;
+                    const newOutput = currentOutput - quantityToDecrease;
+                    
+                    // Cập nhật cả số lượng trên quầy và tổng kho
+                    const currentInput = detail.input_quantity || 0;
+                    const newInput = currentInput - quantityToDecrease;
+                  
+                    // Cập nhật số lượng trong chi tiết sản phẩm
+                    try {
+                        const detailId = detail._id.toString();
+                        console.log(`Gửi request PATCH đến /api/product-detail/${detailId}`);
+
+                        const updateResponse = await fetch(`/api/product-detail/${detailId}?t=${Date.now()}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                output_quantity: newOutput,
+                                input_quantity: newInput
+                            }),
+                        });
+
+                        if (!updateResponse.ok) {
+                            const errorText = await updateResponse.text();
+                            console.error(`Lỗi khi cập nhật chi tiết sản phẩm ${detailId}:`, errorText);
+                            throw new Error(`Không thể cập nhật chi tiết sản phẩm: ${updateResponse.status} ${updateResponse.statusText}`);
+                        } else {
+                            const responseData = await updateResponse.json();
+                            console.log(`Đã cập nhật thành công chi tiết sản phẩm ${detailId}`, responseData);
+                        }
+                    } catch (updateError) {
+                        console.error(`Lỗi khi gửi request PATCH:`, updateError);
+                        throw updateError;
+                    }
+                } else {
+                    console.warn(`Không tìm thấy chi tiết sản phẩm cho ID: ${productId}`);
+                }
+            }
+
+            // Cập nhật lại thông tin số lượng trong state
+            const updatedStockInfo = { ...productStockInfo };
+
+            orderItems.forEach(item => {
+                const productId = item.product._id;
+                if (updatedStockInfo[productId] !== undefined) {
+                    updatedStockInfo[productId] = updatedStockInfo[productId].map(detail => {
+                        return { ...detail, quantity: Math.max(0, detail.quantity - item.quantity) };
+                    }).filter(d => d.quantity > 0);
+                    console.log(`Cập nhật state: Sản phẩm ${item.product.name} - Số lượng mới: ${updatedStockInfo[productId].length}`);
+                }
+            });
+
+            setProductStockInfo(updatedStockInfo);
+            console.log("Hoàn thành cập nhật số lượng sản phẩm");
+
+        } catch (error) {
+            console.error('Lỗi khi cập nhật số lượng sản phẩm:', error);
+            alert('Đơn hàng đã được tạo nhưng có lỗi khi cập nhật số lượng sản phẩm. Vui lòng kiểm tra lại.');
+        }
+    };
 
     return (
         <div className="min-h-screen bg-white pb-24">
@@ -581,14 +531,12 @@ export default function CreateOrder() {
                                 <div id="search-container" className="w-full relative">
                                     <div className="relative">
                                         <input
-                                            id="product-search"
                                             type="text"
-                                            placeholder="Tìm theo tên hoặc mã sản phẩm... (F3)"
+                                            placeholder="Tìm theo tên sản phẩm... (F3)"
                                             className="w-full h-12 px-4 pl-12 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-base text-slate-900 placeholder:text-slate-400 transition-all duration-200"
                                             value={searchTerm}
                                             onChange={handleSearchChange}
                                             onFocus={() => setIsDropdownVisible(true)}
-                                            autoComplete="off"
                                         />
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2">
                                             <Image
@@ -636,6 +584,9 @@ export default function CreateOrder() {
                                                                 const stockDetails = productStockInfo[product._id] || [];
                                                                 const totalQuantity = stockDetails.reduce((sum, detail) => sum + detail.quantity, 0);
                                                                 
+                                                                // Skip products with zero quantity
+                                                                if (totalQuantity === 0) return null;
+                                                                
                                                                 return (
                                                                     <div key={product._id} className="p-4 hover:bg-slate-50 transition-colors">
                                                                         <div className="flex items-center gap-4">
@@ -675,6 +626,8 @@ export default function CreateOrder() {
                                                                         {stockDetails.length > 0 && (
                                                                             <div className="mt-3 grid gap-2">
                                                                                 {stockDetails.map((detail) => (
+                                                                                    // Skip individual batch entries with zero quantity
+                                                                                    detail.quantity > 0 ? (
                                                                                     <div
                                                                                         key={detail.detailId}
                                                                                         className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-blue-50 transition-colors group"
@@ -690,14 +643,14 @@ export default function CreateOrder() {
                                                                                                     <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                                                                     </svg>
-                                                                                                    NSX: {detail.dateOfManufacture?.toLocaleDateString('vi-VN') || 'Không có'}
+                                                                                                    NSX: {detail.dateOfManufacture ? new Date(detail.dateOfManufacture).toLocaleDateString('vi-VN') : 'Không có'}
                                                                                                 </div>
                                                                                                 <span className="text-slate-300">|</span>
                                                                                                 <div className="flex items-center gap-1.5 text-xs text-slate-600">
                                                                                                     <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                                                                     </svg>
-                                                                                                    HSD: {detail.expiryDate?.toLocaleDateString('vi-VN') || 'Không có'}
+                                                                                                    HSD: {detail.expiryDate ? new Date(detail.expiryDate).toLocaleDateString('vi-VN') : 'Không có'}
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
@@ -712,6 +665,7 @@ export default function CreateOrder() {
                                                                                             Thêm vào giỏ
                                                                                         </button>
                                                                                     </div>
+                                                                                    ) : null
                                                                                 ))}
                                                                             </div>
                                                                         )}
@@ -773,10 +727,10 @@ export default function CreateOrder() {
                                                 {item.batchDetails && (
                                                     <div className="mt-1 space-y-1">
                                                         <div className="text-xs text-slate-500">
-                                                            NSX: {item.batchDetails.dateOfManufacture?.toLocaleDateString('vi-VN') || 'Không có'}
+                                                            NSX: {item.batchDetails.dateOfManufacture ? new Date(item.batchDetails.dateOfManufacture).toLocaleDateString('vi-VN') : 'Không có'}
                                                         </div>
                                                         <div className="text-xs text-slate-500">
-                                                            HSD: {item.batchDetails.expiryDate?.toLocaleDateString('vi-VN') || 'Không có'}
+                                                            HSD: {item.batchDetails.expiryDate ? new Date(item.batchDetails.expiryDate).toLocaleDateString('vi-VN') : 'Không có'}
                                                         </div>
                                                     </div>
                                                 )}
@@ -828,9 +782,9 @@ export default function CreateOrder() {
                                                                 return;
                                                             }
                                                         } else {
-                                                            const totalQuantity = stockDetails.reduce((sum, detail) => sum + detail.quantity, 0);
-                                                            if (item.quantity >= totalQuantity) {
-                                                                alert(`Sản phẩm "${item.product.name}" chỉ còn ${totalQuantity} sản phẩm đang bán!`);
+                                                            const totalAvailable = stockDetails.reduce((sum, detail) => sum + detail.quantity, 0);
+                                                            if (item.quantity >= totalAvailable) {
+                                                                alert(`Sản phẩm "${item.product.name}" chỉ còn ${totalAvailable} sản phẩm có sẵn!`);
                                                                 return;
                                                             }
                                                         }

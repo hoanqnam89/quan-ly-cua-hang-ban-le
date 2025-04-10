@@ -26,6 +26,10 @@ interface ITableProps<T> {
   columnMinWidth?: number, 
   canDeleteCollection?: boolean
   canCreateCollection?: boolean
+  currentPage?: number,
+  setCurrentPage?: React.Dispatch<React.SetStateAction<number>>,
+  itemsPerPage?: number,
+  totalItems?: number
 }
 
 export default function Table<T extends {_id: string, index?: number}>({
@@ -37,7 +41,11 @@ export default function Table<T extends {_id: string, index?: number}>({
   datas = [], 
   columnMinWidth = 20, 
   canDeleteCollection = false, 
-  canCreateCollection = true, 
+  canCreateCollection = true,
+  currentPage = 1,
+  setCurrentPage,
+  itemsPerPage = 10,
+  totalItems = datas.length
 }: Readonly<ITableProps<T>>): ReactElement {
   const [isShowToggleColumns, setIsShowToggleColumns] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>(``);
@@ -347,6 +355,77 @@ export default function Table<T extends {_id: string, index?: number}>({
       </div>
   );
 
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  
+  const handlePageChange = (newPage: number) => {
+    if (setCurrentPage && newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    
+    return (
+      <div className="flex justify-center items-center mt-4 space-x-2">
+        <Button 
+          onClick={() => handlePageChange(1)} 
+          isDisable={currentPage === 1}
+          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-50"
+        >
+          <Text>Đầu</Text>
+        </Button>
+        <Button 
+          onClick={() => handlePageChange(currentPage - 1)} 
+          isDisable={currentPage === 1}
+          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-50"
+        >
+          <Text>Trước</Text>
+        </Button>
+        
+        <div className="flex items-center space-x-1">
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            let pageNum;
+            if (totalPages <= 5) {
+              pageNum = i + 1;
+            } else if (currentPage <= 3) {
+              pageNum = i + 1;
+            } else if (currentPage >= totalPages - 2) {
+              pageNum = totalPages - 4 + i;
+            } else {
+              pageNum = currentPage - 2 + i;
+            }
+            
+            return (
+              <Button 
+                key={pageNum}
+                onClick={() => handlePageChange(pageNum)} 
+                className={`w-8 h-8 rounded-full ${currentPage === pageNum ? 'bg-blue-500 text-white' : 'bg-slate-200 hover:bg-slate-300'}`}
+              >
+                <Text>{pageNum}</Text>
+              </Button>
+            );
+          })}
+        </div>
+        
+        <Button 
+          onClick={() => handlePageChange(currentPage + 1)} 
+          isDisable={currentPage === totalPages}
+          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-50"
+        >
+          <Text>Sau</Text>
+        </Button>
+        <Button 
+          onClick={() => handlePageChange(totalPages)} 
+          isDisable={currentPage === totalPages}
+          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-50"
+        >
+          <Text>Cuối</Text>
+        </Button>
+      </div>
+    );
+  };
+
   return (
     <div className={`h-full flex flex-col gap-4 p-1`}>
       <div className={`flex gap-2 items-center`}>
@@ -401,6 +480,8 @@ export default function Table<T extends {_id: string, index?: number}>({
           : rowElements
         }
       </div>
+
+      {renderPagination()}
     </div>
   )
 }

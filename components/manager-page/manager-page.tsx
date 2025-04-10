@@ -32,6 +32,12 @@ interface IManagerPageProps<T> {
   handleOpenModal?: (isOpen: boolean) => boolean
   onExitModalForm?: () => void
   name?: string
+  currentPage?: number
+  setCurrentPage?: Dispatch<SetStateAction<number>>
+  itemsPerPage?: number
+  totalItems?: number
+  displayedItems?: T[]
+  setAllItems?: Dispatch<SetStateAction<T[]>>
 }
 
 export default function ManagerPage<T extends {_id: string, index?: number}>({
@@ -48,7 +54,13 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   isLoaded = false, 
   handleOpenModal = (isOpen: boolean): boolean => !isOpen, 
   onExitModalForm = () => {}, 
-  name = translateCollectionName(collectionName), 
+  name = translateCollectionName(collectionName),
+  currentPage = 1,
+  setCurrentPage,
+  itemsPerPage = 10,
+  totalItems,
+  displayedItems,
+  setAllItems,
 }: Readonly<IManagerPageProps<T>>): ReactElement {
   const translatedCollectionName: string = 
     translateCollectionName(collectionName);
@@ -61,10 +73,21 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
   const getCollections: () => Promise<void> = useCallback(
     async (): Promise<void> => {
-      await fetchGetCollections<T>( collectionName, setCollections );
+      const fetchedCollections = await fetchGetCollections<T>(collectionName);
+      
+      if (setAllItems) {
+        setAllItems(fetchedCollections);
+      }
+      
+      if (displayedItems) {
+        setCollections(displayedItems);
+      } else {
+        setCollections(fetchedCollections.slice(0, itemsPerPage));
+      }
+      
       setIsLoading(false);
     }, 
-    [collectionName],
+    [collectionName, setAllItems, displayedItems, itemsPerPage],
   );
 
   useEffect(() => {
@@ -312,6 +335,8 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
       mounted.current = true;
   }, [handleDeleteCollectionById, isClickDelete]);
 
+  const tableData = displayedItems || collections;
+
   const managerPage: ReactElement = isLoading 
     ? <LoadingScreen></LoadingScreen>
     : <>
@@ -320,10 +345,14 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
       <Table<T>
         name={translatedCollectionName}
         isGetDatasDone={isLoading}
-        datas={collections}
+        datas={tableData}
         columns={columns}
         onClickAdd={toggleAddCollectionModal}
-        onClickDelete={handleDeleteCollection} 
+        onClickDelete={handleDeleteCollection}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        itemsPerPage={itemsPerPage}
+        totalItems={totalItems || tableData.length}
       />
       
       <CollectionForm<T>

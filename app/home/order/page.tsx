@@ -22,7 +22,7 @@ import { DEFAULT_PROCDUCT_DETAIL } from '@/constants/product-detail.constant';
 import DateInput from '@/components/date-input/date-input';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { formatCurrency } from '@/utils/format';
+import { formatCurrency } from '@/app/utils/format';
 import PaymentModal from '@/app/components/PaymentModal';
 
 type collectionType = IProductDetail;
