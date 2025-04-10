@@ -286,14 +286,7 @@ const ImportOrderList = () => {
           </div>
         </header>
 
-        <nav className="flex gap-8 border-b-2 border-slate-200 mb-8">
-          <button
-            className="pb-4 px-4 font-semibold text-base text-blue-600 relative"
-          >
-            Tất cả đơn hàng
-            <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full"></div>
-          </button>
-        </nav>
+        
 
         <div className="space-y-4 mb-8">
           <div className="w-full">

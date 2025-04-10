@@ -12,6 +12,11 @@ import { IProductDetail } from '@/interfaces/product-detail.interface';
 interface OrderItem {
     product: IProduct;
     quantity: number;
+    batchDetails?: {
+        detailId: string;
+        dateOfManufacture: Date | null;
+        expiryDate: Date | null;
+    };
 }
 
 export default function CreateOrder() {
@@ -31,7 +36,13 @@ export default function CreateOrder() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSavingDraft, setIsSavingDraft] = useState(false);
     const [searchTerm, setSearchTerm] = useState<string>('');
-    const [productStockInfo, setProductStockInfo] = useState<Record<string, number>>({});
+    const [productStockInfo, setProductStockInfo] = useState<Record<string, Array<{
+        quantity: number,
+        expiryDate: Date | null,
+        dateOfManufacture: Date | null,
+        detailId: string
+    }>>>({});
+    const [isDropdownVisible, setIsDropdownVisible] = useState(false);
 
     const totalAmount = orderItems.reduce(
         (sum, item) => sum + item.product.output_price * item.quantity,
@@ -105,25 +116,45 @@ export default function CreateOrder() {
         fetchInitialData();
     }, []);
 
-    // Lấy thông tin số lượng đang bán của tất cả sản phẩm một lần duy nhất
+    // Lấy thông tin số lượng đang bán và hạn sử dụng của tất cả sản phẩm một lần duy nhất
     useEffect(() => {
         const fetchProductStockInfo = async () => {
             if (!products.length) return;
 
             try {
-                // Lấy tất cả thông tin chi tiết sản phẩm
                 const response = await fetch(`/api/product-detail?t=${Date.now()}`);
                 if (response.ok) {
                     const allProductDetails: IProductDetail[] = await response.json();
 
-                    // Nhóm chi tiết sản phẩm theo product_id và tính tổng số lượng đang bán
-                    const stockInfo: Record<string, number> = {};
+                    // Group product details by product_id
+                    const stockInfo: Record<string, Array<{
+                        quantity: number,
+                        expiryDate: Date | null,
+                        dateOfManufacture: Date | null,
+                        detailId: string
+                    }>> = {};
 
                     allProductDetails.forEach(detail => {
                         if (!stockInfo[detail.product_id]) {
-                            stockInfo[detail.product_id] = 0;
+                            stockInfo[detail.product_id] = [];
                         }
-                        stockInfo[detail.product_id] += detail.output_quantity || 0;
+                        
+                        if (detail.output_quantity > 0) {
+                            stockInfo[detail.product_id].push({
+                                quantity: detail.output_quantity,
+                                expiryDate: detail.expiry_date ? new Date(detail.expiry_date) : null,
+                                dateOfManufacture: detail.date_of_manufacture ? new Date(detail.date_of_manufacture) : null,
+                                detailId: detail._id
+                            });
+                        }
+                    });
+
+                    // Sort each product's details by manufacturing date
+                    Object.keys(stockInfo).forEach(productId => {
+                        stockInfo[productId].sort((a, b) => {
+                            if (!a.dateOfManufacture || !b.dateOfManufacture) return 0;
+                            return a.dateOfManufacture.getTime() - b.dateOfManufacture.getTime();
+                        });
                     });
 
                     setProductStockInfo(stockInfo);
@@ -145,35 +176,60 @@ export default function CreateOrder() {
         router.push('/home/order');
     };
 
-    const handleAddToOrder = (product: IProduct) => {
-        // Kiểm tra số lượng đang bán của sản phẩm
-        const availableQuantity = productStockInfo[product._id] || 0;
+    const handleAddToOrder = (product: IProduct, detailId?: string) => {
+        const stockDetails = productStockInfo[product._id] || [];
+        const totalQuantity = stockDetails.reduce((sum, detail) => sum + detail.quantity, 0);
 
-        // Thêm sản phẩm trực tiếp vào đơn hàng với số lượng mặc định là 1
+        if (totalQuantity === 0) {
+            alert(`Sản phẩm "${product.name}" đã hết hàng!`);
+            return;
+        }
+
+        // Tìm chi tiết lô hàng nếu có detailId
+        const selectedBatch = detailId ? stockDetails.find(detail => detail.detailId === detailId) : null;
+
         setOrderItems((prev) => {
-            const existingItem = prev.find((item) => item.product._id === product._id);
+            const existingItem = prev.find((item) => {
+                if (detailId) {
+                    return item.product._id === product._id && item.batchDetails?.detailId === detailId;
+                }
+                return item.product._id === product._id;
+            });
 
             if (existingItem) {
-                // Nếu tổng số lượng sau khi thêm vượt quá số lượng đang bán, hiển thị thông báo
-                if (existingItem.quantity >= availableQuantity) {
-                    alert(`Sản phẩm "${product.name}" chỉ còn ${availableQuantity} sản phẩm đang bán!`);
+                // Kiểm tra số lượng có sẵn trong lô cụ thể nếu có
+                if (detailId && selectedBatch) {
+                    if (existingItem.quantity >= selectedBatch.quantity) {
+                        alert(`Lô hàng này chỉ còn ${selectedBatch.quantity} sản phẩm!`);
+                        return prev;
+                    }
+                } else if (existingItem.quantity >= totalQuantity) {
+                    alert(`Sản phẩm "${product.name}" chỉ còn ${totalQuantity} sản phẩm đang bán!`);
                     return prev;
                 }
 
-                return prev.map((item) =>
-                    item.product._id === product._id
-                        ? { ...item, quantity: item.quantity + 1 }
-                        : item
-                );
+                return prev.map((item) => {
+                    if (item === existingItem) {
+                        return { ...item, quantity: item.quantity + 1 };
+                    }
+                    return item;
+                });
             }
 
-            // Nếu số lượng đang bán bằng 0, hiển thị thông báo
-            if (availableQuantity === 0) {
-                alert(`Sản phẩm "${product.name}" đã hết hàng!`);
-                return prev;
-            }
+            // Thêm mới sản phẩm với thông tin lô nếu có
+            const newItem: OrderItem = {
+                product,
+                quantity: 1,
+                ...(selectedBatch && {
+                    batchDetails: {
+                        detailId: selectedBatch.detailId,
+                        dateOfManufacture: selectedBatch.dateOfManufacture,
+                        expiryDate: selectedBatch.expiryDate
+                    }
+                })
+            };
 
-            return [...prev, { product, quantity: 1 }];
+            return [...prev, newItem];
         });
     };
 
@@ -245,7 +301,6 @@ export default function CreateOrder() {
             if (!response.ok) {
                 throw new Error('Không thể tạo đơn hàng');
             }
-
             // Cập nhật số lượng sản phẩm đang bán sau khi tạo đơn hàng thành công
             await updateProductQuantities();
 
@@ -356,8 +411,8 @@ export default function CreateOrder() {
             orderItems.forEach(item => {
                 const productId = item.product._id;
                 if (updatedStockInfo[productId] !== undefined) {
-                    updatedStockInfo[productId] = Math.max(0, updatedStockInfo[productId] - item.quantity);
-                    console.log(`Cập nhật state: Sản phẩm ${item.product.name} - Số lượng mới: ${updatedStockInfo[productId]}`);
+                    updatedStockInfo[productId] = item.quantity > 0 ? updatedStockInfo[productId].filter(d => d.quantity > 0) : [];
+                    console.log(`Cập nhật state: Sản phẩm ${item.product.name} - Số lượng mới: ${updatedStockInfo[productId].length}`);
                 }
             });
 
@@ -417,6 +472,20 @@ export default function CreateOrder() {
         setSearchTerm(e.target.value);
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const searchContainer = document.getElementById('search-container');
+            if (searchContainer && !searchContainer.contains(event.target as Node)) {
+                setIsDropdownVisible(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     return (
         <div className="min-h-screen bg-white pb-24">
             <div className="bg-white border-b border-slate-200 sticky top-0 z-40">
@@ -424,7 +493,7 @@ export default function CreateOrder() {
                     <div className="flex items-center h-16 px-5">
                         <Button
                             onClick={handleBack}
-                            className="flex items-center justify-center w6 h-10 rounded-md bg-white border border-slate-200 hover:bg-slate-50 transition-all duration-200 shadow-sm"
+                            className="flex items-center justify-center  h-10 rounded-md bg-white border border-slate-200 hover:bg-slate-50 transition-all duration-200 shadow-sm w-[60px]"
                         >
                             <Image
                                 src="/icons/chevron-left.svg"
@@ -434,16 +503,164 @@ export default function CreateOrder() {
                                 className="text-slate-500"
                             />
                         </Button>
-                        <span className="ml-5 text-xl font-medium text-slate-900">Tạo đơn hàng</span>
+                        <span className=" text-xl font-medium text-slate-900 flex items-center justify-center  transition-all  w-[200px] p-5">Tạo đơn hàng</span>
                     </div>
                 </div>
             </div>
 
             <div className="max-w-[1500px] mx-auto p-6">
                 <div className="grid grid-cols-7 gap-6">
-                    {/* Cột trái - Sản phẩm đã chọn */}
+                    {/* Cột trái - Sản phẩm đã chọn và tìm kiếm */}
                     <div className="col-span-4">
-                        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm h-[650px] flex flex-col">
+                        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm h-[710px] flex flex-col">
+                            <div className="flex gap-3 mb-5">
+                                <div id="search-container" className="w-full relative">
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Tìm theo tên sản phẩm... (F3)"
+                                            className="w-full h-12 px-4 pl-12 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-base text-slate-900 placeholder:text-slate-400 transition-all duration-200"
+                                            value={searchTerm}
+                                            onChange={handleSearchChange}
+                                            onFocus={() => setIsDropdownVisible(true)}
+                                        />
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                                            <Image
+                                                src="/icons/search.svg"
+                                                alt="search"
+                                                width={20}
+                                                height={20}
+                                                className="text-slate-400"
+                                                priority
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {searchTerm && isDropdownVisible && (
+                                        <div className="absolute z-50 left-0 right-0 mt-2">
+                                            <div className="bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                                                <div className="max-h-[420px] overflow-y-auto custom-scrollbar">
+                                                    {loading ? (
+                                                        <div className="flex items-center justify-center p-6">
+                                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                                                        </div>
+                                                    ) : error ? (
+                                                        <div className="flex items-center justify-center p-6 text-red-500">
+                                                            {error}
+                                                        </div>
+                                                    ) : filteredProducts.length === 0 ? (
+                                                        <div className="flex items-center justify-center p-6">
+                                                            <div className="text-center">
+                                                                <Image
+                                                                    src="/icons/empty-cart.svg"
+                                                                    alt="empty"
+                                                                    width={44}
+                                                                    height={44}
+                                                                    className="mx-auto mb-3 text-slate-400"
+                                                                    priority
+                                                                />
+                                                                <p className="text-slate-600 mb-3 text-[16px]">
+                                                                    Không tìm thấy sản phẩm phù hợp
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="divide-y divide-slate-100">
+                                                            {filteredProducts.map((product) => {
+                                                                const stockDetails = productStockInfo[product._id] || [];
+                                                                const totalQuantity = stockDetails.reduce((sum, detail) => sum + detail.quantity, 0);
+                                                                
+                                                                return (
+                                                                    <div key={product._id} className="p-4 hover:bg-slate-50 transition-colors">
+                                                                        <div className="flex items-center gap-4">
+                                                                            <div className="w-14 h-14 bg-slate-100 rounded-lg relative overflow-hidden flex-shrink-0">
+                                                                                {product.image_links?.[0] ? (
+                                                                                    <Image
+                                                                                        src={product.image_links[0]}
+                                                                                        alt={product.name}
+                                                                                        fill
+                                                                                        className="object-cover"
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div className="w-full h-full flex items-center justify-center">
+                                                                                        <Image
+                                                                                            src="/icons/product.svg"
+                                                                                            alt="product"
+                                                                                            width={24}
+                                                                                            height={24}
+                                                                                            className="text-slate-400"
+                                                                                        />
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0">
+                                                                                <h3 className="font-medium text-[15px] text-slate-900 truncate mb-1">
+                                                                                    {product.name}
+                                                                                </h3>
+                                                                                <div className="flex items-center gap-3">
+                                                                                    <span className="text-[15px] font-medium text-blue-600">
+                                                                                        {formatCurrency(product.output_price)}
+                                                                                    </span>
+                                                                                    
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {stockDetails.length > 0 && (
+                                                                            <div className="mt-3 grid gap-2">
+                                                                                {stockDetails.map((detail) => (
+                                                                                    <div
+                                                                                        key={detail.detailId}
+                                                                                        className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-blue-50 transition-colors group"
+                                                                                    >
+                                                                                        <div className="flex items-center gap-4">
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <div className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 group-hover:bg-blue-100">
+                                                                                                    SL: {detail.quantity}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <div className="flex items-center gap-3">
+                                                                                                <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                                                                                                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                                                    </svg>
+                                                                                                    NSX: {detail.dateOfManufacture?.toLocaleDateString('vi-VN') || 'Không có'}
+                                                                                                </div>
+                                                                                                <span className="text-slate-300">|</span>
+                                                                                                <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                                                                                                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                                                    </svg>
+                                                                                                    HSD: {detail.expiryDate?.toLocaleDateString('vi-VN') || 'Không có'}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                        <button
+                                                                                            className="px-3 py-1.5 bg-white text-blue-600 rounded-lg border border-blue-200 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-200 text-sm font-medium shadow-sm whitespace-nowrap"
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                handleAddToOrder(product, detail.detailId);
+                                                                                                setIsDropdownVisible(false);
+                                                                                            }}
+                                                                                        >
+                                                                                            Thêm vào giỏ
+                                                                                        </button>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
                             <h2 className="text-xl font-semibold text-slate-900 mb-5 flex items-center gap-2">
                                 <Image
                                     src="/icons/cart.svg"
@@ -456,31 +673,14 @@ export default function CreateOrder() {
                                 Sản phẩm đã chọn
                             </h2>
 
-                            <style jsx global>{`
-                                .custom-scrollbar::-webkit-scrollbar {
-                                    width: 8px;
-                                }
-                                .custom-scrollbar::-webkit-scrollbar-track {
-                                    background: #f1f5f9;
-                                    border-radius: 10px;
-                                }
-                                .custom-scrollbar::-webkit-scrollbar-thumb {
-                                    background: #cbd5e1;
-                                    border-radius: 10px;
-                                }
-                                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                                    background: #94a3b8;
-                                }
-                            `}</style>
-
                             {orderItems.length > 0 ? (
-                                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-4">
-                                    {orderItems.map((item) => (
+                                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-3">
+                                    {orderItems.map((item, index) => (
                                         <div
-                                            key={item.product._id}
-                                            className="flex items-center gap-4 p-4 border border-slate-200 rounded-lg"
+                                            key={`${item.product._id}-${item.batchDetails?.detailId || index}`}
+                                            className="flex items-center gap-4 p-4 border border-slate-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all duration-200"
                                         >
-                                            <div className="w-16 h-16 bg-slate-50 rounded-lg relative overflow-hidden flex-shrink-0">
+                                            <div className="w-16 h-16 bg-slate-50 rounded-xl relative overflow-hidden flex-shrink-0">
                                                 {item.product.image_links?.[0] ? (
                                                     <Image
                                                         src={item.product.image_links[0]}
@@ -501,29 +701,39 @@ export default function CreateOrder() {
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <h3 className="font-medium text-base text-slate-900 truncate">{item.product.name}</h3>
+                                                <h3 className="font-medium text-[15px] text-slate-900 truncate">
+                                                    {item.product.name}
+                                                </h3>
+                                                {item.batchDetails && (
+                                                    <div className="mt-1 space-y-1">
+                                                        <div className="text-xs text-slate-500">
+                                                            NSX: {item.batchDetails.dateOfManufacture?.toLocaleDateString('vi-VN') || 'Không có'}
+                                                        </div>
+                                                        <div className="text-xs text-slate-500">
+                                                            HSD: {item.batchDetails.expiryDate?.toLocaleDateString('vi-VN') || 'Không có'}
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 <div className="mt-1 text-sm text-slate-500">
                                                     {formatCurrency(item.product.output_price)}
                                                 </div>
                                             </div>
-                                            <div className="flex items-center border rounded-md overflow-hidden">
+                                            <div className="flex items-center border border-slate-200 rounded-xl overflow-hidden">
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
 
                                                         if (item.quantity > 1) {
-                                                            // Giảm số lượng sản phẩm nhưng không dưới 1
                                                             setOrderItems(prev =>
                                                                 prev.map(i =>
-                                                                    i.product._id === item.product._id
+                                                                    i === item
                                                                         ? { ...i, quantity: i.quantity - 1 }
                                                                         : i
                                                                 )
                                                             );
                                                         } else {
-                                                            // Xóa sản phẩm khỏi danh sách khi số lượng giảm về 0
                                                             setOrderItems(prev =>
-                                                                prev.filter(i => i.product._id !== item.product._id)
+                                                                prev.filter(i => i !== item)
                                                             );
                                                         }
                                                     }}
@@ -537,29 +747,34 @@ export default function CreateOrder() {
                                                         className="text-slate-600"
                                                     />
                                                 </button>
-                                                <div className="w-14 h-10 flex items-center justify-center border-l border-r text-sm text-black font-medium">
+                                                <div className="w-14 h-10 flex items-center justify-center border-l border-r border-slate-200 text-sm text-black font-medium">
                                                     {item.quantity}
                                                 </div>
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
+                                                        const stockDetails = productStockInfo[item.product._id] || [];
+                                                        
+                                                        if (item.batchDetails) {
+                                                            const batch = stockDetails.find(d => d.detailId === item.batchDetails?.detailId);
+                                                            if (batch && item.quantity >= batch.quantity) {
+                                                                alert(`Lô hàng này chỉ còn ${batch.quantity} sản phẩm!`);
+                                                                return;
+                                                            }
+                                                        } else {
+                                                            const totalQuantity = stockDetails.reduce((sum, detail) => sum + detail.quantity, 0);
+                                                            if (item.quantity >= totalQuantity) {
+                                                                alert(`Sản phẩm "${item.product.name}" chỉ còn ${totalQuantity} sản phẩm đang bán!`);
+                                                                return;
+                                                            }
+                                                        }
 
-                                                        // Tăng số lượng sản phẩm
                                                         setOrderItems(prev =>
-                                                            prev.map(i => {
-                                                                if (i.product._id === item.product._id) {
-                                                                    const availableQuantity = productStockInfo[item.product._id] || 0;
-
-                                                                    // Kiểm tra nếu số lượng sau khi tăng vượt quá số lượng đang bán
-                                                                    if (i.quantity >= availableQuantity) {
-                                                                        alert(`Sản phẩm "${item.product.name}" chỉ còn ${availableQuantity} sản phẩm đang bán!`);
-                                                                        return i;
-                                                                    }
-
-                                                                    return { ...i, quantity: i.quantity + 1 };
-                                                                }
-                                                                return i;
-                                                            })
+                                                            prev.map(i =>
+                                                                i === item
+                                                                    ? { ...i, quantity: i.quantity + 1 }
+                                                                    : i
+                                                            )
                                                         );
                                                     }}
                                                     className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 transition-colors"
@@ -581,10 +796,10 @@ export default function CreateOrder() {
                                             <button
                                                 onClick={() =>
                                                     setOrderItems((prev) =>
-                                                        prev.filter((i) => i.product._id !== item.product._id)
+                                                        prev.filter((i) => i !== item)
                                                     )
                                                 }
-                                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50"
+                                                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-50 transition-colors"
                                             >
                                                 <Image
                                                     src="/icons/trash.svg"
@@ -615,89 +830,9 @@ export default function CreateOrder() {
                         </div>
                     </div>
 
-                    {/* Cột phải - Danh sách sản phẩm */}
+                    {/* Cột phải - Thanh toán */}
                     <div className="col-span-3">
-                        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm h-[650px] flex flex-col">
-                            <h2 className="text-xl font-semibold text-slate-900 mb-5 flex items-center gap-2">
-                                <Image
-                                    src="/icons/product.svg"
-                                    alt="product"
-                                    width={22}
-                                    height={22}
-                                    className="text-slate-700"
-                                    priority
-                                />
-                                Danh sách sản phẩm
-                            </h2>
-                            <div className="flex gap-3 mb-5">
-                                <div className="w-full relative">
-                                    <input
-                                        type="text"
-                                        placeholder="Tìm theo tên sản phẩm... (F3)"
-                                        className="w-full h-11 px-4 pl-10 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-400 text-base text-slate-900 placeholder:text-slate-400"
-                                        value={searchTerm}
-                                        onChange={handleSearchChange}
-                                    />
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                                        <Image
-                                            src="/icons/search.svg"
-                                            alt="search"
-                                            width={18}
-                                            height={18}
-                                            className="text-slate-400"
-                                            priority
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
-                                {loading ? (
-                                    <div className="flex items-center justify-center h-full">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                                    </div>
-                                ) : error ? (
-                                    <div className="flex items-center justify-center h-full text-red-500">
-                                        {error}
-                                    </div>
-                                ) : filteredProducts.length === 0 ? (
-                                    <div className="flex items-center justify-center h-full">
-                                        <div className="text-center">
-                                            <Image
-                                                src="/icons/empty-cart.svg"
-                                                alt="empty"
-                                                width={44}
-                                                height={44}
-                                                className="mx-auto mb-3 text-slate-400"
-                                                priority
-                                            />
-                                            <p className="text-slate-600 mb-3 text-[16px]">
-                                                {searchTerm ? 'Không tìm thấy sản phẩm phù hợp' : 'Không có sản phẩm nào'}
-                                            </p>
-                                            {!searchTerm && (
-                                                <button className="px-6 py-2.5 text-blue-600 hover:text-blue-700 font-medium hover:bg-blue-50 rounded-lg transition-all duration-200 border border-blue-200 text-[16px]">
-                                                    Thêm sản phẩm
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <ProductList
-                                        products={filteredProducts}
-                                        onSelect={handleAddToOrder}
-                                        productStockInfo={productStockInfo}
-                                    />
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-white border-t border-slate-200">
-                <div className="max-w-[1500px] mx-auto p-6">
-                    <div className="grid grid-cols-3 gap-6">
-                        <div className="col-span-2">
+                        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm h-[710px] flex flex-col">
                             <h2 className="text-xl font-semibold text-slate-900 mb-5 flex items-center gap-2">
                                 <Image
                                     src="/icons/order.svg"
@@ -710,30 +845,30 @@ export default function CreateOrder() {
                                 Thanh toán
                             </h2>
                             <div className="space-y-5">
-                                <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                                    <span className="text-slate-700 text-[17px]">Tổng tiền hàng</span>
+                                <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                    <span className="text-slate-700 text-[16px]">Tổng tiền hàng</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-slate-500 text-[17px]">{orderItems.length} sản phẩm</span>
-                                        <span className="text-slate-900 font-medium text-[17px]">
+                                        <span className="text-slate-500 text-[16px]">{orderItems.length} sản phẩm</span>
+                                        <span className="text-slate-900 font-medium text-[16px]">
                                             {formatCurrency(totalAmount)}
                                         </span>
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                                    <span className="text-slate-700 text-[17px]">Thêm giảm giá</span>
+                                <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                    <span className="text-slate-700 text-[16px]">Giảm giá</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-slate-500 text-[17px]">---</span>
-                                        <span className="text-slate-900 font-medium text-[17px]">0đ</span>
+                                        <span className="text-slate-500 text-[16px]">---</span>
+                                        <span className="text-slate-900 font-medium text-[16px]">0đ</span>
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                                    <span className="text-slate-700 text-[17px]">Thêm phí giao hàng</span>
+                                <div className="flex justify-between items-center py-2 border-b border-slate-100">
+                                    <span className="text-slate-700 text-[16px]">Phí giao hàng</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-slate-500 text-[17px]">---</span>
-                                        <span className="text-slate-900 font-medium text-[17px]">0đ</span>
+                                        <span className="text-slate-500 text-[16px]">---</span>
+                                        <span className="text-slate-900 font-medium text-[16px]">0đ</span>
                                     </div>
                                 </div>
-                                <div className="flex justify-between items-center py-3">
+                                <div className="flex justify-between items-center py-1">
                                     <span className="font-semibold text-slate-900 text-xl">Thành tiền</span>
                                     <div className="flex items-center gap-2">
                                         <span className="text-slate-900 text-2xl font-semibold">
@@ -743,58 +878,50 @@ export default function CreateOrder() {
                                 </div>
 
                                 {/* Phần thanh toán */}
-                                <div className="mt-4 bg-blue-50 p-4 rounded-lg">
-                                    <div className="flex items-center mb-3">
-                                        <input
-                                            type="radio"
-                                            id="paid"
-                                            name="paymentStatus"
-                                            className="w-4 h-4 text-blue-600"
-                                        />
-                                        <label htmlFor="paid" className="ml-2 text-slate-900 font-medium">
-                                            Đã thanh toán
-                                        </label>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-900 mb-1">
-                                                Hình thức thanh toán
-                                            </label>
-                                            <select
-                                                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium text-slate-900"
-                                                value={paymentMethod}
-                                                onChange={handlePaymentChange}
-                                            >
-                                                <option value="cash">{paymentMethod === 'cash' ? displayPaymentText : 'Thanh toán tiền mặt'}</option>
-                                                <option value="transfer">{paymentMethod === 'transfer' ? displayPaymentText : 'Thanh toán chuyển khoản'}</option>
-                                                <option value="card">{paymentMethod === 'card' ? displayPaymentText : 'Thanh toán qua thẻ'}</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-slate-900 mb-1">
-                                                Số tiền khách đưa
-                                            </label>
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium text-slate-900"
-                                                    value={customerPayment}
-                                                    onChange={handlePaymentAmountChange}
-                                                    placeholder="0"
-                                                />
-                                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-900">
-                                                    đ
-                                                </span>
+                                <div className="mt-4 bg-white border border-slate-200 rounded-xl shadow-sm">                           
+                                    <div className="border-t border-slate-200 bg-slate-50 p-5 rounded-b-xl space-y-2">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm text-slate-600 mb-1.5">
+                                                    Hình thức thanh toán
+                                                </label>
+                                                <select
+                                                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900"
+                                                    value={paymentMethod}
+                                                    onChange={handlePaymentChange}
+                                                >
+                                                    <option value="cash">{paymentMethod === 'cash' ? displayPaymentText : 'Thanh toán tiền mặt'}</option>
+                                                    <option value="transfer">{paymentMethod === 'transfer' ? displayPaymentText : 'Thanh toán chuyển khoản'}</option>
+                                                    <option value="card">{paymentMethod === 'card' ? displayPaymentText : 'Thanh toán qua thẻ'}</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm text-slate-600 mb-1.5">
+                                                    Số tiền khách đưa
+                                                </label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900"
+                                                        value={customerPayment}
+                                                        onChange={handlePaymentAmountChange}
+                                                        placeholder="0"
+                                                    />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                                        đ
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="col-span-2">
-                                            <label className="block text-sm font-medium text-slate-900 mb-1">
-                                                Số tiền thối lại
+
+                                        <div>
+                                            <label className="block text-sm text-slate-600 mb-1.5">
+                                                Số tiền phải trả
                                             </label>
                                             <div className="relative">
                                                 <input
                                                     type="text"
-                                                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-green-600"
+                                                    className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-green-600"
                                                     value={changeAmount}
                                                     readOnly
                                                 />
@@ -803,56 +930,34 @@ export default function CreateOrder() {
                                                 </span>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div className="space-y-5 mb-40">
-                            {/* Thông tin đơn hàng */}
-                            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                                <h2 className="text-lg font-semibold text-slate-900 mb-5 flex items-center gap-2">
-                                    <Image
-                                        src="/icons/employee.svg"
-                                        alt="employee"
-                                        width={20}
-                                        height={20}
-                                        className="text-slate-700"
-                                        priority
-                                    />
-                                    Thông tin đơn hàng
-                                </h2>
-                                <div>
-                                    <label className="block text-[16px] font-medium text-slate-700 mb-2">
-                                        Nhân viên phụ trách
-                                    </label>
-                                    <div className="relative">
-                                        <div className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[16px] text-slate-700">
-                                            {employeeName}
+                                        <div>
+                                            <label className="block text-sm text-slate-600 mb-1.5">
+                                                Nhân viên phụ trách
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    className="w-full px-2.5 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900"
+                                                    value={employeeName}
+                                                    readOnly
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm text-slate-600 mb-1.5">
+                                                Ghi chú
+                                            </label>
+                                            <textarea
+                                                value={note}
+                                                onChange={(e) => setNote(e.target.value)}
+                                                placeholder="VD: Giao hàng trong giờ hành chính cho khách"
+                                                className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[60px] resize-none text-slate-900 placeholder:text-slate-400"
+                                            ></textarea>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* Ghi chú */}
-                            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                                <h2 className="text-lg font-semibold text-slate-900 mb-5 flex items-center gap-2">
-                                    <Image
-                                        src="/icons/note.svg"
-                                        alt="note"
-                                        width={20}
-                                        height={20}
-                                        className="text-slate-700"
-                                        priority
-                                    />
-                                    Ghi chú
-                                </h2>
-                                <textarea
-                                    value={note}
-                                    onChange={(e) => setNote(e.target.value)}
-                                    placeholder="VD: Giao hàng trong giờ hành chính cho khách"
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 min-h-[200px] resize-none text-[15px] leading-relaxed text-slate-700 placeholder:text-slate-400 transition-all duration-200"
-                                ></textarea>
                             </div>
                         </div>
                     </div>
