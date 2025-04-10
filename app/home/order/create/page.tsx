@@ -139,7 +139,7 @@ export default function CreateOrder() {
                         if (!stockInfo[detail.product_id]) {
                             stockInfo[detail.product_id] = [];
                         }
-                        
+
                         if (detail.output_quantity > 0) {
                             stockInfo[detail.product_id].push({
                                 quantity: detail.output_quantity,
@@ -328,7 +328,7 @@ export default function CreateOrder() {
                 // Tạo và in PDF
                 generatePDF(pdfData);
 
-            router.push('/home/order');
+                router.push('/home/order');
             } else {
                 throw new Error('Failed to create order');
             }
@@ -430,47 +430,52 @@ export default function CreateOrder() {
             for (const orderItem of orderItems) {
                 const productId = orderItem.product._id;
                 const quantityToDecrease = orderItem.quantity;
+                const batchDetailId = orderItem.batchDetails?.detailId;
                 console.log(`Cập nhật sản phẩm ${orderItem.product.name} - ID: ${productId} - Số lượng: ${quantityToDecrease}`);
 
-                if (productDetailsMap[productId] && productDetailsMap[productId].length > 0) {
-                    // Chọn chi tiết sản phẩm đầu tiên để cập nhật
-                    const detail = productDetailsMap[productId][0];
-                    
-                    // Tính toán số lượng cần giảm
-                    const currentOutput = detail.output_quantity || 0;
-                    const newOutput = currentOutput - quantityToDecrease;
-                    
-                    // Cập nhật cả số lượng trên quầy và tổng kho
-                    const currentInput = detail.input_quantity || 0;
-                    const newInput = currentInput - quantityToDecrease;
-                  
-                    // Cập nhật số lượng trong chi tiết sản phẩm
-                    try {
-                        const detailId = detail._id.toString();
-                        console.log(`Gửi request PATCH đến /api/product-detail/${detailId}`);
+                if (productDetailsMap[productId]) {
+                    // Chọn sản phẩm có id để cập nhật
+                    const detail = productDetailsMap[productId].find(d => d._id === batchDetailId);
 
-                        const updateResponse = await fetch(`/api/product-detail/${detailId}?t=${Date.now()}`, {
-                            method: 'PATCH',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                output_quantity: newOutput,
-                                input_quantity: newInput
-                            }),
-                        });
+                    if (detail) {
+                        // Tính toán số lượng cần giảm
+                        const currentOutput = detail.output_quantity || 0;
+                        const newOutput = currentOutput - quantityToDecrease;
 
-                        if (!updateResponse.ok) {
-                            const errorText = await updateResponse.text();
-                            console.error(`Lỗi khi cập nhật chi tiết sản phẩm ${detailId}:`, errorText);
-                            throw new Error(`Không thể cập nhật chi tiết sản phẩm: ${updateResponse.status} ${updateResponse.statusText}`);
-                        } else {
-                            const responseData = await updateResponse.json();
-                            console.log(`Đã cập nhật thành công chi tiết sản phẩm ${detailId}`, responseData);
+                        // Cập nhật cả số lượng trên quầy và tổng kho
+                        const currentInput = detail.input_quantity || 0;
+                        const newInput = currentInput - quantityToDecrease;
+
+                        // Cập nhật số lượng trong chi tiết sản phẩm
+                        try {
+                            const detailId = detail._id.toString();
+                            console.log(`Gửi request PATCH đến /api/product-detail/${detailId}`);
+
+                            const updateResponse = await fetch(`/api/product-detail/${detailId}?t=${Date.now()}`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    output_quantity: newOutput,
+                                    input_quantity: newInput
+                                }),
+                            });
+
+                            if (!updateResponse.ok) {
+                                const errorText = await updateResponse.text();
+                                console.error(`Lỗi khi cập nhật chi tiết sản phẩm ${detailId}:`, errorText);
+                                throw new Error(`Không thể cập nhật chi tiết sản phẩm: ${updateResponse.status} ${updateResponse.statusText}`);
+                            } else {
+                                const responseData = await updateResponse.json();
+                                console.log(`Đã cập nhật thành công chi tiết sản phẩm ${detailId}`, responseData);
+                            }
+                        } catch (updateError) {
+                            console.error(`Lỗi khi gửi request PATCH:`, updateError);
+                            throw updateError;
                         }
-                    } catch (updateError) {
-                        console.error(`Lỗi khi gửi request PATCH:`, updateError);
-                        throw updateError;
+                    } else {
+                        console.warn(`Không tìm thấy chi tiết lô hàng ${batchDetailId} cho sản phẩm ${productId}`);
                     }
                 } else {
                     console.warn(`Không tìm thấy chi tiết sản phẩm cho ID: ${productId}`);
@@ -582,10 +587,10 @@ export default function CreateOrder() {
                                                             {filteredProducts.map((product) => {
                                                                 const stockDetails = productStockInfo[product._id] || [];
                                                                 const totalQuantity = stockDetails.reduce((sum, detail) => sum + detail.quantity, 0);
-                                                                
+
                                                                 // Skip products with zero quantity
                                                                 if (totalQuantity === 0) return null;
-                                                                
+
                                                                 return (
                                                                     <div key={product._id} className="p-4 hover:bg-slate-50 transition-colors">
                                                                         <div className="flex items-center gap-4">
@@ -617,7 +622,7 @@ export default function CreateOrder() {
                                                                                     <span className="text-[15px] font-medium text-blue-600">
                                                                                         {formatCurrency(product.output_price)}
                                                                                     </span>
-                                                                                    
+
                                                                                 </div>
                                                                             </div>
                                                                         </div>
@@ -627,43 +632,43 @@ export default function CreateOrder() {
                                                                                 {stockDetails.map((detail) => (
                                                                                     // Skip individual batch entries with zero quantity
                                                                                     detail.quantity > 0 ? (
-                                                                                    <div
-                                                                                        key={detail.detailId}
-                                                                                        className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-blue-50 transition-colors group"
-                                                                                    >
-                                                                                        <div className="flex items-center gap-4">
-                                                                                            <div className="flex items-center gap-2">
-                                                                                                <div className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 group-hover:bg-blue-100">
-                                                                                                    SL: {detail.quantity}
-                                                                                                </div>
-                                                                                            </div>
-                                                                                            <div className="flex items-center gap-3">
-                                                                                                <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                                                                                                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                                                    </svg>
-                                                                                                    NSX: {detail.dateOfManufacture ? new Date(detail.dateOfManufacture).toLocaleDateString('vi-VN') : 'Không có'}
-                                                                                                </div>
-                                                                                                <span className="text-slate-300">|</span>
-                                                                                                <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                                                                                                    <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                                                    </svg>
-                                                                                                    HSD: {detail.expiryDate ? new Date(detail.expiryDate).toLocaleDateString('vi-VN') : 'Không có'}
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                        <button
-                                                                                            className="px-3 py-1.5 bg-white text-blue-600 rounded-lg border border-blue-200 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-200 text-sm font-medium shadow-sm whitespace-nowrap"
-                                                                                            onClick={(e) => {
-                                                                                                e.stopPropagation();
-                                                                                                handleAddToOrder(product, detail.detailId);
-                                                                                                setIsDropdownVisible(false);
-                                                                                            }}
+                                                                                        <div
+                                                                                            key={detail.detailId}
+                                                                                            className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-blue-50 transition-colors group"
                                                                                         >
-                                                                                            Thêm vào giỏ
-                                                                                        </button>
-                                                                                    </div>
+                                                                                            <div className="flex items-center gap-4">
+                                                                                                <div className="flex items-center gap-2">
+                                                                                                    <div className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 group-hover:bg-blue-100">
+                                                                                                        SL: {detail.quantity}
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                                <div className="flex items-center gap-3">
+                                                                                                    <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                                                                                                        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                                                                        </svg>
+                                                                                                        NSX: {detail.dateOfManufacture ? new Date(detail.dateOfManufacture).toLocaleDateString('vi-VN') : 'Không có'}
+                                                                                                    </div>
+                                                                                                    <span className="text-slate-300">|</span>
+                                                                                                    <div className="flex items-center gap-1.5 text-xs text-slate-600">
+                                                                                                        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                                                        </svg>
+                                                                                                        HSD: {detail.expiryDate ? new Date(detail.expiryDate).toLocaleDateString('vi-VN') : 'Không có'}
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            </div>
+                                                                                            <button
+                                                                                                className="px-3 py-1.5 bg-white text-blue-600 rounded-lg border border-blue-200 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-200 text-sm font-medium shadow-sm whitespace-nowrap"
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    handleAddToOrder(product, detail.detailId);
+                                                                                                    setIsDropdownVisible(false);
+                                                                                                }}
+                                                                                            >
+                                                                                                Thêm vào giỏ
+                                                                                            </button>
+                                                                                        </div>
                                                                                     ) : null
                                                                                 ))}
                                                                             </div>
@@ -773,7 +778,7 @@ export default function CreateOrder() {
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         const stockDetails = productStockInfo[item.product._id] || [];
-                                                        
+
                                                         if (item.batchDetails) {
                                                             const batch = stockDetails.find(d => d.detailId === item.batchDetails?.detailId);
                                                             if (batch && item.quantity >= batch.quantity) {
@@ -897,40 +902,40 @@ export default function CreateOrder() {
                                 </div>
 
                                 {/* Phần thanh toán */}
-                                <div className="mt-4 bg-white border border-slate-200 rounded-xl shadow-sm">                           
+                                <div className="mt-4 bg-white border border-slate-200 rounded-xl shadow-sm">
                                     <div className="border-t border-slate-200 bg-slate-50 p-5 rounded-b-xl space-y-2">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
                                                 <label className="block text-sm text-slate-600 mb-1.5">
-                                                Hình thức thanh toán
-                                            </label>
-                                            <select
+                                                    Hình thức thanh toán
+                                                </label>
+                                                <select
                                                     className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900"
-                                                value={paymentMethod}
-                                                onChange={handlePaymentChange}
-                                            >
-                                                <option value="cash">{paymentMethod === 'cash' ? displayPaymentText : 'Thanh toán tiền mặt'}</option>
-                                                <option value="transfer">{paymentMethod === 'transfer' ? displayPaymentText : 'Thanh toán chuyển khoản'}</option>
-                                                <option value="card">{paymentMethod === 'card' ? displayPaymentText : 'Thanh toán qua thẻ'}</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                                <label className="block text-sm text-slate-600 mb-1.5">
-                                                Số tiền khách đưa
-                                            </label>
-                                            <div className="relative">
-                                                <input
-                                                    type="text"
-                                                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900"
-                                                    value={customerPayment}
-                                                    onChange={handlePaymentAmountChange}
-                                                    placeholder="0"
-                                                />
-                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                                                    đ
-                                                </span>
+                                                    value={paymentMethod}
+                                                    onChange={handlePaymentChange}
+                                                >
+                                                    <option value="cash">{paymentMethod === 'cash' ? displayPaymentText : 'Thanh toán tiền mặt'}</option>
+                                                    <option value="transfer">{paymentMethod === 'transfer' ? displayPaymentText : 'Thanh toán chuyển khoản'}</option>
+                                                    <option value="card">{paymentMethod === 'card' ? displayPaymentText : 'Thanh toán qua thẻ'}</option>
+                                                </select>
                                             </div>
-                                        </div>
+                                            <div>
+                                                <label className="block text-sm text-slate-600 mb-1.5">
+                                                    Số tiền khách đưa
+                                                </label>
+                                                <div className="relative">
+                                                    <input
+                                                        type="text"
+                                                        className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900"
+                                                        value={customerPayment}
+                                                        onChange={handlePaymentAmountChange}
+                                                        placeholder="0"
+                                                    />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                                                        đ
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div>
@@ -947,33 +952,33 @@ export default function CreateOrder() {
                                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
                                                     đ
                                                 </span>
-                            </div>
-                        </div>
+                                            </div>
+                                        </div>
 
-                                <div>
+                                        <div>
                                             <label className="block text-sm text-slate-600 mb-1.5">
-                                        Nhân viên phụ trách
-                                    </label>
-                                    <div className="relative">
+                                                Nhân viên phụ trách
+                                            </label>
+                                            <div className="relative">
                                                 <input
                                                     type="text"
                                                     className="w-full px-2.5 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900"
                                                     value={employeeName}
                                                     readOnly
                                                 />
-                                </div>
-                            </div>
+                                            </div>
+                                        </div>
 
                                         <div>
                                             <label className="block text-sm text-slate-600 mb-1.5">
-                                    Ghi chú
+                                                Ghi chú
                                             </label>
-                                <textarea
-                                    value={note}
-                                    onChange={(e) => setNote(e.target.value)}
-                                    placeholder="VD: Giao hàng trong giờ hành chính cho khách"
+                                            <textarea
+                                                value={note}
+                                                onChange={(e) => setNote(e.target.value)}
+                                                placeholder="VD: Giao hàng trong giờ hành chính cho khách"
                                                 className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[60px] resize-none text-slate-900 placeholder:text-slate-400"
-                                ></textarea>
+                                            ></textarea>
                                         </div>
                                     </div>
                                 </div>

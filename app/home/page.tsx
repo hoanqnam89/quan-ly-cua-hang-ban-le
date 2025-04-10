@@ -59,12 +59,12 @@ export default function Home(): ReactElement {
   const [revenueData, setRevenueData] = useState<IRevenueData[]>([]);
   const [productInventoryData, setProductInventoryData] = useState<IProductInventoryData[]>([]);
   const [dateRange, setDateRange] = useState<IDateRangeType>({
-    startDate: '01/02/2023',
-    endDate: '28/02/2023'
+    startDate: '',
+    endDate: ''
   });
   const [prevDateRange, setPrevDateRange] = useState<IDateRangeType>({
-    startDate: '01/01/2023',
-    endDate: '31/01/2023'
+    startDate: '',
+    endDate: ''
   });
 
   const [statsCards, setStatsCards] = useState<IStatCardData[]>([]);
@@ -86,40 +86,40 @@ export default function Home(): ReactElement {
   };
 
   // Hàm lấy tổng doanh thu từ đơn hàng
-  const fetchTotalRevenue = async (startDateStr?: string, endDateStr?: string): Promise<{total: number, byDate: {[key: string]: number}}> => {
+  const fetchTotalRevenue = async (startDateStr?: string, endDateStr?: string): Promise<{ total: number, byDate: { [key: string]: number } }> => {
     try {
       const response = await fetch('/api/order');
       if (response.ok) {
         const orders = await response.json();
-        
+
         // Phân tích ngày bắt đầu và kết thúc nếu có
         let startDate: Date | null = null;
         let endDate: Date | null = null;
-        
+
         if (startDateStr && endDateStr) {
           startDate = parseDate(startDateStr);
           endDate = parseDate(endDateStr);
           // Đặt giờ của endDate thành cuối ngày để bao gồm toàn bộ ngày kết thúc
           endDate.setHours(23, 59, 59, 999);
         }
-        
+
         // Tính doanh thu theo ngày
-        const revenueByDate: {[key: string]: number} = {};
+        const revenueByDate: { [key: string]: number } = {};
         let total = 0;
-        
+
         orders.forEach((order: any) => {
           if (order.created_at && order.total_amount) {
             const orderDate = new Date(order.created_at);
-            
+
             // Nếu có khoảng thời gian, kiểm tra xem đơn hàng có nằm trong khoảng không
             if (startDate && endDate) {
               if (orderDate < startDate || orderDate > endDate) {
                 return; // Bỏ qua đơn hàng nếu không nằm trong khoảng thời gian
               }
             }
-            
+
             const dateKey = `${orderDate.getDate()}/${orderDate.getMonth() + 1}`;
-            
+
             if (!revenueByDate[dateKey]) {
               revenueByDate[dateKey] = 0;
             }
@@ -127,10 +127,10 @@ export default function Home(): ReactElement {
             total += order.total_amount;
           }
         });
-        
+
         console.log('Tổng doanh thu trong khoảng thời gian:', total);
         console.log('Doanh thu theo ngày:', revenueByDate);
-        
+
         return { total, byDate: revenueByDate };
       } else {
         throw new Error('Lỗi khi lấy dữ liệu đơn hàng');
@@ -142,17 +142,17 @@ export default function Home(): ReactElement {
   };
 
   // Hàm lấy dữ liệu tổng kho từ chi tiết sản phẩm
-  const fetchTotalProductDetailStock = async (startDateStr?: string, endDateStr?: string): Promise<{total: number, byDate: {[key: string]: number}, onSaleQuantity: number, stockQuantity: number}> => {
+  const fetchTotalProductDetailStock = async (startDateStr?: string, endDateStr?: string): Promise<{ total: number, byDate: { [key: string]: number }, onSaleQuantity: number, stockQuantity: number }> => {
     try {
       const response = await fetch('/api/product-detail');
       if (response.ok) {
         const productDetails = await response.json();
-        
+
         // Tính tổng số lượng trong kho
         let totalStockQuantity = 0;
         let onSaleQuantity = 0;
         let stockQuantity = 0;
-        
+
         // Tính tổng kho từ chi tiết sản phẩm (input_quantity)
         productDetails.forEach((detail: any) => {
           const inputQuantity = detail.input_quantity || 0;
@@ -163,15 +163,15 @@ export default function Home(): ReactElement {
           onSaleQuantity += outputQuantity; // Số lượng đang bán trên quầy
           stockQuantity += remainingQuantity; // Số lượng tồn kho
         });
-        
+
         // Tạo dữ liệu mẫu theo ngày
-        const byDate: {[key: string]: number} = {};
-        
+        const byDate: { [key: string]: number } = {};
+
         if (startDateStr && endDateStr) {
           const startDate = parseDate(startDateStr);
           const endDate = parseDate(endDateStr);
           const dateArray = generateDatesBetween(startDate, endDate, 7);
-          
+
           // Phân bổ tổng kho đều cho các ngày
           dateArray.forEach((date, index) => {
             const dateKey = `${date.getDate()}/${date.getMonth() + 1}`;
@@ -183,14 +183,14 @@ export default function Home(): ReactElement {
           const dateKey = `${today.getDate()}/${today.getMonth() + 1}`;
           byDate[dateKey] = totalStockQuantity;
         }
-        
+
         console.log('Tổng kho từ chi tiết sản phẩm:', totalStockQuantity);
         console.log('Số lượng đang bán:', onSaleQuantity);
         console.log('Số lượng tồn kho:', stockQuantity);
         console.log('Tổng kho theo ngày:', byDate);
-        
-        return { 
-          total: totalStockQuantity, 
+
+        return {
+          total: totalStockQuantity,
           byDate: byDate,
           onSaleQuantity: onSaleQuantity,
           stockQuantity: stockQuantity
@@ -200,8 +200,8 @@ export default function Home(): ReactElement {
       }
     } catch (error) {
       console.error('Lỗi khi tính tổng kho từ chi tiết sản phẩm:', error);
-      return { 
-        total: 0, 
+      return {
+        total: 0,
         byDate: {},
         onSaleQuantity: 0,
         stockQuantity: 0
@@ -215,7 +215,7 @@ export default function Home(): ReactElement {
     try {
       const currentStartDate = startDate || dateRange.startDate;
       const currentEndDate = endDate || dateRange.endDate;
-      
+
       const [
         productCount,
         productDetailCount,
@@ -236,12 +236,12 @@ export default function Home(): ReactElement {
       setTotalProductDetails(productDetailCount);
       setTotalEmployees(employeeCount);
       setTotalOrders(orderCount);
-      
+
       // Đặt tổng tồn kho từ dữ liệu thực tế (nếu có) hoặc tính toán từ sản phẩm + chi tiết sản phẩm
-      const totalInventoryCount = inventoryData.total > 0 ? 
-        inventoryData.total : 
+      const totalInventoryCount = inventoryData.total > 0 ?
+        inventoryData.total :
         productCount + productDetailCount;
-      
+
       setTotalInventory(totalInventoryCount);
 
       console.log('Kết quả API đã lấy được:', {
@@ -277,7 +277,7 @@ export default function Home(): ReactElement {
         // Tính toán doanh thu trung bình mỗi ngày
         let totalDaysWithRevenue = 0;
         let totalRevenue = 0;
-        
+
         dateArray.forEach((date) => {
           const dateKey = `${date.getDate()}/${date.getMonth() + 1}`;
           // Ngày nào không có doanh thu thì gán giá trị 0
@@ -286,18 +286,18 @@ export default function Home(): ReactElement {
             date: dateKey,
             value: value
           });
-          
+
           if (value > 0) {
             totalDaysWithRevenue++;
           }
           totalRevenue += value;
         });
-        
+
         // Doanh thu trung bình hàng ngày (chỉ tính những ngày có doanh thu)
-        const avgDailyRevenue = totalDaysWithRevenue > 0 
-          ? Math.round(totalRevenue / totalDaysWithRevenue) 
+        const avgDailyRevenue = totalDaysWithRevenue > 0
+          ? Math.round(totalRevenue / totalDaysWithRevenue)
           : 0;
-          
+
         // Đặt tổng doanh thu từ dữ liệu thực tế trong khoảng thời gian
         setTotalRevenue(totalRevenue);
       } else {
@@ -309,25 +309,25 @@ export default function Home(): ReactElement {
           });
         });
       }
-      
+
       setRevenueData(newRevenueData);
 
       // Dữ liệu cho biểu đồ tồn kho theo thời gian
       const newInventoryData: IProductInventoryData[] = [];
-      
+
       // Nếu có dữ liệu tồn kho theo ngày, sử dụng; nếu không, tạo dữ liệu ngẫu nhiên
       if (Object.keys(inventoryData.byDate).length > 0) {
         dateArray.forEach((date) => {
           const dateKey = `${date.getDate()}/${date.getMonth() + 1}`;
           // Ngày nào không có tồn kho thì gán giá trị từ ngày trước đó hoặc 0
           let value = inventoryData.byDate[dateKey] || 0;
-          
+
           // Nếu ngày hiện tại không có dữ liệu nhưng có tồn kho từ ngày trước
           if (value === 0 && newInventoryData.length > 0) {
             // Sử dụng giá trị tồn kho từ ngày trước đó (tồn kho thường không thay đổi nhiều giữa các ngày)
             value = newInventoryData[newInventoryData.length - 1].value;
           }
-          
+
           newInventoryData.push({
             date: dateKey,
             value: value
@@ -336,7 +336,7 @@ export default function Home(): ReactElement {
       } else {
         // Sử dụng dữ liệu ước tính nếu không có dữ liệu thực tế
         const inventoryPerDay = Math.max(Math.ceil(totalInventoryCount / dateArray.length), 5);
-        
+
         dateArray.forEach((date, index) => {
           const inventoryFactor = (Math.sin(index * 0.8) + 1) / 2 + 0.3;
           newInventoryData.push({
@@ -345,7 +345,7 @@ export default function Home(): ReactElement {
           });
         });
       }
-      
+
       setProductInventoryData(newInventoryData);
 
       setStatsCards([
@@ -397,7 +397,7 @@ export default function Home(): ReactElement {
           fetchTotalRevenue(dateRange.startDate, dateRange.endDate),
           fetchTotalProductDetailStock(dateRange.startDate, dateRange.endDate)
         ]);
-        
+
         // Nếu có doanh thu thực tế, sử dụng
         if (actualRevenue.total > 0) {
           setTotalRevenue(actualRevenue.total);
@@ -405,7 +405,7 @@ export default function Home(): ReactElement {
           // Nếu không, sử dụng dữ liệu ước tính
           setTotalRevenue(estimatedRevenue);
         }
-        
+
         // Nếu có dữ liệu tồn kho thực tế, sử dụng
         if (actualInventory.total > 0) {
           setTotalInventory(actualInventory.total);
@@ -414,7 +414,7 @@ export default function Home(): ReactElement {
         // Nếu không lấy được doanh thu, sử dụng dữ liệu ước tính
         setTotalRevenue(estimatedRevenue);
       }
-      
+
       setRevenueGrowth(18.3);
       setInventoryGrowth(7.8);
 
@@ -614,7 +614,7 @@ export default function Home(): ReactElement {
       // Gọi API để lấy dữ liệu mới với khoảng thời gian đã chọn
       fetchAllData(selectedOption.startDate, selectedOption.endDate);
     }
-  /* eslint-disable-next-line react-hooks/exhaustive-deps */
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [fetchAllData, dateRange]);
 
   // Khởi tạo ứng dụng
@@ -640,7 +640,7 @@ export default function Home(): ReactElement {
       // Gọi lấy dữ liệu ban đầu
       fetchAllData(defaultOption.startDate, defaultOption.endDate);
     }
-  /* eslint-disable-next-line react-hooks/exhaustive-deps */
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
   // Tự động cập nhật dữ liệu
@@ -706,24 +706,24 @@ export default function Home(): ReactElement {
       if (document.getElementById('inventory-pie-chart')) {
         // Tính toán tổng kho hiện tại từ chi tiết sản phẩm
         const productDetails = productInventoryData;
-        
+
         // Phân loại tổng kho theo danh mục
         let totalInventory = 0;
         let onSaleQuantity = 0;
         let stockQuantity = 0;
-        
+
         try {
           // Gọi API để lấy dữ liệu chi tiết sản phẩm mới nhất
           const response = await fetch('/api/product-detail');
           if (response.ok) {
             const productDetailData = await response.json();
-            
+
             // Tính số lượng trên quầy và số lượng tồn kho
             productDetailData.forEach((detail: any) => {
               const inputQuantity = detail.input_quantity || 0;
               const outputQuantity = detail.output_quantity || 0;
               const remaining = inputQuantity - outputQuantity;
-              
+
               totalInventory += inputQuantity;
               onSaleQuantity += outputQuantity;
               stockQuantity += remaining;
@@ -731,11 +731,11 @@ export default function Home(): ReactElement {
           }
         } catch (error) {
           console.error('Lỗi khi lấy dữ liệu chi tiết sản phẩm:', error);
-          
+
           if (productDetails && productDetails.length > 0) {
             // Sử dụng dữ liệu tổng kho từ ngày cuối cùng trong khoảng thời gian
             totalInventory = productDetails[productDetails.length - 1].value;
-            
+
             // Ước tính phân loại nếu không có dữ liệu chi tiết
             onSaleQuantity = Math.round(totalInventory * 0.7); // 70% tổng kho đang bán
             stockQuantity = Math.round(totalInventory * 0.3); // 30% tổng kho trong kho
