@@ -52,6 +52,7 @@ const ImportOrderList = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortField, setSortField] = useState<'date' | 'price'>('date');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending'>('all');
   const router = useRouter();
@@ -154,9 +155,14 @@ const ImportOrderList = () => {
   // Hàm sắp xếp đơn hàng
   const sortOrders = (orders: Order[]) => {
     return [...orders].sort((a, b) => {
-      const dateA = new Date(a.created_at).getTime();
-      const dateB = new Date(b.created_at).getTime();
-      return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      if (sortField === 'date') {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return sortOrder === 'asc' ? dateA - dateB : dateB - dateA;
+      } else {
+        // Sắp xếp theo giá
+        return sortOrder === 'asc' ? a.total_amount - b.total_amount : b.total_amount - a.total_amount;
+      }
     });
   };
 
@@ -165,6 +171,7 @@ const ImportOrderList = () => {
     setDateFilter('all');
     setStatusFilter('all');
     setSortOrder('desc');
+    setSortField('date');
     setSearchTerm('');
   };
 
@@ -398,9 +405,16 @@ const ImportOrderList = () => {
               <Button
                 onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
                   event?.stopPropagation();
-                  setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+                  if (sortField === 'date') {
+                    // Nếu đang sắp xếp theo ngày, chuyển sang sắp xếp theo giá
+                    setSortField('price');
+                    setSortOrder('desc');
+                  } else {
+                    // Nếu đang sắp xếp theo giá, đảo chiều sắp xếp
+                    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+                  }
                 }}
-                className={`w-full flex items-center gap-2 px-5 py-3 bg-white border ${sortOrder === 'asc' ? 'border-blue-500 text-blue-600' : 'border-slate-200 text-slate-700'} rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
+                className={`w-full flex items-center gap-2 px-5 py-3 bg-white border ${sortOrder === 'asc' || sortField === 'price' ? 'border-blue-500 text-blue-600' : 'border-slate-200 text-slate-700'} rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
               >
                 <svg
                   width="18"
@@ -408,7 +422,7 @@ const ImportOrderList = () => {
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  className={sortOrder === 'asc' ? 'text-blue-500' : 'text-slate-500'}
+                  className={sortOrder === 'asc' || sortField === 'price' ? 'text-blue-500' : 'text-slate-500'}
                 >
                   <path
                     d="M4 17L8 21L12 17"
@@ -453,7 +467,12 @@ const ImportOrderList = () => {
                     strokeLinejoin="round"
                   />
                 </svg>
-                <span>Sắp xếp {sortOrder === 'asc' ? '↑' : '↓'}</span>
+                <span>
+                  {sortField === 'date' 
+                    ? `Sắp xếp theo ngày ${sortOrder === 'asc' ? '↑' : '↓'}`
+                    : `Sắp xếp theo giá ${sortOrder === 'asc' ? '↑' : '↓'}`
+                  }
+                </span>
               </Button>
             </div>
 

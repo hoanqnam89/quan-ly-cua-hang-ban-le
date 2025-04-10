@@ -8,6 +8,7 @@ import type { IProduct } from '../../../interfaces/product.interface';
 import { useEffect, useState } from 'react';
 import { formatCurrency } from '../../../utils/format';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
+import { generatePDF } from '../../../utils/generatePDF';
 
 interface OrderItem {
     product: IProduct;
@@ -298,14 +299,36 @@ export default function CreateOrder() {
                 }),
             });
 
-            if (!response.ok) {
-                throw new Error('Không thể tạo đơn hàng');
-            }
-            // Cập nhật số lượng sản phẩm đang bán sau khi tạo đơn hàng thành công
+            if (response.ok) {
+                const orderData = await response.json();
+
+                // Cập nhật số lượng sản phẩm đang bán
             await updateProductQuantities();
 
-            alert('Tạo đơn hàng thành công!');
+                // Tạo dữ liệu cho PDF
+                const pdfData = {
+                    orderId: orderData._id,
+                    employeeName: employeeName,
+                    items: orderItems.map(item => ({
+                        product: {
+                            name: item.product.name,
+                            output_price: item.product.output_price
+                        },
+                        quantity: item.quantity
+                    })),
+                    totalAmount: totalAmount,
+                    customerPayment: customerPayment,
+                    changeAmount: changeAmount,
+                    note: note
+                };
+
+                // Tạo và in PDF
+                generatePDF(pdfData);
+
             router.push('/home/order');
+            } else {
+                throw new Error('Failed to create order');
+            }
         } catch (error) {
             console.error('Error creating order:', error);
             alert('Có lỗi xảy ra khi tạo đơn hàng');
@@ -880,38 +903,38 @@ export default function CreateOrder() {
                                 {/* Phần thanh toán */}
                                 <div className="mt-4 bg-white border border-slate-200 rounded-xl shadow-sm">                           
                                     <div className="border-t border-slate-200 bg-slate-50 p-5 rounded-b-xl space-y-2">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
                                                 <label className="block text-sm text-slate-600 mb-1.5">
-                                                    Hình thức thanh toán
-                                                </label>
-                                                <select
+                                                Hình thức thanh toán
+                                            </label>
+                                            <select
                                                     className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900"
-                                                    value={paymentMethod}
-                                                    onChange={handlePaymentChange}
-                                                >
-                                                    <option value="cash">{paymentMethod === 'cash' ? displayPaymentText : 'Thanh toán tiền mặt'}</option>
-                                                    <option value="transfer">{paymentMethod === 'transfer' ? displayPaymentText : 'Thanh toán chuyển khoản'}</option>
-                                                    <option value="card">{paymentMethod === 'card' ? displayPaymentText : 'Thanh toán qua thẻ'}</option>
-                                                </select>
-                                            </div>
-                                            <div>
+                                                value={paymentMethod}
+                                                onChange={handlePaymentChange}
+                                            >
+                                                <option value="cash">{paymentMethod === 'cash' ? displayPaymentText : 'Thanh toán tiền mặt'}</option>
+                                                <option value="transfer">{paymentMethod === 'transfer' ? displayPaymentText : 'Thanh toán chuyển khoản'}</option>
+                                                <option value="card">{paymentMethod === 'card' ? displayPaymentText : 'Thanh toán qua thẻ'}</option>
+                                            </select>
+                                        </div>
+                                        <div>
                                                 <label className="block text-sm text-slate-600 mb-1.5">
-                                                    Số tiền khách đưa
-                                                </label>
-                                                <div className="relative">
-                                                    <input
-                                                        type="text"
+                                                Số tiền khách đưa
+                                            </label>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
                                                         className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-slate-900"
-                                                        value={customerPayment}
-                                                        onChange={handlePaymentAmountChange}
-                                                        placeholder="0"
-                                                    />
+                                                    value={customerPayment}
+                                                    onChange={handlePaymentAmountChange}
+                                                    placeholder="0"
+                                                />
                                                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                                                        đ
-                                                    </span>
-                                                </div>
+                                                    đ
+                                                </span>
                                             </div>
+                                        </div>
                                         </div>
 
                                         <div>
@@ -928,33 +951,33 @@ export default function CreateOrder() {
                                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
                                                     đ
                                                 </span>
-                                            </div>
-                                        </div>
+                            </div>
+                        </div>
 
-                                        <div>
+                                <div>
                                             <label className="block text-sm text-slate-600 mb-1.5">
-                                                Nhân viên phụ trách
-                                            </label>
-                                            <div className="relative">
+                                        Nhân viên phụ trách
+                                    </label>
+                                    <div className="relative">
                                                 <input
                                                     type="text"
                                                     className="w-full px-2.5 py-2.5 bg-white border border-slate-200 rounded-lg text-slate-900"
                                                     value={employeeName}
                                                     readOnly
                                                 />
-                                            </div>
-                                        </div>
+                                </div>
+                            </div>
 
                                         <div>
                                             <label className="block text-sm text-slate-600 mb-1.5">
-                                                Ghi chú
+                                    Ghi chú
                                             </label>
-                                            <textarea
-                                                value={note}
-                                                onChange={(e) => setNote(e.target.value)}
-                                                placeholder="VD: Giao hàng trong giờ hành chính cho khách"
+                                <textarea
+                                    value={note}
+                                    onChange={(e) => setNote(e.target.value)}
+                                    placeholder="VD: Giao hàng trong giờ hành chính cho khách"
                                                 className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-h-[60px] resize-none text-slate-900 placeholder:text-slate-400"
-                                            ></textarea>
+                                ></textarea>
                                         </div>
                                     </div>
                                 </div>
