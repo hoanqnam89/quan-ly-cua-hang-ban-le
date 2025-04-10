@@ -415,7 +415,6 @@ export default function CreateOrder() {
             }
 
             const productDetails: IProductDetail[] = await response.json();
-            console.log(`Đã lấy ${productDetails.length} chi tiết sản phẩm`);
 
             // Tạo bản đồ chi tiết sản phẩm theo product_id
             const productDetailsMap: Record<string, IProductDetail[]> = {};
