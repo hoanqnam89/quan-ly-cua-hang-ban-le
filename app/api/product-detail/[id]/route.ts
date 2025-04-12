@@ -8,6 +8,7 @@ import { createErrorMessage } from "@/utils/create-error-message";
 import { ROOT } from "@/constants/root.constant";
 import { IProductDetail } from "@/interfaces/product-detail.interface";
 import { ProductDetailModel } from "@/models/ProductDetail";
+import { ObjectId } from "mongodb";
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
@@ -169,55 +170,34 @@ export const GET = async (
   }
 };
 
-export const DELETE = async (
-  req: NextRequest,
-  context: { params: { id: string } }
-): Promise<NextResponse> => {
-  const { id } = context.params;
-  print(`${collectionName} API - DELETE ${collectionName} ID: ${id}`, ETerminal.FgRed);
-
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> {
   try {
-    connectToDatabase();
+    // Await params before using its properties
+    const id = (await Promise.resolve(params)).id;
+    print(`${collectionName} API - DELETE ${collectionName} ID: ${id}`, ETerminal.FgRed);
 
-    const foundProductDetail: collectionType | null =
-      await collectionModel.findById(id);
-
-    if (!foundProductDetail)
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to delete ${collectionName}.`,
-          `The ${collectionName} with the ID '${id}' does not exist in our records.`,
-          path,
-          `Please check if the ${collectionName} ID is correct.`
-        ),
-        { status: EStatusCode.NOT_FOUND }
-      );
-
+    await connectToDatabase();
     const deletedProductDetail = await collectionModel.findByIdAndDelete(id);
 
-    if (!deletedProductDetail)
+    if (!deletedProductDetail) {
       return NextResponse.json(
-        createErrorMessage(
-          `Failed to delete ${collectionName}.`,
-          ``,
-          path,
-          `Please contact for more information.`,
-        ),
-        { status: EStatusCode.INTERNAL_SERVER_ERROR }
+        { message: `${collectionName} not found` },
+        { status: 404 }
       );
-
-    return NextResponse.json({ success: true, message: `${collectionName} deleted successfully` }, { status: EStatusCode.OK });
-  } catch (error: unknown) {
-    console.error(`Lỗi khi xóa product-detail/${id}:`, error);
+    }
 
     return NextResponse.json(
-      createErrorMessage(
-        `Failed to delete ${collectionName}.`,
-        error as string,
-        path,
-        `Please contact for more information.`,
-      ),
-      { status: EStatusCode.INTERNAL_SERVER_ERROR }
+      { message: `${collectionName} deleted successfully` },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Error:', error);
+    return NextResponse.json(
+      { message: `Error deleting ${collectionName}` },
+      { status: 500 }
     );
   }
-};
+}

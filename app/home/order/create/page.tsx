@@ -373,8 +373,8 @@ export default function CreateOrder() {
                 throw new Error(errorData.error || 'Không thể lưu đơn hàng');
             }
 
-            // Cập nhật số lượng sản phẩm đang bán và tổng kho
-            await updateProductQuantities();
+            // Removing the product quantity update for draft orders
+            // await updateProductQuantities();
 
             alert('Đã lưu đơn hàng nháp thành công!');
             router.push('/home/order');

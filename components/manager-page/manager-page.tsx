@@ -17,7 +17,7 @@ export interface ICollectionIdNotify {
   isClicked: boolean
 }
 
-interface IManagerPageProps<T> {
+export interface IManagerPageProps<T> {
   children: ReactElement
   columns: Array<IColumnProps<T>>
   collectionName: ECollectionNames
@@ -34,10 +34,10 @@ interface IManagerPageProps<T> {
   name?: string
   currentPage?: number
   setCurrentPage?: Dispatch<SetStateAction<number>>
-  itemsPerPage?: number
   totalItems?: number
   displayedItems?: T[]
   setAllItems?: Dispatch<SetStateAction<T[]>>
+  additionalButtons?: ReactElement
 }
 
 export default function ManagerPage<T extends {_id: string, index?: number}>({
@@ -55,12 +55,12 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   handleOpenModal = (isOpen: boolean): boolean => !isOpen, 
   onExitModalForm = () => {}, 
   name = translateCollectionName(collectionName),
-  currentPage = 1,
-  setCurrentPage,
-  itemsPerPage = 10,
+  currentPage: externalCurrentPage,
+  setCurrentPage: externalSetCurrentPage,
   totalItems,
   displayedItems,
   setAllItems,
+  additionalButtons,
 }: Readonly<IManagerPageProps<T>>): ReactElement {
   const translatedCollectionName: string = 
     translateCollectionName(collectionName);
@@ -70,10 +70,22 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   const [collections, setCollections] = useState<T[]>([]);
   const [isUpdateCollection, setIsUpdateCollection] = useState<boolean>(false);
   const { createNotification, notificationElements } = useNotificationsHook();
+  const [allCollections, setAllCollections] = useState<T[]>([]);
+  const itemsPerPage = 10;
+  
+  // Internal page state when no external state is provided
+  const [internalCurrentPage, setInternalCurrentPage] = useState<number>(1);
+  
+  // Use external or internal page state
+  const currentPage = externalCurrentPage || internalCurrentPage;
+  const setCurrentPage = externalSetCurrentPage || setInternalCurrentPage;
 
   const getCollections: () => Promise<void> = useCallback(
     async (): Promise<void> => {
+      setIsLoading(true);
       const fetchedCollections = await fetchGetCollections<T>(collectionName);
+      
+      setAllCollections(fetchedCollections);
       
       if (setAllItems) {
         setAllItems(fetchedCollections);
@@ -82,16 +94,25 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
       if (displayedItems) {
         setCollections(displayedItems);
       } else {
-        setCollections(fetchedCollections.slice(0, itemsPerPage));
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        setCollections(fetchedCollections.slice(startIndex, startIndex + itemsPerPage));
       }
       
       setIsLoading(false);
     }, 
-    [collectionName, setAllItems, displayedItems, itemsPerPage],
+    [collectionName, setAllItems, displayedItems, currentPage, itemsPerPage],
   );
 
+  // Update collections when page changes
   useEffect(() => {
-    if ( !isAddCollectionModalOpen )
+    if (allCollections.length > 0 && !displayedItems) {
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      setCollections(allCollections.slice(startIndex, startIndex + itemsPerPage));
+    }
+  }, [currentPage, allCollections, displayedItems, itemsPerPage]);
+
+  useEffect(() => {
+    if (!isAddCollectionModalOpen)
       onExitModalForm()
   }, [isAddCollectionModalOpen, onExitModalForm])
   
@@ -101,17 +122,11 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
 
   const toggleAddCollectionModal = useCallback(
     (isReadOnly: boolean = false): void => {
-      // if ( isReadOnly ) {
-        // setCollection(defaultCollection);
-      // }
-
       setIsModalReadonly(!isReadOnly);
       setIsAddCollectionModalOpen((prev: boolean): boolean => handleOpenModal(prev));
     }, 
     [
-      defaultCollection, 
       setIsModalReadonly, 
-      setCollection, 
     ],
   );
 
@@ -322,25 +337,29 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   const mounted = useRef(false);
 
   useEffect(() => {
-    if ( mounted.current )
+    if (mounted.current && isClickShowMore.isClicked)
       handleShowMore(isClickShowMore.id);
     else
-      mounted.current = false;
+      mounted.current = true;
   }, [handleShowMore, isClickShowMore]);
 
   useEffect(() => {
-    if ( mounted.current )
+    if (isClickDelete.isClicked) {
       handleDeleteCollectionById(isClickDelete.id);
-    else
-      mounted.current = true;
+    }
   }, [handleDeleteCollectionById, isClickDelete]);
 
   const tableData = displayedItems || collections;
+  const totalPagesCount = Math.ceil((totalItems || allCollections.length) / itemsPerPage);
 
   const managerPage: ReactElement = isLoading 
     ? <LoadingScreen></LoadingScreen>
     : <>
       <title>{`Quản lý ${name}`}</title>
+
+      <div className="flex gap-2 mb-4">
+        {additionalButtons}
+      </div>
 
       <Table<T>
         name={translatedCollectionName}
@@ -351,8 +370,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
         onClickDelete={handleDeleteCollection}
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={totalItems || tableData.length}
+        totalItems={totalItems || allCollections.length}
       />
       
       <CollectionForm<T>

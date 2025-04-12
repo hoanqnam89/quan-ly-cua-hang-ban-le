@@ -23,5 +23,5 @@ export {
   Tag, 
   TagsInput, 
   Text, 
-  TextInput, 
+  TextInput,
 }

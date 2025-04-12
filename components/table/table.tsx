@@ -28,7 +28,7 @@ interface ITableProps<T> {
   canCreateCollection?: boolean
   currentPage?: number,
   setCurrentPage?: React.Dispatch<React.SetStateAction<number>>,
-  itemsPerPage?: number,
+
   totalItems?: number
 }
 
@@ -44,7 +44,7 @@ export default function Table<T extends {_id: string, index?: number}>({
   canCreateCollection = true,
   currentPage = 1,
   setCurrentPage,
-  itemsPerPage = 10,
+ 
   totalItems = datas.length
 }: Readonly<ITableProps<T>>): ReactElement {
   const [isShowToggleColumns, setIsShowToggleColumns] = useState<boolean>(false);
@@ -289,6 +289,21 @@ export default function Table<T extends {_id: string, index?: number}>({
               const rowData: string = 
                 row[column.key as keyof typeof row] as string;
               
+              // For the # column, calculate based on current page
+              if (column.key === 'index' || column.title === '#') {
+                // Calculate sequential number based on page
+                const sequentialIndex = ((currentPage - 1) * 10) + rowIndex;
+                return <Text 
+                  key={key} 
+                  isCopyable={true} 
+                  isEllipsis={true} 
+                  tooltip={`${sequentialIndex}`}
+                  className={`py-2 pl-1 pr-4`}
+                >
+                  {sequentialIndex}
+                </Text>
+              }
+              
               return <Text 
                 key={key} 
                 isCopyable={true} 
@@ -355,73 +370,85 @@ export default function Table<T extends {_id: string, index?: number}>({
       </div>
   );
 
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const totalPages = Math.ceil(totalItems );
   
   const handlePageChange = (newPage: number) => {
-    if (setCurrentPage && newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
+    if (newPage >= 1 && newPage <= totalPages) {
+      if (setCurrentPage) {
+        setCurrentPage(newPage);
+      } else {
+        // Handle page change internally
+        const event = new CustomEvent('tablePageChange', { detail: { page: newPage } });
+        window.dispatchEvent(event);
+      }
     }
   };
 
   const renderPagination = () => {
-    if (totalPages <= 1) return null;
+    // Simple pagination that always shows page numbers
+    const maxVisiblePages = 5;
+    const totalPageCount = Math.max(1, Math.ceil(totalItems));
+    
+    // Calculate which page numbers to show
+    let startPage = 1;
+    let endPage = Math.min(totalPageCount, maxVisiblePages);
+    
+    if (currentPage > 3 && totalPageCount > maxVisiblePages) {
+      startPage = Math.min(currentPage - 2, totalPageCount - maxVisiblePages + 1);
+      endPage = Math.min(startPage + maxVisiblePages - 1, totalPageCount);
+    }
+    
+    const pageNumbers = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
     
     return (
-      <div className="flex justify-center items-center mt-4 space-x-2">
-        <Button 
-          onClick={() => handlePageChange(1)} 
-          isDisable={currentPage === 1}
-          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-50"
-        >
-          <Text>Đầu</Text>
-        </Button>
-        <Button 
-          onClick={() => handlePageChange(currentPage - 1)} 
-          isDisable={currentPage === 1}
-          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-50"
-        >
-          <Text>Trước</Text>
-        </Button>
-        
-        <div className="flex items-center space-x-1">
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            let pageNum;
-            if (totalPages <= 5) {
-              pageNum = i + 1;
-            } else if (currentPage <= 3) {
-              pageNum = i + 1;
-            } else if (currentPage >= totalPages - 2) {
-              pageNum = totalPages - 4 + i;
-            } else {
-              pageNum = currentPage - 2 + i;
-            }
-            
-            return (
-              <Button 
-                key={pageNum}
-                onClick={() => handlePageChange(pageNum)} 
-                className={`w-8 h-8 rounded-full ${currentPage === pageNum ? 'bg-blue-500 text-white' : 'bg-slate-200 hover:bg-slate-300'}`}
-              >
-                <Text>{pageNum}</Text>
-              </Button>
-            );
-          })}
+      <div className="flex justify-center mt-4">
+        <div className="inline-flex border border-gray-200 rounded-md">
+          <button 
+            onClick={() => handlePageChange(1)} 
+            disabled={currentPage === 1}
+            className="px-4 py-2 text-gray-500 border-r border-gray-200 disabled:opacity-50"
+          >
+            Đầu
+          </button>
+          
+          <button 
+            onClick={() => handlePageChange(currentPage - 1)} 
+            disabled={currentPage === 1}
+            className="px-4 py-2 text-gray-500 border-r border-gray-200 disabled:opacity-50"
+          >
+            Trước
+          </button>
+          
+          {pageNumbers.map(page => (
+            <button 
+              key={page}
+              onClick={() => handlePageChange(page)} 
+              className={`px-4 py-2 ${
+                currentPage === page 
+                  ? 'text-blue-600 bg-blue-50 font-medium' 
+                  : 'text-gray-500 hover:bg-gray-50'
+              } border-r border-gray-200`}
+            >
+              {page}
+            </button>
+          ))}
+          
+          <button 
+            onClick={() => handlePageChange(currentPage + 1)} 
+            disabled={currentPage === totalPageCount}
+            className="px-4 py-2 text-gray-500 border-r border-gray-200 disabled:opacity-50"
+          >
+            Sau
+          </button>
+          
+          <button 
+            onClick={() => handlePageChange(totalPageCount)} 
+            disabled={currentPage === totalPageCount}
+            className="px-4 py-2 text-gray-500 disabled:opacity-50"
+          >
+            Cuối
+          </button>
         </div>
-        
-        <Button 
-          onClick={() => handlePageChange(currentPage + 1)} 
-          isDisable={currentPage === totalPages}
-          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-50"
-        >
-          <Text>Sau</Text>
-        </Button>
-        <Button 
-          onClick={() => handlePageChange(totalPages)} 
-          isDisable={currentPage === totalPages}
-          className="px-3 py-1 rounded bg-slate-200 hover:bg-slate-300 disabled:opacity-50"
-        >
-          <Text>Cuối</Text>
-        </Button>
       </div>
     );
   };
