@@ -8,14 +8,24 @@ import { externalLinkIcon } from "@/public";
 export const createCollectionDetailLink = (
   collectionName: ECollectionNames, 
   id: string
-): ReactElement => 
-  <a 
-    href={`/home/${nameToHyphenAndLowercase(collectionName)}/${id}`} 
-    target={`_blank`}
-  >
-    <IconContainer 
-      tooltip={createMoreInfoTooltip(collectionName)}
-      iconLink={externalLinkIcon}
+): ReactElement => {
+  
+  let targetUrl = `/home/${nameToHyphenAndLowercase(collectionName)}/${id}`;
+  
+  
+  if (collectionName === ECollectionNames.PRODUCT_DETAIL) {
+    targetUrl = `/home/product/${id}`;
+  }
+  
+  return (
+    <a 
+      href={targetUrl}
     >
-    </IconContainer>
-  </a>
+      <IconContainer 
+        tooltip={createMoreInfoTooltip(collectionName)}
+        iconLink={externalLinkIcon}
+      >
+      </IconContainer>
+    </a>
+  );
+}

@@ -6,7 +6,7 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { ECollectionNames } from '@/enums'
 import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState, ReactNode, Dispatch, SetStateAction } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { infoIcon, trashIcon } from '@/public';
+import { infoIcon, trashIcon, externalLinkIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
@@ -826,10 +826,16 @@ export default function Product() {
       size: `1.5fr`,
       render: (collection: collectionType): ReactElement =>
         <div className="flex justify-center">
-          {createCollectionDetailLink(
-            collectionName,
-            collection._id
-          )}
+          <a 
+            href={`/home/product/${collection.product_id}`} 
+            target={`_blank`}
+          >
+            <IconContainer 
+              tooltip={createMoreInfoTooltip(ECollectionNames.PRODUCT)}
+              iconLink={externalLinkIcon}
+            >
+            </IconContainer>
+          </a>
         </div>
     },
     {
