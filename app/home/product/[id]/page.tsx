@@ -42,7 +42,7 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
   // Safely create collection detail link
   const safeCreateCollectionDetailLink = (collectionName: ECollectionNames, id: string) => {
     if (!id) return null;
-    
+
     const href = `/home/${collectionName}/${id}`;
     return (
       <Link href={href} className={styles.linkIcon}>
@@ -60,12 +60,12 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
       const newBusinesses = await fetchGetCollections<IBusiness>(
         ECollectionNames.BUSINESS
       );
-      
+
       if (!newBusinesses || !Array.isArray(newBusinesses)) {
         console.error('Invalid business data received');
         return;
       }
-      
+
       const newSuppliers = newBusinesses.filter(
         (business) => business && business.type !== EBusinessType.SUPPLIER
       );
@@ -74,9 +74,9 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
         label: supplier.name || 'Unknown',
         value: supplier._id || '',
       }));
-      
+
       setSupplierOptions(options);
-      
+
       // Find supplier name if we already have collection data
       if (collection.supplier_id) {
         const supplier = newSuppliers.find(s => s._id === collection.supplier_id);
@@ -89,29 +89,29 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
       setError('Không thể tải danh sách nhà sản xuất');
     }
   }, [collection.supplier_id]);
-  
+
   const getProductDetails = useCallback(async () => {
     try {
       setIsLoading(true);
-      
+
       const response = await getCollectionById(id, collectionName);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const productData = await response.json();
-      
+
       if (!productData) {
         throw new Error('No product data received');
       }
-      
+
       setCollection(productData);
-      
+
       // Set the first image as the selected image if available
       if (productData.image_links && Array.isArray(productData.image_links) && productData.image_links.length > 0) {
         setSelectedImage(productData.image_links[0]);
       }
-      
+
       // Update supplier name if we have supplier options
       if (productData.supplier_id && supplierOptions.length > 0) {
         const supplier = supplierOptions.find(o => o.value === productData.supplier_id);
@@ -127,51 +127,57 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
           const details = await detailsResponse.json();
           if (Array.isArray(details) && details.length > 0) {
             setProductDetails(details);
-            
+
             // Sort by creation date (most recent first)
-            const sortedDetails = [...details].sort((a, b) => 
+            const sortedDetails = [...details].sort((a, b) =>
               new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
             );
-            
+
             // Get most recent batch for dates
             const latestBatch = sortedDetails[0];
-            
+
             // Calculate inventory data from all product details
             let totalInput = 0;
             let totalOutput = 0;
-            
+            let totalInventory = 0;
+
             // Sum up inventory data from all product details
             details.forEach((detail, index) => {
               console.log(`Detail #${index + 1}:`, {
                 id: detail._id,
                 input_quantity: detail.input_quantity,
-                output_quantity: detail.output_quantity
+                output_quantity: detail.output_quantity,
+                inventory: detail.inventory || (detail.input_quantity - detail.output_quantity)
               });
-              
-              // input_quantity is the quantity in storage (tồn kho)
+
+              // input_quantity là tổng kho
               totalInput += Number(detail.input_quantity) || 0;
-              
-              // output_quantity is the quantity on display/shelf (trên quầy)
+
+              // output_quantity là số lượng đã bán
               totalOutput += Number(detail.output_quantity) || 0;
+
+              // inventory là số lượng tồn kho
+              const detailInventory = detail.inventory || (detail.input_quantity - detail.output_quantity);
+              totalInventory += Number(detailInventory) || 0;
             });
-            
+
             console.log("Inventory data:", {
               totalInput,
               totalOutput,
-              total: totalInput + totalOutput
+              totalInventory
             });
-            
+
             // Set inventory summary with calculated values
             setInventorySummary({
-              // Tổng kho = tổng của số lượng trong kho và trên quầy
-              totalInventory: totalInput + totalOutput,
-              
-              // Số lượng trên quầy = tổng output_quantity
+              // Tổng kho
+              totalInventory: totalInput,
+
+              // Số lượng đã bán
               onShelf: totalOutput,
-              
-              // Số lượng tồn kho = tổng input_quantity
-              remaining: totalInput,
-              
+
+              // Số lượng tồn kho
+              remaining: totalInventory,
+
               productionDate: latestBatch.date_of_manufacture ? new Date(latestBatch.date_of_manufacture) : null,
               expiryDate: latestBatch.expiry_date ? new Date(latestBatch.expiry_date) : null
             });
@@ -205,15 +211,15 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
   if (isLoading) {
     return <LoadingScreen />;
   }
-  
+
   if (error) {
     return (
       <div className={styles.errorContainer}>
         <div className={styles.errorMessage}>
           <h2>Đã xảy ra lỗi</h2>
           <p>{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className={styles.retryButton}
           >
             Thử lại
@@ -240,7 +246,7 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
           </div>
         </div>
       </div>
-      
+
       <div className={styles.contentWrapper}>
         <div className={styles.productGrid}>
           {/* Product Image Section */}
@@ -248,8 +254,8 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
             {collection.image_links && Array.isArray(collection.image_links) && collection.image_links.length > 0 ? (
               <>
                 <div className={styles.mainImageContainer}>
-                  <Image 
-                    src={selectedImage || collection.image_links[0]} 
+                  <Image
+                    src={selectedImage || collection.image_links[0]}
                     alt={collection.name || 'Product image'}
                     fill
                     className={styles.mainImage}
@@ -257,11 +263,11 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
                     quality={90}
                   />
                 </div>
-                
+
                 {collection.image_links.length > 1 && (
                   <div className={styles.thumbnailContainer}>
                     {collection.image_links.map((image, index) => (
-                      <div 
+                      <div
                         key={index}
                         className={`${styles.thumbnail} ${selectedImage === image ? styles.activeThumbnail : ''}`}
                         onClick={() => setSelectedImage(image)}
@@ -284,44 +290,44 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
               </div>
             )}
           </div>
-          
+
           {/* Product Details Section */}
           <div className={styles.detailsSection}>
             <div className={styles.productBasicInfo}>
               <h2 className={styles.productName}>{collection.name || 'Không có tên'}</h2>
               <p className={styles.productDescription}>{collection.description || 'Không có mô tả'}</p>
             </div>
-            
+
             <div className={styles.detailsList}>
               <div className={styles.detailItem}>
                 <span className={styles.detailLabel}>Nhà sản xuất</span>
                 <span className={styles.detailValue}>
                   {collection.supplier_id && safeCreateCollectionDetailLink(
-                    ECollectionNames.BUSINESS, 
+                    ECollectionNames.BUSINESS,
                     collection.supplier_id
                   )}
                   {supplierName || 'Không xác định'}
                 </span>
               </div>
-              
+
               <div className={styles.detailItem}>
                 <span className={styles.detailLabel}>Giá nhập</span>
                 <span className={`${styles.detailValue} ${styles.priceInput}`}>
                   {(collection.input_price || 0).toLocaleString()} VNĐ
                 </span>
               </div>
-              
+
               <div className={styles.detailItem}>
                 <span className={styles.detailLabel}>Giá bán</span>
                 <span className={`${styles.detailValue} ${styles.priceOutput}`}>
                   {(collection.output_price || 0).toLocaleString()} VNĐ
                 </span>
               </div>
-              
+
               {/* Inventory Information */}
               <div className={styles.inventorySection}>
                 <h3 className={styles.sectionTitle}>Thông tin kho hàng</h3>
-                
+
                 {inventorySummary.expiryDate && (
                   <div className={styles.detailItem}>
                     <span className={styles.detailLabel}>Hạn sử dụng</span>
@@ -330,37 +336,37 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
                     </span>
                   </div>
                 )}
-                
+
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>Tổng kho</span>
                   <span className={styles.detailValue}>
                     {inventorySummary.totalInventory.toLocaleString()} sản phẩm
                   </span>
                 </div>
-                
+
                 <div className={styles.detailItem}>
-                  <span className={styles.detailLabel}>Số lượng trên quầy</span>
+                  <span className={styles.detailLabel}>Số lượng đã bán</span>
                   <span className={`${styles.detailValue} ${styles.quantityOnShelf}`}>
                     {inventorySummary.onShelf.toLocaleString()} sản phẩm
                     <span className={styles.inventoryLabel}>(output_quantity)</span>
                   </span>
                 </div>
-                
+
                 <div className={styles.detailItem}>
                   <span className={styles.detailLabel}>Số lượng tồn kho</span>
                   <span className={`${styles.detailValue} ${styles.quantityRemaining}`}>
                     {inventorySummary.remaining.toLocaleString()} sản phẩm
-                    <span className={styles.inventoryLabel}>(input_quantity)</span>
+                    <span className={styles.inventoryLabel}>(inventory)</span>
                   </span>
                 </div>
               </div>
             </div>
-            
+
             <div className={styles.timestampSection}>
               <div className={styles.timestampItem}>
                 <span className={styles.timestampLabel}>Ngày tạo</span>
                 <span className={styles.timestampValue}>
-                  {collection.created_at ? 
+                  {collection.created_at ?
                     new Date(collection.created_at).toLocaleString('vi-VN', {
                       hour: '2-digit',
                       minute: '2-digit',
@@ -371,11 +377,11 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
                     }) : 'N/A'}
                 </span>
               </div>
-              
+
               <div className={styles.timestampItem}>
                 <span className={styles.timestampLabel}>Ngày cập nhật</span>
                 <span className={styles.timestampValue}>
-                  {collection.updated_at ? 
+                  {collection.updated_at ?
                     new Date(collection.updated_at).toLocaleString('vi-VN', {
                       hour: '2-digit',
                       minute: '2-digit',

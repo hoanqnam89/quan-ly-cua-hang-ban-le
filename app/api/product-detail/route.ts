@@ -17,7 +17,7 @@ const collectionModel = ProductDetailModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
-  print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow );
+  print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow);
 
   // const cookieStore: ReadonlyRequestCookies = await cookies();
   // const isUserAdmin = await isAdmin(
@@ -42,40 +42,41 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   try {
     connectToDatabase();
 
-    if ( !isValidObjectId(productDetail.product_id) )
+    if (!isValidObjectId(productDetail.product_id))
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `The ID '${productDetail.product_id}' is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.PRODUCT} ID is correct.`, 
+          path,
+          `Please check if the ${ECollectionNames.PRODUCT} ID is correct.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
-    const foundProduct: IProduct | null = 
+    const foundProduct: IProduct | null =
       await ProductModel.findById(productDetail.product_id);
 
-    if (!foundProduct) 
+    if (!foundProduct)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `The ${ECollectionNames.PRODUCT} with the ID '${productDetail.product_id}' does not exist in our records.`,
-          path, 
+          path,
           `Please check if the ${ECollectionNames.PRODUCT} ID is correct.`
-        ),          
+        ),
         { status: EStatusCode.NOT_FOUND }
       );
-    
+
     const newProductDetail = new collectionModel({
-      created_at: new Date(), 
-      updated_at: new Date(), 
+      created_at: new Date(),
+      updated_at: new Date(),
 
       product_id: productDetail.product_id,
-      date_of_manufature: productDetail.date_of_manufacture, 
-      expiry_date: productDetail.expiry_date, 
-      input_quantity: 0, 
-      output_quantity: 0, 
+      input_quantity: productDetail.input_quantity,
+      output_quantity: productDetail.output_quantity || 0,
+      inventory: productDetail.input_quantity - (productDetail.output_quantity || 0),
+      date_of_manufacture: productDetail.date_of_manufacture,
+      expiry_date: productDetail.expiry_date,
     });
 
     const savedProductDetail: collectionType = await newProductDetail.save();
@@ -85,8 +86,8 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           ``,
-          path, 
-          `Please contact for more information.`, 
+          path,
+          `Please contact for more information.`,
         ),
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
@@ -99,24 +100,24 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       createErrorMessage(
         `Failed to create ${collectionName}.`,
         error as string,
-        path, 
-        `Please contact for more information.`, 
+        path,
+        `Please contact for more information.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
   }
 }
 
-export const GET = async (): Promise<NextResponse> => 
+export const GET = async (): Promise<NextResponse> =>
   await getCollectionsApi<collectionType>(
-    collectionName, 
-    collectionModel, 
+    collectionName,
+    collectionModel,
     path
   );
 
-export const DELETE = async (): Promise<NextResponse> => 
+export const DELETE = async (): Promise<NextResponse> =>
   await deleteCollectionsApi<collectionType>(
-    collectionName, 
-    collectionModel, 
+    collectionName,
+    collectionModel,
     path
   );

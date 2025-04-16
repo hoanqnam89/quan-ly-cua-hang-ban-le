@@ -183,21 +183,18 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       // Tính tổng số lượng sau khi nhập
       const totalQuantity = foundProductDetail.input_quantity + additionalQuantity;
 
-      // Tính số lượng tồn kho (10% tổng số lượng)
-      const stockQuantity = Math.floor(totalQuantity * 0.1);
+      // Số lượng đã bán vẫn giữ nguyên
+      const currentOutputQuantity = foundProductDetail.output_quantity;
 
-      // Số lượng đang bán
-      const newOutputQuantity = totalQuantity - stockQuantity;
-
-      // Đảm bảo số lượng trong kho CHÍNH XÁC bằng số lượng đang bán + số lượng tồn kho
-      const newInputQuantity = newOutputQuantity + stockQuantity;
+      // Tính số lượng tồn kho mới
+      const newInventory = totalQuantity - currentOutputQuantity;
 
       await ProductDetailModel.findOneAndUpdate(
         { _id: productDetail._id },
         {
           $set: {
-            input_quantity: newInputQuantity,
-            output_quantity: newOutputQuantity,
+            input_quantity: totalQuantity,
+            inventory: newInventory,
             updated_at: new Date(),
           }
         }

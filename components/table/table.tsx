@@ -17,13 +17,13 @@ interface IHeaderButtons {
 }
 
 interface ITableProps<T> {
-  name?: string, 
-  isGetDatasDone?: boolean, 
-  onClickAdd?: () => void, 
-  onClickDelete?: () => void, 
-  columns: Array<IColumnProps<T>>, 
-  datas: T[], 
-  columnMinWidth?: number, 
+  name?: string,
+  isGetDatasDone?: boolean,
+  onClickAdd?: () => void,
+  onClickDelete?: () => void,
+  columns: Array<IColumnProps<T>>,
+  datas: T[],
+  columnMinWidth?: number,
   canDeleteCollection?: boolean
   canCreateCollection?: boolean
   currentPage?: number,
@@ -32,19 +32,19 @@ interface ITableProps<T> {
   totalItems?: number
 }
 
-export default function Table<T extends {_id: string, index?: number}>({
-  name = ``, 
-  isGetDatasDone = true, 
-  onClickAdd = () => {}, 
-  onClickDelete = () => {}, 
-  columns = [], 
-  datas = [], 
-  columnMinWidth = 20, 
-  canDeleteCollection = false, 
+export default function Table<T extends { _id: string, index?: number }>({
+  name = ``,
+  isGetDatasDone = true,
+  onClickAdd = () => { },
+  onClickDelete = () => { },
+  columns = [],
+  datas = [],
+  columnMinWidth = 20,
+  canDeleteCollection = false,
   canCreateCollection = true,
   currentPage = 1,
   setCurrentPage,
- 
+
   totalItems = datas.length
 }: Readonly<ITableProps<T>>): ReactElement {
   const [isShowToggleColumns, setIsShowToggleColumns] = useState<boolean>(false);
@@ -59,10 +59,10 @@ export default function Table<T extends {_id: string, index?: number}>({
   const [gridColumns, setGridColumns] = useState<string[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<ICheckbox[]>([
     ...columns.map((column: IColumnProps<T>): ICheckbox => ({
-      label: column.title, 
-      value: column.title, 
+      label: column.title,
+      value: column.title,
       isChecked: column.isVisible === undefined || column.isVisible === true ?
-        true : false, 
+        true : false,
     }))
   ]);
   const [tableDatas, setTableDatas] = useState<T[]>([
@@ -73,14 +73,14 @@ export default function Table<T extends {_id: string, index?: number}>({
   const [isAllColumnVisible, setIsAllColumnVisible] = useState<boolean>(false);
 
   const gridStyle: CSSProperties = {
-    gridTemplateColumns: gridColumns.join(` `), 
+    gridTemplateColumns: gridColumns.join(` `),
   }
 
   useEffect((): void => {
-    setIsVisibles( new Array(datas.length).fill(true) );
+    setIsVisibles(new Array(datas.length).fill(true));
     setGridColumns([...visibleColumns.map((
       visibleColumn: ICheckbox, visibleColumnIndex
-    ): string => 
+    ): string =>
       visibleColumn.isChecked ? columns[visibleColumnIndex].size : ``
     )]);
   }, [datas, columns, visibleColumns]);
@@ -90,9 +90,9 @@ export default function Table<T extends {_id: string, index?: number}>({
   }
 
   const handleResetColumn = (
-    e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>, index: number, 
+    e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>, index: number,
   ): void => {
-    if ( e.detail === 2 )
+    if (e.detail === 2)
       setGridColumns([...columns.map(
         (column: IColumnProps<T>, columnIndex: number): string => {
           if (columnIndex === index)
@@ -104,43 +104,43 @@ export default function Table<T extends {_id: string, index?: number}>({
   }
 
   const handleResetColumns = (): void => {
-    setGridColumns([...columns.map((column: IColumnProps<T>): string => 
+    setGridColumns([...columns.map((column: IColumnProps<T>): string =>
       column.size
     )]);
   }
 
   const isAllTableColumnInvisible = (): boolean => visibleColumns.every(
-    (visibleColumn: ICheckbox): boolean => 
+    (visibleColumn: ICheckbox): boolean =>
       !visibleColumn.isChecked
-    );
+  );
 
   const handleShowAllTableColumns = (): void => {
     setVisibleColumns([
       ...visibleColumns.map((visibleColumn: ICheckbox): ICheckbox => ({
-        ...visibleColumn, 
-        isChecked: isAllColumnVisible, 
+        ...visibleColumn,
+        isChecked: isAllColumnVisible,
       }))
     ]);
     setIsAllColumnVisible((prev: boolean): boolean => !prev);
   }
 
-  const handleMouseMove: (this: Window, e: globalThis.MouseEvent) => void = 
+  const handleMouseMove: (this: Window, e: globalThis.MouseEvent) => void =
     useCallback((e: globalThis.MouseEvent): void => {
       setGridColumns([...
         columns.map((column: IColumnProps<T>, columnIndex: number): string => {
-          if ( !column.ref.current )
+          if (!column.ref.current)
             return ``;
 
           if (columnIndex === activeIndex) {
             const width = e.clientX - column.ref.current.offsetLeft;
 
-            if (width >= columnMinWidth) 
+            if (width >= columnMinWidth)
               return `${width}px`;
           }
 
           return `${column.ref.current.offsetWidth}px`;
         }
-      )]);
+        )]);
     }, [activeIndex, columns, columnMinWidth]);
 
   const removeListeners: () => void = useCallback((): void => {
@@ -158,7 +158,7 @@ export default function Table<T extends {_id: string, index?: number}>({
       addEventListener(`mousemove`, handleMouseMove);
       addEventListener(`mouseup`, handleMouseUp);
     }
-  
+
     return (): void => {
       removeListeners();
     }
@@ -167,18 +167,18 @@ export default function Table<T extends {_id: string, index?: number}>({
   const sortHeader = (index: number, key?: keyof T): void => {
     setTableDatas([...tableDatas.sort((a: T, b: T): number => {
       const newIsClicks: ESortStatus[] = [...isClicks];
-      newIsClicks[index] = 
+      newIsClicks[index] =
         (newIsClicks[index] + 1) % (enumToArray(ESortStatus).length / 2);
 
       setIsClicks(newIsClicks);
 
-      if ( !key || newIsClicks[index] === ESortStatus.UNSORT )
+      if (!key || newIsClicks[index] === ESortStatus.UNSORT)
         return 0;
 
-      if ( a[key] < b[key] )
+      if (a[key] < b[key])
         return newIsClicks[index] === ESortStatus.ASCENDING ? -1 : 1;
 
-      if ( a[key] > b[key] )
+      if (a[key] > b[key])
         return newIsClicks[index] === ESortStatus.ASCENDING ? 1 : -1;
 
       return 0;
@@ -208,7 +208,7 @@ export default function Table<T extends {_id: string, index?: number}>({
 
       const dataString: string = JSON.stringify(data);
 
-      if ( regex.test(dataString) ) 
+      if (regex.test(dataString))
         isVisible = true;
 
       return isVisible;
@@ -220,22 +220,22 @@ export default function Table<T extends {_id: string, index?: number}>({
   const headerElements: ReactElement[] = columns.map(
     (column: IColumnProps<T>, columnIndex: number): ReactElement => {
       return visibleColumns[columnIndex].isChecked ?
-        <div 
+        <div
           ref={column.ref}
-          key={`header-${column.title}`} 
+          key={`header-${column.title}`}
           className={`h-full flex items-center gap-0 select-none relative`}
         >
-          <Text 
-            isEllipsis={true} 
+          <Text
+            isEllipsis={true}
             weight={600}
-            onClick={(): void => sortHeader(columnIndex, column.key)} 
+            onClick={(): void => sortHeader(columnIndex, column.key)}
             tooltip={`Click to sort ${column.title}`}
             className={`${column.key && `cursor-pointer`} py-2 pl-1 pr-4 border-b border-b-zinc-950/10`}
           >
             {column.title}
           </Text>
 
-          {column.key && 
+          {column.key &&
             <IconContainer iconLink={
               getIconBaseOnSortStatus(isClicks[columnIndex])
             }>
@@ -244,12 +244,11 @@ export default function Table<T extends {_id: string, index?: number}>({
 
           <div
             onMouseDown={(): void => handleMouseDown(columnIndex)}
-            className={`${ 
-              activeIndex === columnIndex && styles.active
-            } ${styles[`resize-handle`]} h-full block ml-auto cursor-col-resize border-white`}
+            className={`${activeIndex === columnIndex && styles.active
+              } ${styles[`resize-handle`]} h-full block ml-auto cursor-col-resize border-white`}
             title={`Click and drag to resize '${column.title}' column\nDouble click to reset this '${column.title}' column size`}
             onClick={
-              (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>): void => 
+              (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>): void =>
                 handleResetColumn(e, columnIndex)
             }
           >
@@ -263,63 +262,64 @@ export default function Table<T extends {_id: string, index?: number}>({
     <div className={`flex justify-center items-center p-1`}>
       <Text isItalic={true}>Không có dữ liệu</Text>
     </div>
-  ) : isAllTableColumnInvisible() ? 
+  ) : isAllTableColumnInvisible() ?
     <></> : (
-    <>
-      {tableDatas.map(
-        (row: T, rowIndex: number): ReactElement => isVisibles[rowIndex] ? 
-          <div
-            key={`${row._id}`}
-            className={`grid justify-between items-center gap-0 pb-1 pt-2 border-t-solid ${styles.row}`}
-            style={gridStyle}
-          >
-            {columns.map((
-              column: IColumnProps<T>, columnIndex: number
-            ): ReactElement => {
-              const key: string = `${row._id}-${column.title}`;
+      <>
+        {tableDatas.map(
+          (row: T, rowIndex: number): ReactElement => isVisibles[rowIndex] ?
+            <div
+              key={`${row._id}_${rowIndex}`}
+              className={`grid justify-between items-center gap-0 pb-1 pt-2 border-t-solid ${styles.row}`}
+              style={gridStyle}
+            >
+              {columns.map((
+                column: IColumnProps<T>, columnIndex: number
+              ): ReactElement => {
+                const key: string = `${row._id}_${rowIndex}_${column.title}`;
 
-              if ( !visibleColumns[columnIndex].isChecked )
-                return <Fragment key={key}></Fragment>
+                if (!visibleColumns[columnIndex].isChecked)
+                  return <Fragment key={key}></Fragment>
 
-              if ( column.render ) 
-                return <Fragment key={key}>
-                  {column.render(row, key, column)}
-                </Fragment>
-              
-              const rowData: string = 
-                row[column.key as keyof typeof row] as string;
-              
-              // For the # column, calculate based on current page
-              if (column.key === 'index' || column.title === '#') {
-                // Calculate sequential number based on page
-                const sequentialIndex = ((currentPage - 1) * 10) + rowIndex;
-                return <Text 
-                  key={key} 
-                  isCopyable={true} 
-                  isEllipsis={true} 
-                  tooltip={`${sequentialIndex}`}
+                if (column.render)
+                  return <Fragment key={key}>
+                    {column.render(row, key, column)}
+                  </Fragment>
+
+                const rowData: string =
+                  row[column.key as keyof typeof row] as string;
+
+                // For the # column, calculate based on current page
+                if (column.key === 'index' || column.title === '#') {
+                  // Calculate sequential number based on page, (page-1)*itemsPerPage + rowIndex + 1
+                  const itemsPerPage = 10; // Số lượng mục trên mỗi trang
+                  const sequentialIndex = ((currentPage - 1) * itemsPerPage) + rowIndex + 1;
+                  return <Text
+                    key={key}
+                    isCopyable={true}
+                    isEllipsis={true}
+                    tooltip={`${sequentialIndex}`}
+                    className={`py-2 pl-1 pr-4`}
+                  >
+                    {sequentialIndex}
+                  </Text>
+                }
+
+                return <Text
+                  key={key}
+                  isCopyable={true}
+                  isEllipsis={true}
+                  tooltip={rowData}
                   className={`py-2 pl-1 pr-4`}
                 >
-                  {sequentialIndex}
+                  {rowData}
                 </Text>
-              }
-              
-              return <Text 
-                key={key} 
-                isCopyable={true} 
-                isEllipsis={true} 
-                tooltip={rowData}
-                className={`py-2 pl-1 pr-4`}
-              >
-                {rowData}
-              </Text>
-            })}
-          </div> : 
-          <Fragment key={`${row._id}`}>
-          </Fragment>
-      )}
-    </>
-  );
+              })}
+            </div> :
+            <Fragment key={`${row._id}_${rowIndex}`}>
+            </Fragment>
+        )}
+      </>
+    );
 
   const handleShowToggleColumns = (): void => {
     setIsShowToggleColumns(!isShowToggleColumns);
@@ -327,42 +327,42 @@ export default function Table<T extends {_id: string, index?: number}>({
 
   const headerButtons: IHeaderButtons[] = [
     {
-      className: ``, 
-      onClick: handleResetColumns, 
-      iconLink: listRestartIcon, 
-      size: 32, 
-      tooltip: `Khôi phục toàn bộ chiều dài cột`, 
-    }, 
+      className: ``,
+      onClick: handleResetColumns,
+      iconLink: listRestartIcon,
+      size: 32,
+      tooltip: `Khôi phục toàn bộ chiều dài cột`,
+    },
     {
-      className: ``, 
-      onClick: handleShowToggleColumns, 
-      iconLink: listCollapseIcon, 
-      size: 32, 
-      tooltip: `Hiển thị hiện/ẩn các cột`, 
-    }, 
+      className: ``,
+      onClick: handleShowToggleColumns,
+      iconLink: listCollapseIcon,
+      size: 32,
+      tooltip: `Hiển thị hiện/ẩn các cột`,
+    },
     ...canDeleteCollection ? [{
-      className: ``, 
-      onClick: onClickDelete, 
-      iconLink: trashIcon, 
-      size: 32, 
-      tooltip: `Xóa tất cả ${name}s`, 
-    }] : [], 
+      className: ``,
+      onClick: onClickDelete,
+      iconLink: trashIcon,
+      size: 32,
+      tooltip: `Xóa tất cả ${name}s`,
+    }] : [],
     ...canCreateCollection ? [{
-      className: ``, 
-      onClick: onClickAdd, 
-      iconLink: plusIcon, 
-      size: 32, 
-      tooltip: `Thêm mới ${name}`, 
-    }] : [], 
+      className: ``,
+      onClick: onClickAdd,
+      iconLink: plusIcon,
+      size: 32,
+      tooltip: `Thêm mới ${name}`,
+    }] : [],
   ];
 
   const headerButtonElements: ReactElement[] = headerButtons.map(
     (headerButton: IHeaderButtons, headerButtonIndex: number): ReactElement =>
       <div key={`${headerButtonIndex}`}>
         <Button onClick={headerButton.onClick}>
-          <IconContainer 
-            iconLink={headerButton.iconLink} 
-            size={headerButton.size} 
+          <IconContainer
+            iconLink={headerButton.iconLink}
+            size={headerButton.size}
             tooltip={headerButton.tooltip}
           >
           </IconContainer>
@@ -370,8 +370,8 @@ export default function Table<T extends {_id: string, index?: number}>({
       </div>
   );
 
-  const totalPages = Math.ceil(totalItems );
-  
+  const totalPages = Math.ceil(totalItems);
+
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
       if (setCurrentPage) {
@@ -388,61 +388,60 @@ export default function Table<T extends {_id: string, index?: number}>({
     // Simple pagination that always shows page numbers
     const maxVisiblePages = 5;
     const totalPageCount = Math.max(1, Math.ceil(totalItems));
-    
+
     // Calculate which page numbers to show
     let startPage = 1;
     let endPage = Math.min(totalPageCount, maxVisiblePages);
-    
+
     if (currentPage > 3 && totalPageCount > maxVisiblePages) {
       startPage = Math.min(currentPage - 2, totalPageCount - maxVisiblePages + 1);
       endPage = Math.min(startPage + maxVisiblePages - 1, totalPageCount);
     }
-    
+
     const pageNumbers = Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
-    
+
     return (
       <div className="flex justify-center mt-4">
         <div className="inline-flex border border-gray-200 rounded-md">
-          <button 
-            onClick={() => handlePageChange(1)} 
+          <button
+            onClick={() => handlePageChange(1)}
             disabled={currentPage === 1}
             className="px-4 py-2 text-gray-500 border-r border-gray-200 disabled:opacity-50"
           >
             Đầu
           </button>
-          
-          <button 
-            onClick={() => handlePageChange(currentPage - 1)} 
+
+          <button
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
             className="px-4 py-2 text-gray-500 border-r border-gray-200 disabled:opacity-50"
           >
             Trước
           </button>
-          
+
           {pageNumbers.map(page => (
-            <button 
+            <button
               key={page}
-              onClick={() => handlePageChange(page)} 
-              className={`px-4 py-2 ${
-                currentPage === page 
-                  ? 'text-blue-600 bg-blue-50 font-medium' 
-                  : 'text-gray-500 hover:bg-gray-50'
-              } border-r border-gray-200`}
+              onClick={() => handlePageChange(page)}
+              className={`px-4 py-2 ${currentPage === page
+                ? 'text-blue-600 bg-blue-50 font-medium'
+                : 'text-gray-500 hover:bg-gray-50'
+                } border-r border-gray-200`}
             >
               {page}
             </button>
           ))}
-          
-          <button 
-            onClick={() => handlePageChange(currentPage + 1)} 
+
+          <button
+            onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPageCount}
             className="px-4 py-2 text-gray-500 border-r border-gray-200 disabled:opacity-50"
           >
             Sau
           </button>
-          
-          <button 
-            onClick={() => handlePageChange(totalPageCount)} 
+
+          <button
+            onClick={() => handlePageChange(totalPageCount)}
             disabled={currentPage === totalPageCount}
             className="px-4 py-2 text-gray-500 disabled:opacity-50"
           >
@@ -462,9 +461,9 @@ export default function Table<T extends {_id: string, index?: number}>({
 
         <div className={`flex-1`}>
           <TextInput
-            value={searchValue} 
+            value={searchValue}
             placeholder={`Tìm kiếm ${name}...`}
-            onInputChange={(e: ChangeEvent<HTMLInputElement>): void => 
+            onInputChange={(e: ChangeEvent<HTMLInputElement>): void =>
               handleSearch(e.target.value)
             }
           >
@@ -475,7 +474,7 @@ export default function Table<T extends {_id: string, index?: number}>({
       </div>
 
       {isShowToggleColumns ? <div className={`flex gap-2 items-center`}>
-        <Checkboxes 
+        <Checkboxes
           title={`Hiện các cột:`}
           options={visibleColumns}
           setOptions={setVisibleColumns}
@@ -484,9 +483,9 @@ export default function Table<T extends {_id: string, index?: number}>({
 
         <div>
           <Button onClick={(): void => handleShowAllTableColumns()}>
-            <IconContainer 
-              iconLink={columns4Icon} 
-              size={24} 
+            <IconContainer
+              iconLink={columns4Icon}
+              size={24}
               tooltip={`Bấm để hiện/ẩn toàn bộ cột trong bảng`}
             >
             </IconContainer>
@@ -502,7 +501,7 @@ export default function Table<T extends {_id: string, index?: number}>({
       </div>
 
       <div className={`flex flex-col overflow-y-scroll no-scrollbar`}>
-        {isGetDatasDone 
+        {isGetDatasDone
           ? <LoadingIcon></LoadingIcon>
           : rowElements
         }

@@ -19,7 +19,7 @@ export const PATCH = async (
   req: NextRequest,
   context: { params: { id: string } }
 ): Promise<NextResponse> => {
-  const { id } = context.params;
+  const { id } = await Promise.resolve(context.params);
   print(`${collectionName} API - PATCH ${collectionName} ID: ${id}`, ETerminal.FgMagenta);
 
   // const cookieStore: ReadonlyRequestCookies = await cookies();
@@ -79,19 +79,31 @@ export const PATCH = async (
       // Nếu cả hai trường đều được cung cấp, sử dụng cả hai giá trị như nhận được
       updateData.input_quantity = productDetail.input_quantity;
       updateData.output_quantity = productDetail.output_quantity;
+      // Cập nhật trường inventory
+      updateData.inventory = productDetail.input_quantity - productDetail.output_quantity;
       console.log(`Cập nhật cả input_quantity (${productDetail.input_quantity}) và output_quantity (${productDetail.output_quantity})`);
     } else if (productDetail.input_quantity !== undefined) {
-      // Chỉ cung cấp input_quantity, tính toán output_quantity theo công thức cũ
-      const stockQuantity = Math.floor(productDetail.input_quantity * 0.1);
-      const outputQuantity = productDetail.input_quantity - stockQuantity;
-
+      // Chỉ cung cấp input_quantity, giữ nguyên output_quantity
       updateData.input_quantity = productDetail.input_quantity;
-      updateData.output_quantity = outputQuantity;
-      console.log(`Cập nhật input_quantity thành ${productDetail.input_quantity} và tính toán output_quantity thành ${outputQuantity}`);
+
+      // Lấy output_quantity hiện tại từ database để tính inventory
+      const currentDetail = await collectionModel.findById(id);
+      if (currentDetail) {
+        updateData.inventory = productDetail.input_quantity - currentDetail.output_quantity;
+      }
+
+      console.log(`Cập nhật input_quantity thành ${productDetail.input_quantity} và tính toán inventory`);
     } else if (productDetail.output_quantity !== undefined) {
-      // Chỉ cung cấp output_quantity
+      // Chỉ cung cấp output_quantity, giữ nguyên input_quantity
       updateData.output_quantity = productDetail.output_quantity;
-      console.log(`Cập nhật trực tiếp output_quantity thành ${productDetail.output_quantity}`);
+
+      // Lấy input_quantity hiện tại từ database để tính inventory
+      const currentDetail = await collectionModel.findById(id);
+      if (currentDetail) {
+        updateData.inventory = currentDetail.input_quantity - productDetail.output_quantity;
+      }
+
+      console.log(`Cập nhật output_quantity thành ${productDetail.output_quantity} và tính toán inventory`);
     }
 
     console.log(`Dữ liệu cập nhật:`, updateData);

@@ -38,11 +38,11 @@ export default function Product() {
   const [product, setProduct] = useState<collectionType>(DEFAULT_PROCDUCT);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
-    id: ``, 
+    id: ``,
     isClicked: false
   });
   const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({
-    id: ``, 
+    id: ``,
     isClicked: false
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -51,18 +51,18 @@ export default function Product() {
   const getSuppliers: () => Promise<void> = useCallback(
     async (): Promise<void> => {
       const newBusinesses: IBusiness[] = await fetchGetCollections<IBusiness>(
-        ECollectionNames.BUSINESS, 
+        ECollectionNames.BUSINESS,
       );
       const newSuppliers: IBusiness[] = newBusinesses.filter((
         business: IBusiness
-      ): boolean => 
-        business.type !== EBusinessType.SUPPLIER 
+      ): boolean =>
+        business.type !== EBusinessType.SUPPLIER
       );
 
       if (newSuppliers.length > 0) {
         setProduct({
-          ...product, 
-          supplier_id: newSuppliers[0]._id, 
+          ...product,
+          supplier_id: newSuppliers[0]._id,
         });
       }
       setSupplierOptions([
@@ -72,10 +72,10 @@ export default function Product() {
         }))
       ]);
       setIsLoading(false);
-    }, 
+    },
     [],
   );
-  
+
   useEffect((): void => {
     getSuppliers();
   }, []);
@@ -111,10 +111,10 @@ export default function Product() {
             images.push(result.toString());
           }
 
-          if ( images.length === imageFiles.length && !isCancel ) {
+          if (images.length === imageFiles.length && !isCancel) {
             setProduct({
-              ...product, 
-              image_links: images, 
+              ...product,
+              image_links: images,
             });
           }
         }
@@ -135,71 +135,71 @@ export default function Product() {
   const columns: Array<IColumnProps<collectionType>> = [
     {
       key: `index`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `#`,
       size: `1fr`,
     },
     {
       key: `_id`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Mã`,
       size: `6fr`,
     },
     {
       key: `supplier_id`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Nhà sản xuất`,
-      size: `4fr`, 
-      render: (collection: collectionType): ReactElement => 
+      size: `4fr`,
+      render: (collection: collectionType): ReactElement =>
         createCollectionDetailLink(
-          ECollectionNames.BUSINESS, 
+          ECollectionNames.BUSINESS,
           collection.supplier_id
         )
     },
     {
       key: `name`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Tên sản phẩm`,
-      size: `4fr`, 
+      size: `4fr`,
     },
     {
       key: `description`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Mô tả`,
-      size: `5fr`, 
+      size: `5fr`,
     },
     {
       key: `input_price`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Giá nhập`,
-      size: `3fr`, 
-      render: (collection: collectionType): ReactElement => 
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement =>
         <Text>{formatCurrency(collection.input_price)}</Text>
     },
     {
       key: `output_price`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Giá bán`,
-      size: `3fr`, 
-      render: (collection: collectionType): ReactElement => 
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement =>
         <Text>{formatCurrency(collection.output_price)}</Text>
     },
     {
       key: `image_links`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Hình ảnh`,
-      size: `3fr`, 
-      render: (collection: collectionType): ReactElement => 
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement =>
         <div className={`flex flex-wrap gap-2`}>
           {
-            collection.image_links.map((image: string, index: number) => 
-              <div 
-                key={index} 
+            collection.image_links.map((image: string, index: number) =>
+              <div
+                key={index}
                 className={`relative ${styles[`image-container`]}`}
               >
-                <Image 
+                <Image
                   className={`w-full max-w-full max-h-full`}
-                  src={image} 
+                  src={image}
                   alt={``}
                   width={0}
                   height={0}
@@ -210,12 +210,12 @@ export default function Product() {
             )
           }
         </div>
-    }, 
+    },
     {
       key: `created_at`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Ngày tạo`,
-      size: `4fr`, 
+      size: `4fr`,
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.created_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
@@ -223,9 +223,9 @@ export default function Product() {
     },
     {
       key: `updated_at`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Ngày cập nhật`,
-      size: `4fr`, 
+      size: `4fr`,
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.updated_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
@@ -233,18 +233,18 @@ export default function Product() {
     },
     {
       title: `Xem thêm`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => <Button 
+      ref: useRef(null),
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement => <Button
         title={createMoreInfoTooltip(collectionName)}
         onClick={(): void => {
           setIsClickShowMore({
-            id: collection._id, 
-            isClicked: !isClickShowMore.isClicked, 
+            id: collection._id,
+            isClicked: !isClickShowMore.isClicked,
           });
         }}
       >
-        <IconContainer 
+        <IconContainer
           tooltip={createMoreInfoTooltip(collectionName)}
           iconLink={infoIcon}
         >
@@ -253,28 +253,28 @@ export default function Product() {
     },
     {
       title: `Xem chi tiết`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => 
+      ref: useRef(null),
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement =>
         createCollectionDetailLink(
-          collectionName, 
+          collectionName,
           collection._id
         )
     },
     {
       title: `Xóa`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => <Button 
+      ref: useRef(null),
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement => <Button
         title={createDeleteTooltip(collectionName)}
         onClick={(): void => {
           setIsClickDelete({
-            id: collection._id, 
-            isClicked: !isClickShowMore.isClicked, 
+            id: collection._id,
+            isClicked: !isClickShowMore.isClicked,
           });
         }}
       >
-        <IconContainer 
+        <IconContainer
           tooltip={createDeleteTooltip(collectionName)}
           iconLink={trashIcon}
         >
@@ -285,15 +285,15 @@ export default function Product() {
 
   const handleChangeProduct = (e: ChangeEvent<HTMLInputElement>): void => {
     setProduct({
-      ...product, 
-      [e.target.name]: e.target.value, 
+      ...product,
+      [e.target.name]: e.target.value,
     });
   }
-  
+
   const handleChangeSupplierId = (e: ChangeEvent<HTMLSelectElement>): void => {
     setProduct({
-      ...product, 
-      supplier_id: e.target.value, 
+      ...product,
+      supplier_id: e.target.value,
     });
   }
 
@@ -305,8 +305,8 @@ export default function Product() {
       (_imageFile: File, imageFileIndex: number) => imageFileIndex !== index
     );
     setProduct({
-      ...product, 
-      image_links: newImages, 
+      ...product,
+      image_links: newImages,
     });
     setImageFiles([...newImageFiles]);
   }
@@ -334,7 +334,7 @@ export default function Product() {
       defaultCollection={DEFAULT_PROCDUCT}
       collection={product}
       setCollection={setProduct}
-      isModalReadonly={isModalReadOnly} 
+      isModalReadonly={isModalReadOnly}
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
@@ -415,14 +415,14 @@ export default function Product() {
 
                 <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
                   {
-                    product.image_links.map((image: string, index: number) => 
-                      <div 
-                        key={index} 
+                    product.image_links.map((image: string, index: number) =>
+                      <div
+                        key={index}
                         className={`relative ${styles[`image-container`]}`}
                       >
-                        <Image 
+                        <Image
                           className={`w-full max-w-full max-h-full`}
-                          src={image} 
+                          src={image}
                           alt={``}
                           width={0}
                           height={0}
@@ -431,8 +431,8 @@ export default function Product() {
                         </Image>
 
                         {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
-                          <Button 
-                            className={`absolute top-0 right-0`} 
+                          <Button
+                            className={`absolute top-0 right-0`}
                             onClick={() => handleDeleteImage(index)}
                           >
                             <IconContainer iconLink={trashIcon}>
@@ -442,7 +442,7 @@ export default function Product() {
                       </div>
                     )
                   }
-                </div> 
+                </div>
               </div>
             </InputSection>
           </TabItem>

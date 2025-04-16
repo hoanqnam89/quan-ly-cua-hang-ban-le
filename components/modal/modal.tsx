@@ -15,7 +15,7 @@ interface IModalProps {
   isOpen: boolean
   setIsOpen: Dispatch<SetStateAction<boolean>>
   padding?: number
-  title?: string 
+  title?: string
   showButtons?: boolean
   isOkDisable?: boolean
   okText?: string
@@ -25,15 +25,15 @@ interface IModalProps {
 }
 
 export default function Modal({
-  width = `80vw`, 
-  height = `80vh`, 
+  width = `80vw`,
+  height = `80vh`,
   children,
   isOpen,
   setIsOpen,
   padding = 16,
-  title = `Modal mới`, 
-  showButtons = true, 
-  isOkDisable = false, 
+  title = `Modal mới`,
+  showButtons = true,
+  isOkDisable = false,
   okText = `Lưu`,
   cancelText = `Hủy bỏ`,
   okAction,
@@ -104,7 +104,7 @@ export default function Modal({
 
         <div
           style={modalHeaderStyle}
-          className={`z-10 rounded-lg items-center justify-center overflow-y-scroll no-scrollbar`}
+          className={`z-10 rounded-lg items-center justify-center overflow-y-auto overflow-visible`}
         >
           {children}
         </div>

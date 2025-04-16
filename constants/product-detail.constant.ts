@@ -8,6 +8,7 @@ export const DEFAULT_PROCDUCT_DETAIL: IProductDetail = {
   product_id: ``,
   input_quantity: 0,
   output_quantity: 0,
+  inventory: 0,
   date_of_manufacture: new Date(),
-  expiry_date: new Date(), 
+  expiry_date: new Date(),
 }

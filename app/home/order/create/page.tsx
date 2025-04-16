@@ -140,9 +140,9 @@ export default function CreateOrder() {
                             stockInfo[detail.product_id] = [];
                         }
 
-                        if (detail.output_quantity > 0) {
+                        if (detail.inventory > 0) {
                             stockInfo[detail.product_id].push({
-                                quantity: detail.output_quantity,
+                                quantity: detail.inventory,
                                 expiryDate: detail.expiry_date ? new Date(detail.expiry_date) : null,
                                 dateOfManufacture: detail.date_of_manufacture ? new Date(detail.date_of_manufacture) : null,
                                 detailId: detail._id
@@ -407,7 +407,13 @@ export default function CreateOrder() {
     // Hàm cập nhật số lượng sản phẩm đang bán và tổng kho
     const updateProductQuantities = async () => {
         try {
-            console.log("Bắt đầu cập nhật số lượng sản phẩm...");
+            console.log("Bắt đầu cập nhật số lượng sản phẩm sau khi thanh toán...");
+
+            if (!orderItems || orderItems.length === 0) {
+                console.log("Không có sản phẩm để cập nhật số lượng.");
+                return;
+            }
+
             // Lấy tất cả thông tin chi tiết sản phẩm hiện tại
             const response = await fetch(`/api/product-detail?t=${Date.now()}`);
             if (!response.ok) {
@@ -415,6 +421,7 @@ export default function CreateOrder() {
             }
 
             const productDetails: IProductDetail[] = await response.json();
+            console.log(`Đã lấy ${productDetails.length} chi tiết sản phẩm`);
 
             // Tạo bản đồ chi tiết sản phẩm theo product_id
             const productDetailsMap: Record<string, IProductDetail[]> = {};
@@ -430,77 +437,144 @@ export default function CreateOrder() {
             for (const orderItem of orderItems) {
                 const productId = orderItem.product._id;
                 const quantityToDecrease = orderItem.quantity;
+                const productName = orderItem.product?.name || `Sản phẩm #${productId}`;
                 const batchDetailId = orderItem.batchDetails?.detailId;
-                console.log(`Cập nhật sản phẩm ${orderItem.product.name} - ID: ${productId} - Số lượng: ${quantityToDecrease}`);
 
-                if (productDetailsMap[productId]) {
-                    // Chọn sản phẩm có id để cập nhật
-                    const detail = productDetailsMap[productId].find(d => d._id === batchDetailId);
+                console.log(`Cập nhật sản phẩm ${productName} - ID: ${productId} - Số lượng: ${quantityToDecrease}`);
 
-                    if (detail) {
-                        // Tính toán số lượng cần giảm
-                        const currentOutput = detail.output_quantity || 0;
-                        const newOutput = currentOutput - quantityToDecrease;
+                if (productDetailsMap[productId] && productDetailsMap[productId].length > 0) {
+                    const details = productDetailsMap[productId];
+                    let remainingQuantity = quantityToDecrease;
 
-                        // Cập nhật cả số lượng trên quầy và tổng kho
-                        const currentInput = detail.input_quantity || 0;
-                        const newInput = currentInput - quantityToDecrease;
+                    // Nếu có thông tin lô cụ thể, ưu tiên cập nhật lô đó trước
+                    if (batchDetailId) {
+                        const selectedBatch = details.find(d => d._id.toString() === batchDetailId);
+                        if (selectedBatch) {
+                            const currentInput = selectedBatch.input_quantity || 0;
+                            const currentOutput = selectedBatch.output_quantity || 0;
+                            const currentInventory = currentInput - currentOutput;
 
-                        // Cập nhật số lượng trong chi tiết sản phẩm
-                        try {
-                            const detailId = detail._id.toString();
-                            console.log(`Gửi request PATCH đến /api/product-detail/${detailId}`);
+                            // Số lượng có thể bán từ lô này
+                            const decreaseAmount = Math.min(remainingQuantity, currentInventory);
 
-                            const updateResponse = await fetch(`/api/product-detail/${detailId}?t=${Date.now()}`, {
-                                method: 'PATCH',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    output_quantity: newOutput,
-                                    input_quantity: newInput
-                                }),
-                            });
+                            if (decreaseAmount > 0) {
+                                // Tăng output_quantity (số lượng đã bán)
+                                const newOutput = currentOutput + decreaseAmount;
 
-                            if (!updateResponse.ok) {
-                                const errorText = await updateResponse.text();
-                                console.error(`Lỗi khi cập nhật chi tiết sản phẩm ${detailId}:`, errorText);
-                                throw new Error(`Không thể cập nhật chi tiết sản phẩm: ${updateResponse.status} ${updateResponse.statusText}`);
-                            } else {
-                                const responseData = await updateResponse.json();
-                                console.log(`Đã cập nhật thành công chi tiết sản phẩm ${detailId}`, responseData);
+                                try {
+                                    const detailId = selectedBatch._id.toString();
+                                    console.log(`Cập nhật lô đã chọn ${detailId}:
+                                        - Số lượng đã bán cũ: ${currentOutput}
+                                        - Số lượng bán thêm: ${decreaseAmount}
+                                        - Số lượng đã bán mới: ${newOutput}
+                                        - Tồn kho mới: ${currentInput - newOutput}
+                                    `);
+
+                                    const updateResponse = await fetch(`/api/product-detail/${detailId}?t=${Date.now()}`, {
+                                        method: 'PATCH',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            output_quantity: newOutput,
+                                        }),
+                                    });
+
+                                    if (!updateResponse.ok) {
+                                        const errorText = await updateResponse.text();
+                                        console.error(`Lỗi khi cập nhật chi tiết sản phẩm ${detailId}:`, errorText);
+                                        throw new Error(`Không thể cập nhật chi tiết sản phẩm: ${updateResponse.status} ${updateResponse.statusText}`);
+                                    }
+
+                                    // Giảm số lượng còn phải xử lý
+                                    remainingQuantity -= decreaseAmount;
+                                    console.log(`Đã cập nhật số lượng đã bán: ${decreaseAmount}. Còn lại cần xử lý: ${remainingQuantity}`);
+
+                                } catch (updateError) {
+                                    console.error(`Lỗi khi gửi request PATCH:`, updateError);
+                                    throw updateError;
+                                }
                             }
-                        } catch (updateError) {
-                            console.error(`Lỗi khi gửi request PATCH:`, updateError);
-                            throw updateError;
                         }
-                    } else {
-                        console.warn(`Không tìm thấy chi tiết lô hàng ${batchDetailId} cho sản phẩm ${productId}`);
                     }
-                } else {
-                    console.warn(`Không tìm thấy chi tiết sản phẩm cho ID: ${productId}`);
+
+                    // Nếu vẫn còn số lượng cần trừ, xử lý các lô khác
+                    if (remainingQuantity > 0) {
+                        // Sắp xếp lô theo ngày sản xuất để lấy lô cũ nhất trước
+                        const sortedDetails = details.sort((a, b) => {
+                            const dateA = a.date_of_manufacture ? new Date(a.date_of_manufacture).getTime() : 0;
+                            const dateB = b.date_of_manufacture ? new Date(b.date_of_manufacture).getTime() : 0;
+                            return dateA - dateB;
+                        });
+
+                        // Process each product detail
+                        for (const detail of sortedDetails) {
+                            // Bỏ qua lô đã xử lý ở trên
+                            if (batchDetailId && detail._id.toString() === batchDetailId) continue;
+
+                            if (remainingQuantity <= 0) break;
+
+                            const currentInput = detail.input_quantity || 0;
+                            const currentOutput = detail.output_quantity || 0;
+                            const currentInventory = currentInput - currentOutput;
+
+                            // Số lượng có thể bán từ lô này
+                            const decreaseAmount = Math.min(remainingQuantity, currentInventory);
+
+                            if (decreaseAmount > 0) {
+                                // Tăng output_quantity (số lượng đã bán)
+                                const newOutput = currentOutput + decreaseAmount;
+
+                                try {
+                                    const detailId = detail._id.toString();
+                                    console.log(`Cập nhật chi tiết sản phẩm ${detailId}:
+                                        - Số lượng đã bán cũ: ${currentOutput}
+                                        - Số lượng bán thêm: ${decreaseAmount}
+                                        - Số lượng đã bán mới: ${newOutput}
+                                        - Tồn kho mới: ${currentInput - newOutput}
+                                    `);
+
+                                    const updateResponse = await fetch(`/api/product-detail/${detailId}?t=${Date.now()}`, {
+                                        method: 'PATCH',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                            output_quantity: newOutput,
+                                        }),
+                                    });
+
+                                    if (!updateResponse.ok) {
+                                        const errorText = await updateResponse.text();
+                                        console.error(`Lỗi khi cập nhật chi tiết sản phẩm ${detailId}:`, errorText);
+                                        throw new Error(`Không thể cập nhật chi tiết sản phẩm: ${updateResponse.status} ${updateResponse.statusText}`);
+                                    }
+
+                                    // Giảm số lượng còn phải xử lý
+                                    remainingQuantity -= decreaseAmount;
+                                    console.log(`Đã cập nhật số lượng đã bán: ${decreaseAmount}. Còn lại cần xử lý: ${remainingQuantity}`);
+
+                                } catch (updateError) {
+                                    console.error(`Lỗi khi gửi request PATCH:`, updateError);
+                                    throw updateError;
+                                }
+                            }
+                        }
+                    }
+
+                    if (remainingQuantity > 0) {
+                        console.warn(`Không đủ số lượng cho sản phẩm ${productName}. Còn lại ${remainingQuantity} không thể xử lý.`);
+                    }
                 }
             }
 
-            // Cập nhật lại thông tin số lượng trong state
-            const updatedStockInfo = { ...productStockInfo };
-
-            orderItems.forEach(item => {
-                const productId = item.product._id;
-                if (updatedStockInfo[productId] !== undefined) {
-                    updatedStockInfo[productId] = updatedStockInfo[productId].map(detail => {
-                        return { ...detail, quantity: Math.max(0, detail.quantity - item.quantity) };
-                    }).filter(d => d.quantity > 0);
-                    console.log(`Cập nhật state: Sản phẩm ${item.product.name} - Số lượng mới: ${updatedStockInfo[productId].length}`);
-                }
-            });
-
-            setProductStockInfo(updatedStockInfo);
-            console.log("Hoàn thành cập nhật số lượng sản phẩm");
+            console.log("Hoàn thành cập nhật số lượng sản phẩm sau khi thanh toán");
 
         } catch (error) {
             console.error('Lỗi khi cập nhật số lượng sản phẩm:', error);
-            alert('Đơn hàng đã được tạo nhưng có lỗi khi cập nhật số lượng sản phẩm. Vui lòng kiểm tra lại.');
+            // Không hiển thị thông báo lỗi cho người dùng trong trường hợp này
+            // vì đơn hàng đã được thanh toán thành công
+            console.warn("Thanh toán vẫn thành công mặc dù có lỗi khi cập nhật số lượng sản phẩm");
         }
     };
 

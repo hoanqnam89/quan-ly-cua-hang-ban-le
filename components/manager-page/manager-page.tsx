@@ -24,7 +24,7 @@ export interface IManagerPageProps<T> {
   defaultCollection: T
   collection: T
   setCollection: Dispatch<SetStateAction<T>>
-  isModalReadonly: boolean, 
+  isModalReadonly: boolean,
   setIsModalReadonly: Dispatch<SetStateAction<boolean>>
   isClickShowMore: ICollectionIdNotify
   isClickDelete: ICollectionIdNotify
@@ -38,22 +38,23 @@ export interface IManagerPageProps<T> {
   displayedItems?: T[]
   setAllItems?: Dispatch<SetStateAction<T[]>>
   additionalButtons?: ReactElement
+  additionalProcessing?: (items: T[]) => T[]
 }
 
-export default function ManagerPage<T extends {_id: string, index?: number}>({
-  children, 
-  columns, 
-  collectionName, 
-  defaultCollection, 
-  collection, 
-  setCollection, 
-  isModalReadonly, 
-  setIsModalReadonly, 
+export default function ManagerPage<T extends { _id: string, index?: number }>({
+  children,
+  columns,
+  collectionName,
+  defaultCollection,
+  collection,
+  setCollection,
+  isModalReadonly,
+  setIsModalReadonly,
   isClickShowMore,
-  isClickDelete, 
-  isLoaded = false, 
-  handleOpenModal = (isOpen: boolean): boolean => !isOpen, 
-  onExitModalForm = () => {}, 
+  isClickDelete,
+  isLoaded = false,
+  handleOpenModal = (isOpen: boolean): boolean => !isOpen,
+  onExitModalForm = () => { },
   name = translateCollectionName(collectionName),
   currentPage: externalCurrentPage,
   setCurrentPage: externalSetCurrentPage,
@@ -61,21 +62,22 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   displayedItems,
   setAllItems,
   additionalButtons,
+  additionalProcessing,
 }: Readonly<IManagerPageProps<T>>): ReactElement {
-  const translatedCollectionName: string = 
+  const translatedCollectionName: string =
     translateCollectionName(collectionName);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAddCollectionModalOpen, setIsAddCollectionModalOpen] = 
+  const [isAddCollectionModalOpen, setIsAddCollectionModalOpen] =
     useState<boolean>(false);
   const [collections, setCollections] = useState<T[]>([]);
   const [isUpdateCollection, setIsUpdateCollection] = useState<boolean>(false);
   const { createNotification, notificationElements } = useNotificationsHook();
   const [allCollections, setAllCollections] = useState<T[]>([]);
   const itemsPerPage = 10;
-  
+
   // Internal page state when no external state is provided
   const [internalCurrentPage, setInternalCurrentPage] = useState<number>(1);
-  
+
   // Use external or internal page state
   const currentPage = externalCurrentPage || internalCurrentPage;
   const setCurrentPage = externalSetCurrentPage || setInternalCurrentPage;
@@ -83,31 +85,40 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   const getCollections: () => Promise<void> = useCallback(
     async (): Promise<void> => {
       setIsLoading(true);
-      const fetchedCollections = await fetchGetCollections<T>(collectionName);
-      
+      let fetchedCollections = await fetchGetCollections<T>(collectionName);
+
+      // Áp dụng xử lý bổ sung nếu có
+      if (additionalProcessing) {
+        fetchedCollections = additionalProcessing(fetchedCollections);
+      }
+
       setAllCollections(fetchedCollections);
-      
+
       if (setAllItems) {
         setAllItems(fetchedCollections);
       }
-      
+
       if (displayedItems) {
         setCollections(displayedItems);
       } else {
         const startIndex = (currentPage - 1) * itemsPerPage;
         setCollections(fetchedCollections.slice(startIndex, startIndex + itemsPerPage));
       }
-      
+
       setIsLoading(false);
-    }, 
-    [collectionName, setAllItems, displayedItems, currentPage, itemsPerPage],
+    },
+    [collectionName, setAllItems, displayedItems, currentPage, itemsPerPage, additionalProcessing],
   );
 
   // Update collections when page changes
   useEffect(() => {
     if (allCollections.length > 0 && !displayedItems) {
       const startIndex = (currentPage - 1) * itemsPerPage;
-      setCollections(allCollections.slice(startIndex, startIndex + itemsPerPage));
+
+      // Áp dụng xử lý bổ sung mỗi khi hiển thị dữ liệu mới
+      let filteredCollections = allCollections;
+
+      setCollections(filteredCollections.slice(startIndex, startIndex + itemsPerPage));
     }
   }, [currentPage, allCollections, displayedItems, itemsPerPage]);
 
@@ -115,7 +126,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
     if (!isAddCollectionModalOpen)
       onExitModalForm()
   }, [isAddCollectionModalOpen, onExitModalForm])
-  
+
   useEffect((): void => {
     getCollections();
   }, [getCollections]);
@@ -124,17 +135,17 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
     (isReadOnly: boolean = false): void => {
       setIsModalReadonly(!isReadOnly);
       setIsAddCollectionModalOpen((prev: boolean): boolean => handleOpenModal(prev));
-    }, 
+    },
     [
-      setIsModalReadonly, 
+      setIsModalReadonly,
     ],
   );
 
   const handleAddCollection = async (): Promise<void> => {
     setIsLoading(true);
 
-    const addCollectionApiResponse: Response = 
-      await addCollection<T>( collection, collectionName );
+    const addCollectionApiResponse: Response =
+      await addCollection<T>(collection, collectionName);
 
     let notificationText: string = ``;
     let notificationType: ENotificationType = ENotificationType.ERROR;
@@ -168,7 +179,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
       id: 0,
       children: <Text>{notificationText}</Text>,
       type: notificationType,
-      isAutoClose: true, 
+      isAutoClose: true,
     });
 
     await getCollections();
@@ -182,8 +193,8 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   const handleUpdateCollection = async (): Promise<void> => {
     setIsLoading(true);
 
-    const updateCollectionApiResponse: Response = 
-      await updateCollectionById<T>( collection, collection._id, collectionName );
+    const updateCollectionApiResponse: Response =
+      await updateCollectionById<T>(collection, collection._id, collectionName);
 
     let notificationText: string = ``;
     let notificationType: ENotificationType = ENotificationType.ERROR;
@@ -214,7 +225,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
       id: 0,
       children: <Text>{notificationText}</Text>,
       type: notificationType,
-      isAutoClose: true, 
+      isAutoClose: true,
     });
 
     await getCollections();
@@ -222,22 +233,22 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   }
 
   const handleDeleteCollection = async (): Promise<void> => {
-    if ( collections.length === 0 ) {
+    if (collections.length === 0) {
       createNotification({
         id: 0,
         children: <Text>Không có {translatedCollectionName} để xóa!</Text>,
         type: ENotificationType.ERROR,
-        isAutoClose: true, 
+        isAutoClose: true,
       });
       return;
     }
-    
-    if ( !confirm(`Bạn có muốn xóa TẤT CẢ ${translatedCollectionName}?`) )
+
+    if (!confirm(`Bạn có muốn xóa TẤT CẢ ${translatedCollectionName}?`))
       return;
-    
+
     setIsLoading(true);
 
-    const deleteCollectionApiResponse: Response = 
+    const deleteCollectionApiResponse: Response =
       await deleteCollections(collectionName);
 
     let notificationText: string = ``;
@@ -263,7 +274,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
       id: 0,
       children: <Text>{notificationText}</Text>,
       type: notificationType,
-      isAutoClose: true, 
+      isAutoClose: true,
     });
 
     await getCollections();
@@ -273,20 +284,20 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
     async (collectionId: string): Promise<void> => {
       setIsLoading(true);
 
-      const getCollectionByIdApiResponse: Response = 
-        await getCollectionById( collectionId, collectionName );
+      const getCollectionByIdApiResponse: Response =
+        await getCollectionById(collectionId, collectionName);
 
-      if ( !getCollectionByIdApiResponse.ok )
+      if (!getCollectionByIdApiResponse.ok)
         return;
 
-      const getCollectionByIdApiJson: T = 
+      const getCollectionByIdApiJson: T =
         await getCollectionByIdApiResponse.json();
 
-      setCollection({...getCollectionByIdApiJson});
+      setCollection({ ...getCollectionByIdApiJson });
       toggleAddCollectionModal(false);
-      
+
       setIsLoading(false);
-    }, 
+    },
     [collectionName, toggleAddCollectionModal, setCollection],
   );
 
@@ -294,13 +305,13 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
     collectionId: string
   ) => Promise<void> = useCallback(
     async (collectionId: string): Promise<void> => {
-      if ( !confirm(`Bạn có muốn xóa ${translatedCollectionName} này?`) )
+      if (!confirm(`Bạn có muốn xóa ${translatedCollectionName} này?`))
         return;
 
       setIsLoading(true);
 
-      const deleteCollectionByIdApiResponse: Response = 
-        await deleteCollectionById( collectionId, collectionName );
+      const deleteCollectionByIdApiResponse: Response =
+        await deleteCollectionById(collectionId, collectionName);
 
       let notificationText: string = ``;
       let notificationType: ENotificationType = ENotificationType.ERROR;
@@ -325,11 +336,11 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
         id: 0,
         children: <Text>{notificationText}</Text>,
         type: notificationType,
-        isAutoClose: true, 
+        isAutoClose: true,
       });
 
       await getCollections();
-    }, 
+    },
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
     [collectionName, getCollections],
   );
@@ -352,7 +363,7 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
   const tableData = displayedItems || collections;
   const totalPagesCount = Math.ceil((totalItems || allCollections.length) / itemsPerPage);
 
-  const managerPage: ReactElement = isLoading 
+  const managerPage: ReactElement = isLoading
     ? <LoadingScreen></LoadingScreen>
     : <>
       <title>{`Quản lý ${name}`}</title>
@@ -372,13 +383,13 @@ export default function ManagerPage<T extends {_id: string, index?: number}>({
         setCurrentPage={setCurrentPage}
         totalItems={totalItems || allCollections.length}
       />
-      
+
       <CollectionForm<T>
-        collection={collection} 
+        collection={collection}
         collectionName={collectionName}
         isModalOpen={isAddCollectionModalOpen}
         setIsModalOpen={setIsAddCollectionModalOpen}
-        okAction={isModalReadonly 
+        okAction={isModalReadonly
           ? handleClickUpdateCollection
           : isUpdateCollection
             ? handleUpdateCollection

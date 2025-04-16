@@ -106,31 +106,32 @@ export default function PaymentModal({ isOpen, onClose, onComplete, orderId, tot
                 console.log(`Cập nhật sản phẩm ${productName} - ID: ${productId} - Số lượng: ${quantityToDecrease}`);
 
                 if (productDetailsMap[productId] && productDetailsMap[productId].length > 0) {
-                    // Sắp xếp chi tiết sản phẩm theo ngày hết hạn (cũ nhất trước)
-                    const sortedDetails = productDetailsMap[productId].sort(
-                        (a, b) => new Date(a.expiry_date).getTime() - new Date(b.expiry_date).getTime()
-                    );
-
-                    console.log(`Tìm thấy ${sortedDetails.length} chi tiết cho sản phẩm ${productName}`);
-
+                    const details = productDetailsMap[productId];
                     let remainingQuantity = quantityToDecrease;
 
-                    // Giảm số lượng từ các chi tiết sản phẩm, bắt đầu từ sản phẩm sắp hết hạn nhất
-                    for (const detail of sortedDetails) {
+                    // Process each product detail
+                    for (const detail of details) {
                         if (remainingQuantity <= 0) break;
 
-                        // Số lượng có thể giảm từ chi tiết này
+                        const currentInput = detail.input_quantity || 0;
                         const currentOutput = detail.output_quantity || 0;
-                        const newOutput = Math.max(0, currentOutput - remainingQuantity);
-                        const decreaseAmount = currentOutput - newOutput;
+                        const currentInventory = currentInput - currentOutput;
 
-                        console.log(`Chi tiết sản phẩm ID: ${detail._id} - Số lượng hiện tại: ${currentOutput} - Giảm: ${decreaseAmount} - Còn lại: ${newOutput}`);
+                        // Số lượng có thể bán từ lô này
+                        const decreaseAmount = Math.min(remainingQuantity, currentInventory);
 
                         if (decreaseAmount > 0) {
-                            // Cập nhật số lượng đã bán trong chi tiết sản phẩm
+                            // Sửa lại: Tăng output_quantity (số lượng đã bán)
+                            const newOutput = currentOutput + decreaseAmount; // Đúng: output tăng thêm số lượng bán
+
                             try {
                                 const detailId = detail._id.toString();
-                                console.log(`Gửi request PATCH đến /api/product-detail/${detailId}`);
+                                console.log(`Cập nhật chi tiết sản phẩm ${detailId}:
+                                    - Số lượng đã bán cũ: ${currentOutput}
+                                    - Số lượng bán thêm: ${decreaseAmount}
+                                    - Số lượng đã bán mới: ${newOutput}
+                                    - Tồn kho mới: ${currentInput - newOutput} // inventory sẽ giảm vì output tăng
+                                `);
 
                                 const updateResponse = await fetch(`/api/product-detail/${detailId}?t=${Date.now()}`, {
                                     method: 'PATCH',
@@ -138,7 +139,7 @@ export default function PaymentModal({ isOpen, onClose, onComplete, orderId, tot
                                         'Content-Type': 'application/json',
                                     },
                                     body: JSON.stringify({
-                                        output_quantity: newOutput
+                                        output_quantity: newOutput, // Gửi output mới đã tăng
                                     }),
                                 });
 
@@ -146,25 +147,22 @@ export default function PaymentModal({ isOpen, onClose, onComplete, orderId, tot
                                     const errorText = await updateResponse.text();
                                     console.error(`Lỗi khi cập nhật chi tiết sản phẩm ${detailId}:`, errorText);
                                     throw new Error(`Không thể cập nhật chi tiết sản phẩm: ${updateResponse.status} ${updateResponse.statusText}`);
-                                } else {
-                                    const responseData = await updateResponse.json();
-                                    console.log(`Đã cập nhật thành công chi tiết sản phẩm ${detailId}`, responseData);
                                 }
 
+                                // Giảm số lượng còn phải xử lý
                                 remainingQuantity -= decreaseAmount;
+                                console.log(`Đã cập nhật số lượng đã bán: ${decreaseAmount}. Còn lại cần xử lý: ${remainingQuantity}`);
+
                             } catch (updateError) {
                                 console.error(`Lỗi khi gửi request PATCH:`, updateError);
-                                // Ghi nhật ký lỗi nhưng không dừng quá trình
-                                console.warn(`Tiếp tục xử lý các sản phẩm khác sau lỗi`);
+                                throw updateError;
                             }
                         }
                     }
 
                     if (remainingQuantity > 0) {
-                        console.warn(`Không đủ số lượng cho sản phẩm ${productName}. Còn lại ${remainingQuantity} không thể giảm.`);
+                        console.warn(`Không đủ số lượng cho sản phẩm ${productName}. Còn lại ${remainingQuantity} không thể xử lý.`);
                     }
-                } else {
-                    console.warn(`Không tìm thấy chi tiết sản phẩm cho ID: ${productId} - ${productName}`);
                 }
             }
 
@@ -372,4 +370,4 @@ export default function PaymentModal({ isOpen, onClose, onComplete, orderId, tot
             </div>
         </div>
     );
-} 
+}

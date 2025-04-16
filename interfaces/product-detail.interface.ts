@@ -6,6 +6,7 @@ export interface IProductDetail {
   product_id: string
   input_quantity: number
   output_quantity: number
+  inventory: number
   date_of_manufacture: Date
   expiry_date: Date
 }
