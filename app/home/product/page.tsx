@@ -446,12 +446,6 @@ export default function Product() {
               </div>
             </InputSection>
           </TabItem>
-
-          <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
-            <TimestampTabItem<collectionType> collection={product}>
-            </TimestampTabItem>
-          </TabItem>
-
         </Tabs>
 
         {notificationElements}

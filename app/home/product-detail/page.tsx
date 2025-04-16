@@ -717,7 +717,6 @@ export default function Product() {
         const productOption = productOptions.find(
           (option) => option.value === collection.product_id
         );
-
         const productName = productOption?.label || 'Không xác định';
 
         return (
