@@ -159,7 +159,8 @@ const getCollectionsApi = async <T>(
       const queryTime = Date.now() - queryStart;
       print(`${collectionName} API - Đã truy vấn xong ${collections.length} bản ghi sau ${queryTime}ms`, ETerminal.FgGreen);
 
-      const totalTime = Date.now() - startTime;
+      // const totalTime = Date.now() - startTime;
+      const totalTime = Date.now() - 0;
       print(`${collectionName} API - Hoàn thành sau ${totalTime}ms`, ETerminal.FgGreen);
 
       return NextResponse.json(collections, {
@@ -175,7 +176,8 @@ const getCollectionsApi = async <T>(
       throw new Error(`Truy vấn dữ liệu quá thời gian: ${queryError}`);
     }
   } catch (error: unknown) {
-    const errorTime = Date.now() - startTime;
+    // const errorTime = Date.now() - startTime;
+    const errorTime = Date.now() - 0;
     console.error(`${collectionName} API - Lỗi sau ${errorTime}ms:`, error);
 
     if (error instanceof Error) {

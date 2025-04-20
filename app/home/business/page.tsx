@@ -160,7 +160,7 @@ export default function Product() {
       }
     },
     {
-      title: `Xem thêm`,
+      title: `Xem chi tiết`,
       ref: useRef(null),
       size: `2fr`,
       render: (collection: collectionType): ReactElement => <Button
@@ -181,6 +181,7 @@ export default function Product() {
     },
     {
       title: `Xem chi tiết`,
+      isVisible: false,
       ref: useRef(null),
       size: `2fr`,
       render: (collection: collectionType): ReactElement =>

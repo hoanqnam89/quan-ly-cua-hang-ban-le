@@ -93,20 +93,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     cachedProducts = null;
 
     return NextResponse.json(savedProduct, { status: EStatusCode.CREATED });
-  } catch (saveError: any) {
-    // Xử lý lỗi trùng lặp khóa
-    if (saveError.code === 11000) {
-      // Tạo mã mới với timestamp hiện tại và thử lại
-      newProduct.code = `${product.code}-${Date.now()}`;
-      const savedProduct = await newProduct.save();
-
-      cachedProducts = null;
-      return NextResponse.json(savedProduct, { status: EStatusCode.CREATED });
-    }
-
-    throw saveError; // Nếu không phải lỗi trùng lặp, ném lại lỗi
-  }
-} catch (error: unknown) {
+  } catch (error: unknown) {
   console.error(error);
 
   return NextResponse.json(
@@ -164,11 +151,10 @@ export const GET = async (req: NextRequest): Promise<NextResponse> => {
         input_price: 1,
         output_price: 1,
         business_id: 1,
-        supplier_name: 1,
+        supplier_id: 1,
         created_at: 1,
         updated_at: 1,
         category_id: 1,
-        code: 1,
       };
     }
 

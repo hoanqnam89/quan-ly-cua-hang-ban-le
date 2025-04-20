@@ -27,6 +27,8 @@ import { createCollectionDetailLink } from '@/utils/create-collection-detail-lin
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '@/components/notify/notification/notification';
 import { ICategory } from '@/interfaces/category.interface';
+import { IProduct } from '@/interfaces/product.interface';
+import { DEFAULT_PROCDUCT } from '@/constants/product.constant';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -102,9 +104,9 @@ export default function Product() {
     [],
   );
 
-  loadBusinessNames();
-}, []);
-
+  useEffect((): void => {
+    getSuppliers();
+  }, []);
 useEffect((): void => {
   getCategory();
 }, []);
@@ -330,7 +332,7 @@ const columns: Array<IColumnProps<collectionType>> = [
 const handleChangeBusinessId = (e: ChangeEvent<HTMLSelectElement>): void => {
   const selectedBusinessId = e.target.value;
   // Tìm business tương ứng từ ID
-  const selectedBusiness = businessesData.find(business => business._id === selectedBusinessId);
+  const selectedBusiness = supplier.find(business => business._id === selectedBusinessId);
   setProduct({
     ...product,
     _id: selectedBusinessId,
@@ -377,7 +379,7 @@ const handleOpenModal = (prev: boolean): boolean => {
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
-  if (!product.supplier_name) {
+  if (!product.supplier_id) {
     createNotification({
       id: Date.now(),
       children: <Text>Vui lòng chọn nhà cung cấp!</Text>,
@@ -422,9 +424,9 @@ return (
               name={`business_id`}
               isLoading={isLoading}
               isDisable={isModalReadOnly}
-              options={businessOptions}
+              options={supplierOptions}
               defaultOptionIndex={getSelectedOptionIndex(
-                businessOptions, product.business_id
+                supplierOptions, product.supplier_id
               )}
               onInputChange={handleChangeBusinessId}
             >
@@ -561,61 +563,15 @@ return (
 );
 }
 
-export const GET = async (req: NextRequest): Promise<NextResponse> => {
-  print(`${collectionName} API - GET ${collectionName}s`, ETerminal.FgGreen);
+function loadBusinessNames() {
+  throw new Error('Function not implemented.');
+}
 
-  try {
-    await connectToDatabase();
+function getCategory() {
+  throw new Error('Function not implemented.');
+}
 
-    const url = new URL(req.url);
-    const limit = parseInt(url.searchParams.get('limit') || '1000');
-    const fields = url.searchParams.get('fields');
+function setImageFiles(arg0: File[]) {
+  throw new Error('Function not implemented.');
+}
 
-    let projection = {};
-    if (fields) {
-      projection = fields.split(',').reduce((acc, field) => ({
-        ...acc,
-        [field.trim()]: 1
-      }), {});
-    } else {
-      projection = {
-        _id: 1,
-        code: 1,
-        name: 1,
-        description: 1,
-        image_links: 1,
-        input_price: 1,
-        output_price: 1,
-        business_id: 1,
-        supplier_name: 1,
-        created_at: 1,
-        updated_at: 1
-      };
-    }
-
-    // Sử dụng fetch API của Next.js với revalidate
-    const products = await fetch(`${ROOT}/api/products?limit=${limit}&fields=${fields}`, {
-      next: { revalidate: 60 }, // Revalidate cache mỗi 60 giây
-    }).then(res => res.json());
-
-    return NextResponse.json(products, {
-      status: EStatusCode.OK,
-      headers: {
-        'Cache-Control': 'public, max-age=60', // Cache 60 giây ở client
-        'X-Cached-Response': 'true' // Hoặc 'false' tùy thuộc vào việc dữ liệu có từ cache hay không
-      }
-    });
-  } catch (error: unknown) {
-    console.error(error);
-
-    return NextResponse.json(
-      createErrorMessage(
-        `Failed to get ${collectionName}s.`,
-        error as string,
-        req.url,
-        `Please contact for more information.`,
-      ),
-      { status: EStatusCode.INTERNAL_SERVER_ERROR }
-    );
-  }
-};
