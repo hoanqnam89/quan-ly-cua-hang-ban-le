@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+import { Code, ObjectId } from 'mongodb';
 import { models, model, Schema } from 'mongoose';
 
 const ProductSchema = new Schema({
@@ -16,7 +16,15 @@ const ProductSchema = new Schema({
   supplier_id: { 
     type: ObjectId, 
     required: [true, `Supplier is required!`], 
-  }, 
+  },
+  category_id: { 
+    type: ObjectId, 
+    required: [true, `Category is required!`], 
+  },
+  code: {
+    type: String, 
+    required: [true, `Name is required!`], 
+  },   
   name: {
     type: String, 
     required: [true, `Name is required!`], 

@@ -45,8 +45,6 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
           description: product.description,
           input_price: product.input_price,
           output_price: product.output_price,
-          code: product.code,
-          category_id: product.category_id,
           image_links: product.image_links,
           updated_at: new Date(),
         }

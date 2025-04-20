@@ -4,6 +4,8 @@ export interface IProduct {
   updated_at: Date
 
   supplier_id: string
+  category_id: string
+  code: string
   name: string
   description: string
   image_links: string[]

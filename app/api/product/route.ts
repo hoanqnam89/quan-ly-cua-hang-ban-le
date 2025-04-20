@@ -18,7 +18,7 @@ const collectionModel = ProductModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
 // Cache kết quả API trong 5 phút (300000ms)
-const CACHE_DURATION = 300000;
+const CACHE_DURATION = 0;
 let cachedProducts: { data: IProduct[]; timestamp: number } | null = null;
 
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
@@ -43,6 +43,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   //   );
 
   const product: collectionType = await req.json();
+  console.log(product)
 
   try {
     connectToDatabase();
@@ -76,14 +77,18 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       created_at: new Date(),
       updated_at: new Date(),
       supplier_id: product.supplier_id,
+      category_id: product.category_id,
       name: product.name,
+      code: product.code,
       description: product.description,
       image_links: product.image_links,
       input_price: product.input_price,
       output_price: product.output_price,
     });
+    console.log('new Product',newProduct)
 
     const savedProduct: collectionType = await newProduct.save();
+    console.log('save Product',savedProduct)
 
     if (!savedProduct)
       return NextResponse.json(
@@ -158,7 +163,9 @@ export const GET = async (req: NextRequest): Promise<NextResponse> => {
         output_price: 1,
         supplier_id: 1,
         created_at: 1,
-        updated_at: 1
+        updated_at: 1, 
+        category_id: 1,
+        code: 1,
       };
     }
 
@@ -176,7 +183,7 @@ export const GET = async (req: NextRequest): Promise<NextResponse> => {
     return NextResponse.json(products, {
       status: EStatusCode.OK,
       headers: {
-        'Cache-Control': 'public, max-age=300', // Cache 5 phút ở client
+        'Cache-Control': 'public, max-age=0', // Cache 5 phút ở client
         'X-Cached-Response': 'false'
       }
     });

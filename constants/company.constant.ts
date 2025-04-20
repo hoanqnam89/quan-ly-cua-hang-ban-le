@@ -8,17 +8,17 @@ export const COMPANY: IBusiness & {
   _id: "",
   created_at: new Date(),
   updated_at: new Date(), 
-  name: `Brotherhoods`,
+  name: ``,
   address: {
-    number: "38",
-    street: "Phan Xích Long",
-    city: "Hồ Chí Minh",
-    ward: "1",
-    district: "Gò Vấp",
-    country: "Việt Nam"
+    number: "",
+    street: "",
+    city: "",
+    ward: "",
+    district: "",
+    country: ""
   },
-  email: "hoangnam@gmail.com",
+  email: "",
   type: EBusinessType.SUPPLIER, 
-  phone: `0932659945`, 
-  number: `95764956704`, 
+  phone: "", 
+  number: "", 
 }

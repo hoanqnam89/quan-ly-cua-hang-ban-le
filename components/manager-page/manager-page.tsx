@@ -134,6 +134,8 @@ export default function ManagerPage<T extends { _id: string, index?: number }>({
   const toggleAddCollectionModal = useCallback(
     (isReadOnly: boolean = false): void => {
       setIsModalReadonly(!isReadOnly);
+      if (isReadOnly)
+        setCollection({...defaultCollection})
       setIsAddCollectionModalOpen((prev: boolean): boolean => handleOpenModal(prev));
     },
     [

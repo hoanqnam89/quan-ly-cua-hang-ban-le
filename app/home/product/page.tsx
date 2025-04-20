@@ -28,6 +28,7 @@ import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '@/components/notify/notification/notification';
+import { ICategory } from '@/interfaces/category.interface';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -47,6 +48,9 @@ export default function Product() {
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
+  const [categoryOptions, setCategoryOptions] = useState<ISelectOption[]>([]);
+  const [supplier, setSupplier] = useState<IBusiness[]>([]);
+  const [categories, setCategories] = useState<ICategory[]>([]);
 
   const getSuppliers: () => Promise<void> = useCallback(
     async (): Promise<void> => {
@@ -58,6 +62,7 @@ export default function Product() {
       ): boolean =>
         business.type !== EBusinessType.SUPPLIER
       );
+      setSupplier([...newSuppliers])
 
       if (newSuppliers.length > 0) {
         setProduct({
@@ -75,9 +80,36 @@ export default function Product() {
     },
     [],
   );
+  const getCategory: () => Promise<void> = useCallback(
+    async (): Promise<void> => {
+      const newCategories: ICategory[] = await fetchGetCollections<ICategory>(
+        ECollectionNames.CATEGORY,
+      );
+      setCategories([...newCategories])
+
+      if (newCategories.length > 0) {
+        setProduct({
+          ...product,
+          category_id: newCategories[0]._id,
+        });
+      }
+      setCategoryOptions([
+        ...newCategories.map((category: ICategory): ISelectOption => ({
+          label: `${category.name}`,
+          value: category._id,
+        }))
+      ]);
+      setIsLoading(false);
+    },
+    [],
+  );
 
   useEffect((): void => {
     getSuppliers();
+  }, []);
+
+  useEffect((): void => {
+    getCategory();
   }, []);
 
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
@@ -140,27 +172,41 @@ export default function Product() {
       size: `1fr`,
     },
     {
-      key: `_id`,
+      key: `code`,
       ref: useRef(null),
       title: `Mã`,
-      size: `6fr`,
+      size: `4fr`,
     },
     {
       key: `supplier_id`,
       ref: useRef(null),
-      title: `Nhà sản xuất`,
+      title: `Nhà cung cấp`,
       size: `4fr`,
-      render: (collection: collectionType): ReactElement =>
-        createCollectionDetailLink(
-          ECollectionNames.BUSINESS,
-          collection.supplier_id
-        )
+      render: (collection: collectionType): ReactElement => {
+        const foundSupplier = supplier.find((element) => element._id === collection.supplier_id)
+        return <p>{foundSupplier?.name}</p>
+      }
+        
     },
     {
       key: `name`,
       ref: useRef(null),
       title: `Tên sản phẩm`,
       size: `4fr`,
+    },
+    {
+      key: `name`,
+      ref: useRef(null),
+      title: `Loại sản phẩm`,
+      size: `4fr`,
+      render: (collection: collectionType): ReactElement => {
+        const foundCategories = categories.find((element) =>{
+         return element._id === collection.category_id
+        })
+        console.log(foundCategories,categories);
+        return <p>{foundCategories?.name}</p>
+        
+      }
     },
     {
       key: `description`,
@@ -217,22 +263,22 @@ export default function Product() {
       title: `Ngày tạo`,
       size: `4fr`,
       render: (collection: collectionType): ReactElement => {
-        const date: string = new Date(collection.created_at).toLocaleString();
+        const date: string = new Date(collection.created_at).toDateString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
+    // {
+    //   key: `updated_at`,
+    //   ref: useRef(null),
+    //   title: `Ngày cập nhật`,
+    //   size: `4fr`,
+    //   render: (collection: collectionType): ReactElement => {
+    //     const date: string = new Date(collection.updated_at).toLocaleString();
+    //     return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+    //   }
+    // },
     {
-      key: `updated_at`,
-      ref: useRef(null),
-      title: `Ngày cập nhật`,
-      size: `4fr`,
-      render: (collection: collectionType): ReactElement => {
-        const date: string = new Date(collection.updated_at).toLocaleString();
-        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
-      }
-    },
-    {
-      title: `Xem thêm`,
+      title: `Chỉnh sửa `,
       ref: useRef(null),
       size: `2fr`,
       render: (collection: collectionType): ReactElement => <Button
@@ -251,16 +297,16 @@ export default function Product() {
         </IconContainer>
       </Button>
     },
-    {
-      title: `Xem chi tiết`,
-      ref: useRef(null),
-      size: `2fr`,
-      render: (collection: collectionType): ReactElement =>
-        createCollectionDetailLink(
-          collectionName,
-          collection._id
-        )
-    },
+    // {
+    //   title: `Xem chi tiết`,
+    //   ref: useRef(null),
+    //   size: `2fr`,
+    //   render: (collection: collectionType): ReactElement =>
+    //     createCollectionDetailLink(
+    //       collectionName,
+    //       collection._id
+    //     )
+    // },
     {
       title: `Xóa`,
       ref: useRef(null),
@@ -294,6 +340,12 @@ export default function Product() {
     setProduct({
       ...product,
       supplier_id: e.target.value,
+    });
+  }
+  const handleChangeCategoryId = (e: ChangeEvent<HTMLSelectElement>): void => {
+    setProduct({
+      ...product,
+      category_id: e.target.value,
     });
   }
 
@@ -358,11 +410,35 @@ export default function Product() {
               </SelectDropdown>
             </InputSection>
 
+            <InputSection label={`Loại sản phẩm`}>
+              <SelectDropdown
+                name={`category_id`}
+                isLoading={isLoading}
+                isDisable={isModalReadOnly}
+                options={categoryOptions}
+                defaultOptionIndex={getSelectedOptionIndex(
+                  categoryOptions, product.category_id
+                )}
+                onInputChange={handleChangeCategoryId}
+              >
+              </SelectDropdown>
+            </InputSection>
+
             <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>
               <TextInput
                 name={`name`}
                 isDisable={isModalReadOnly}
                 value={product.name}
+                onInputChange={handleChangeProduct}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Code`} gridColumns={gridColumns}>
+              <TextInput
+                name={`code`}
+                isDisable={isModalReadOnly}
+                value={product.code}
                 onInputChange={handleChangeProduct}
               >
               </TextInput>
