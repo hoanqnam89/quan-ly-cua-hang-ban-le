@@ -266,7 +266,6 @@ export default function Product() {
       isClickDelete={isClickDelete}
     >
       <Tabs>
-
         <TabItem label={`${translateCollectionName(collectionName)}`}>
           <InputSection label={`Tên doanh nghiệp`} gridColumns={gridColumns}>
             <TextInput

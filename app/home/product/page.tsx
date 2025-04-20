@@ -11,8 +11,6 @@ import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-toolt
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
-import { IProduct } from '@/interfaces/product.interface';
-import { DEFAULT_PROCDUCT } from '@/constants/product.constant';
 import Image from 'next/image';
 import styles from './style.module.css';
 import { MAX_PRICE } from '@/constants/max-price.constant';
@@ -28,6 +26,42 @@ import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '@/components/notify/notification/notification';
+import { fetchBusinessNames } from '@/utils/fetch-helpers';
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/utils/database';
+import { print } from '@/utils/print';
+import { ETerminal } from '@/enums/terminal.enum';
+import { ROOT } from '@/constants/root.constant';
+import { EStatusCode } from '@/enums/status-code.enum';
+import { createErrorMessage } from '@/utils/create-error-message';
+
+export interface IProduct {
+  _id: string;
+  code: string;
+  name: string;
+  description: string;
+  image_links: string[];
+  input_price: number;
+  output_price: number;
+  business_id: string; // Added business_id property
+  supplier_name: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export const DEFAULT_PROCDUCT: IProduct = {
+  _id: '',
+  code: '',
+  name: '',
+  description: '',
+  image_links: [],
+  input_price: 0,
+  output_price: 0,
+  business_id: '',
+  supplier_name: '', // Giá trị mặc định là một chuỗi rỗng
+  created_at: new Date(),
+  updated_at: new Date(),
+};
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -46,38 +80,29 @@ export default function Product() {
     isClicked: false
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
+  const [businessOptions, setBusinessOptions] = useState<ISelectOption[]>([]);
+  const [businessesData, setBusinessesData] = useState<IBusiness[]>([]);
 
-  const getSuppliers: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const newBusinesses: IBusiness[] = await fetchGetCollections<IBusiness>(
-        ECollectionNames.BUSINESS,
-      );
-      const newSuppliers: IBusiness[] = newBusinesses.filter((
-        business: IBusiness
-      ): boolean =>
-        business.type !== EBusinessType.SUPPLIER
-      );
-
-      if (newSuppliers.length > 0) {
-        setProduct({
-          ...product,
-          supplier_id: newSuppliers[0]._id,
+  useEffect(() => {
+    const loadBusinessNames = async () => {
+      setIsLoading(true);
+      try {
+        const options = await fetchBusinessNames();
+        setBusinessOptions(options);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Lỗi khi lấy danh sách nhà cung cấp:', error);
+        setIsLoading(false);
+        createNotification({
+          id: Date.now(),
+          children: <Text>Lỗi khi lấy danh sách nhà cung cấp</Text>,
+          type: ENotificationType.ERROR,
+          isAutoClose: true,
         });
       }
-      setSupplierOptions([
-        ...newSuppliers.map((supplier: IBusiness): ISelectOption => ({
-          label: `${supplier.name}`,
-          value: supplier._id,
-        }))
-      ]);
-      setIsLoading(false);
-    },
-    [],
-  );
+    };
 
-  useEffect((): void => {
-    getSuppliers();
+    loadBusinessNames();
   }, []);
 
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
@@ -142,19 +167,20 @@ export default function Product() {
     {
       key: `_id`,
       ref: useRef(null),
-      title: `Mã`,
+      title: `Mã DB`,
       size: `6fr`,
     },
     {
-      key: `supplier_id`,
+      key: `code`,
       ref: useRef(null),
-      title: `Nhà sản xuất`,
+      title: `Mã sản phẩm`,
       size: `4fr`,
-      render: (collection: collectionType): ReactElement =>
-        createCollectionDetailLink(
-          ECollectionNames.BUSINESS,
-          collection.supplier_id
-        )
+    },
+    {
+      key: `supplier_name`,
+      ref: useRef(null),
+      title: `Nhà cung cấp`,
+      size: `4fr`,
     },
     {
       key: `name`,
@@ -193,20 +219,21 @@ export default function Product() {
         <div className={`flex flex-wrap gap-2`}>
           {
             collection.image_links.map((image: string, index: number) =>
-              <div
-                key={index}
-                className={`relative ${styles[`image-container`]}`}
-              >
-                <Image
-                  className={`w-full max-w-full max-h-full`}
-                  src={image}
-                  alt={``}
-                  width={0}
-                  height={0}
-                  quality={10}
+              image ? ( // Kiểm tra xem image có phải là chuỗi rỗng không
+                <div
+                  key={index}
+                  className={`relative ${styles[`image-container`]}`}
                 >
-                </Image>
-              </div>
+                  <Image
+                    className={`w-full max-w-full max-h-full`}
+                    src={image}
+                    alt={``}
+                    width={0}
+                    height={0}
+                    quality={10}
+                  />
+                </div>
+              ) : null // Nếu image là chuỗi rỗng, trả về null
             )
           }
         </div>
@@ -283,17 +310,13 @@ export default function Product() {
     },
   ];
 
-  const handleChangeProduct = (e: ChangeEvent<HTMLInputElement>): void => {
+  const handleChangeBusinessId = (e: ChangeEvent<HTMLSelectElement>): void => {
+    const selectedBusinessId = e.target.value;
+    // Tìm business tương ứng từ ID
+    const selectedBusiness = businessesData.find(business => business._id === selectedBusinessId);
     setProduct({
       ...product,
-      [e.target.name]: e.target.value,
-    });
-  }
-
-  const handleChangeSupplierId = (e: ChangeEvent<HTMLSelectElement>): void => {
-    setProduct({
-      ...product,
-      supplier_id: e.target.value,
+      _id: selectedBusinessId,
     });
   }
 
@@ -314,7 +337,7 @@ export default function Product() {
   const gridColumns: string = `200px 1fr`;
 
   const handleOpenModal = (prev: boolean): boolean => {
-    // if (supplierOptions.length === 0) {
+    // if (businessOptions.length === 0) {
     //   createNotification({
     //     id: 0,
     //     children: <Text>Thêm nhà cung cấp vào trước khi thêm sản phẩm!</Text>,
@@ -326,6 +349,33 @@ export default function Product() {
 
     return !prev;
   }
+
+  // Trong hàm xử lý submit form
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!product.supplier_name) {
+      createNotification({
+        id: Date.now(),
+        children: <Text>Vui lòng chọn nhà cung cấp!</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+      });
+      return;
+    }
+
+    // Gửi dữ liệu lên server
+    // ...
+  };
+
+  function handleChangeProduct(e: ChangeEvent<HTMLInputElement>): void {
+    const { name, value } = e.target;
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      [name]: name === 'input_price' || name === 'output_price' ? parseFloat(value) || 0 : value,
+    }));
+  }
+
 
   return (
     <ManagerPage<collectionType>
@@ -344,16 +394,16 @@ export default function Product() {
       <>
         <Tabs>
           <TabItem label={`${translateCollectionName(collectionName)}`}>
-            <InputSection label={`Cho nhà sản xuất`}>
+            <InputSection label={`Nhà cung cấp`}>
               <SelectDropdown
-                name={`supplier_id`}
+                name={`business_id`}
                 isLoading={isLoading}
                 isDisable={isModalReadOnly}
-                options={supplierOptions}
+                options={businessOptions}
                 defaultOptionIndex={getSelectedOptionIndex(
-                  supplierOptions, product.supplier_id
+                  businessOptions, product.business_id
                 )}
-                onInputChange={handleChangeSupplierId}
+                onInputChange={handleChangeBusinessId}
               >
               </SelectDropdown>
             </InputSection>
@@ -373,6 +423,16 @@ export default function Product() {
                 name={`description`}
                 isDisable={isModalReadOnly}
                 value={product.description}
+                onInputChange={handleChangeProduct}
+              >
+              </TextInput>
+            </InputSection>
+
+            <InputSection label={`Mã sản phẩm`} gridColumns={gridColumns}>
+              <TextInput
+                name={`code`}
+                isDisable={isModalReadOnly}
+                value={product.code}
                 onInputChange={handleChangeProduct}
               >
               </TextInput>
@@ -453,3 +513,62 @@ export default function Product() {
     </ManagerPage>
   );
 }
+
+export const GET = async (req: NextRequest): Promise<NextResponse> => {
+  print(`${collectionName} API - GET ${collectionName}s`, ETerminal.FgGreen);
+
+  try {
+    await connectToDatabase();
+
+    const url = new URL(req.url);
+    const limit = parseInt(url.searchParams.get('limit') || '1000');
+    const fields = url.searchParams.get('fields');
+
+    let projection = {};
+    if (fields) {
+      projection = fields.split(',').reduce((acc, field) => ({
+        ...acc,
+        [field.trim()]: 1
+      }), {});
+    } else {
+      projection = {
+        _id: 1,
+        code: 1,
+        name: 1,
+        description: 1,
+        image_links: 1,
+        input_price: 1,
+        output_price: 1,
+        business_id: 1,
+        supplier_name: 1,
+        created_at: 1,
+        updated_at: 1
+      };
+    }
+
+    // Sử dụng fetch API của Next.js với revalidate
+    const products = await fetch(`${ROOT}/api/products?limit=${limit}&fields=${fields}`, {
+      next: { revalidate: 60 }, // Revalidate cache mỗi 60 giây
+    }).then(res => res.json());
+
+    return NextResponse.json(products, {
+      status: EStatusCode.OK,
+      headers: {
+        'Cache-Control': 'public, max-age=60', // Cache 60 giây ở client
+        'X-Cached-Response': 'true' // Hoặc 'false' tùy thuộc vào việc dữ liệu có từ cache hay không
+      }
+    });
+  } catch (error: unknown) {
+    console.error(error);
+
+    return NextResponse.json(
+      createErrorMessage(
+        `Failed to get ${collectionName}s.`,
+        error as string,
+        req.url,
+        `Please contact for more information.`,
+      ),
+      { status: EStatusCode.INTERNAL_SERVER_ERROR }
+    );
+  }
+};
