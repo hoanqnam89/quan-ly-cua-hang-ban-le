@@ -9,10 +9,12 @@ import { ROOT } from "@/constants/root.constant";
 import { IProduct } from "@/interfaces/product.interface";
 import { ProductModel } from "@/models/Product";
 import { isValidObjectId } from "mongoose";
+import { ICategory } from "@/interfaces/category.interface";
+import { CategoryModel } from "@/models/Category";
 
-type collectionType = IProduct;
-const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
-const collectionModel = ProductModel;
+type collectionType = ICategory;
+const collectionName: ECollectionNames = ECollectionNames.CATEGORY;
+const collectionModel = CategoryModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}/[id]`;
 
 export const PATCH = async (req: NextRequest): Promise<NextResponse> => {

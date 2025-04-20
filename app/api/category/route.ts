@@ -47,18 +47,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   try {
     connectToDatabase();
 
-    if (!isValidObjectId(category._id))
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `The ID '${category._id}' is not valid.`,
-          path,
-          `Please check if the ${ECollectionNames.ACCOUNT} ID is correct.`,
-        ),
-        { status: EStatusCode.UNPROCESSABLE_ENTITY }
-      );
-
-
     const newCategory = new collectionModel({
       created_at: new Date(),
       updated_at: new Date(),
