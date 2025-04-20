@@ -9,8 +9,9 @@ import { LoadingScreen } from '@/components';
 import { boxIcon, infoIcon, pencilIcon, trashIcon, userIcon, checkIcon, plusIcon } from '@/public';
 import { ICategory } from '@/interfaces/category.interface';
 import { DEFAULT_CATEGORY } from '@/constants/category.constant';
+import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 
-// Định nghĩa giao diện cho đơn vị tính
+// Định nghĩa giao diện cho loại sản phẩm 
 interface IUnit {
   _id: string;
   name: string;
@@ -19,7 +20,7 @@ interface IUnit {
   updated_at: Date;
 }
 
-// Định nghĩa giá trị mặc định cho đơn vị tính
+// Định nghĩa giá trị mặc định cho loại sản phẩm 
 const DEFAULT_UNIT: IUnit = {
   _id: '',
   name: '',
@@ -28,7 +29,7 @@ const DEFAULT_UNIT: IUnit = {
   updated_at: new Date(),
 };
 
-// Hàm tạo mã đơn vị tính theo định dạng DV-(NgayThangNam)-0001
+// Hàm tạo mã loại sản phẩm  theo định dạng DV-(NgayThangNam)-0001
 const generateUnitId = (index: number): string => {
   const today = new Date();
   const day = String(today.getDate()).padStart(2, '0');
@@ -60,8 +61,8 @@ export default function CategoryPage() {
       const fetchCategories = await fetchGetCollections<ICategory>(ECollectionNames.CATEGORY);
       setCategories(fetchCategories);
     } catch (error) {
-      console.error('Lỗi khi lấy dữ liệu đơn vị tính:', error);
-      alert('Không thể lấy dữ liệu đơn vị tính. Vui lòng thử lại sau!');
+      console.error('Lỗi khi lấy dữ liệu loại sản phẩm :', error);
+      alert('Không thể lấy dữ liệu loại sản phẩm . Vui lòng thử lại sau!');
     } finally {
       setIsLoading(false);
     }
@@ -74,33 +75,33 @@ export default function CategoryPage() {
     });
   }
 
-  // Thêm hoặc cập nhật đơn vị tính
+  // Thêm hoặc cập nhật loại sản phẩm 
   const handleSaveCategory = async (): Promise<void> => {
     if (!category.name.trim()) {
-      alert('Vui lòng nhập tên đơn vị tính');
+      alert('Vui lòng nhập tên loại sản phẩm ');
       return;
     }
 
     setIsLoading(true);
     try {
       if (isEditing) {
-        // Cập nhật đơn vị tính đã có
+        // Cập nhật loại sản phẩm  đã có
         await updateCollectionById<ICategory>(category, category._id, ECollectionNames.CATEGORY);
         alert('Cập nhật loại sản phẩm thành công!');
       } else {
-        // Thêm đơn vị tính mới
+        // Thêm loại sản phẩm  mới
         await addCollection<ICategory>(category, ECollectionNames.CATEGORY);
         alert('Thêm loại sản phẩm thành công!');
       }
 
-      // Làm mới danh sách đơn vị tính
+      // Làm mới danh sách loại sản phẩm 
       await fetchCategory();
 
       // Reset form
       resetForm();
     } catch (error) {
-      console.error('Lỗi khi lưu đơn vị tính:', error);
-      alert('Không thể lưu đơn vị tính. Vui lòng thử lại sau!');
+      console.error('Lỗi khi lưu loại sản phẩm :', error);
+      alert('Không thể lưu loại sản phẩm . Vui lòng thử lại sau!');
     } finally {
       setIsLoading(false);
     }
@@ -123,11 +124,11 @@ export default function CategoryPage() {
         setCategory(categoryData);
         setIsEditing(true);
       } else {
-        throw new Error('Không thể lấy thông tin đơn vị tính');
+        throw new Error('Không thể lấy thông tin loại sản phẩm ');
       }
     } catch (error) {
-      console.error('Lỗi khi lấy thông tin đơn vị tính:', error);
-      alert('Không thể lấy thông tin đơn vị tính. Vui lòng thử lại sau!');
+      console.error('Lỗi khi lấy thông tin loại sản phẩm :', error);
+      alert('Không thể lấy thông tin loại sản phẩm . Vui lòng thử lại sau!');
     } finally {
       setIsLoading(false);
     }
@@ -139,6 +140,8 @@ export default function CategoryPage() {
       const response = await getCollectionById(id, ECollectionNames.CATEGORY);
       if (response.ok) {
         const categoryData = await response.json();
+        console.log(categoryData);
+        
         setSelectedCategory(categoryData);
         setShowDetailModal(true);
       } else {
@@ -160,11 +163,11 @@ export default function CategoryPage() {
     setIsLoading(true);
     try {
       await deleteCollectionById(id, ECollectionNames.CATEGORY);
-      alert('Xóa đơn vị tính thành công!');
+      alert('Xóa loại sản phẩm  thành công!');
       await fetchCategory();
     } catch (error) {
-      console.error('Lỗi khi xóa đơn vị tính:', error);
-      alert('Không thể xóa đơn vị tính. Vui lòng thử lại sau!');
+      console.error('Lỗi khi xóa loại sản phẩm :', error);
+      alert('Không thể xóa loại sản phẩm . Vui lòng thử lại sau!');
     } finally {
       setIsLoading(false);
     }
@@ -214,7 +217,7 @@ export default function CategoryPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Form thêm/sửa đơn vị tính */}
+        {/* Form thêm/sửa loại sản phẩm  */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 h-full">
             <div className="border-b pb-4 mb-4">
@@ -236,7 +239,7 @@ export default function CategoryPage() {
             <div className="space-y-4">
               {isEditing && (
                 <div>
-                  <label className="block mb-1 font-medium text-gray-700">Mã đơn vị</label>
+                  <label className="block mb-1 font-medium text-gray-700">Mã loại sản phẩm</label>
                   <TextInput
                     name="_id"
                     isDisable={true}
@@ -247,7 +250,7 @@ export default function CategoryPage() {
               )}
 
               <div>
-                <label className="block mb-1 font-medium text-gray-700">Tên đơn vị tính <span className="text-red-500">*</span></label>
+                <label className="block mb-1 font-medium text-gray-700">Tên loại sản phẩm  <span className="text-red-500">*</span></label>
                 <TextInput
                   name="name"
                   value={category.name}
@@ -260,15 +263,17 @@ export default function CategoryPage() {
               <div className="pt-4 flex flex-col space-y-2">
                 <Button
                   onClick={handleSaveCategory}
-                  className="bg-primary text-white hover:bg-primary-dark w-full py-2 transition-colors flex items-center justify-center"
+                  className="text-white w-full py-2 transition-colors flex items-center justify-center font-bold"
+                  type={EButtonType.INFO}
                 >
-                  <IconContainer iconLink={checkIcon} size={16} className="mr-1" />
+                  {/* <IconContainer iconLink={checkIcon} size={16} className="mr-1" /> */}
                   {isEditing ? 'Cập nhật' : 'Lưu loại sản phẩm'}
                 </Button>
                 {isEditing && (
                   <Button
                     onClick={resetForm}
-                    className="bg-gray-300 text-gray-800 hover:bg-gray-400 w-full py-2 transition-colors"
+                    className="text-white w-full py-2 transition-colors flex items-center justify-center font-bold"
+                    type={EButtonType.ERROR}
                   >
                     Hủy
                   </Button>
@@ -278,7 +283,7 @@ export default function CategoryPage() {
           </div>
         </div>
 
-        {/* Danh sách đơn vị tính */}
+        {/* Danh sách loại sản phẩm  */}
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 h-full">
             <div className="border-b pb-4 mb-4">
@@ -286,7 +291,7 @@ export default function CategoryPage() {
                 <IconContainer iconLink={boxIcon} size={20} className="mr-2 text-primary" />
                 Danh sách loại sản phẩm
                 <span className="ml-2 text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                  {filteredCategories.length} đơn vị
+                  {filteredCategories.length} loại sản phẩm
                 </span>
               </h2>
             </div>
@@ -295,9 +300,9 @@ export default function CategoryPage() {
               <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
                 <IconContainer iconLink={boxIcon} size={48} className="mx-auto mb-3 opacity-25" />
                 {searchTerm ? (
-                  <p>Không tìm thấy đơn vị tính phù hợp với từ khóa "{searchTerm}"</p>
+                  <p>Không tìm thấy loại sản phẩm  phù hợp với từ khóa "{searchTerm}"</p>
                 ) : (
-                  <p>Chưa có đơn vị tính nào. Vui lòng thêm đơn vị tính mới.</p>
+                  <p>Chưa có loại sản phẩm  nào. Vui lòng thêm loại sản phẩm  mới.</p>
                 )}
               </div>
             ) : (
@@ -306,7 +311,7 @@ export default function CategoryPage() {
                   <thead className="bg-gray-50">
                     <tr>
                       {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th> */}
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên đơn vị tính</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên loại sản phẩm </th>
                       {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng quy đổi</th> */}
                       {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th> */}
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
@@ -360,14 +365,14 @@ export default function CategoryPage() {
         </div>
       </div>
 
-      {/* Modal xem chi tiết đơn vị tính */}
+      {/* Modal xem chi tiết loại sản phẩm  */}
       {showDetailModal && selectedCategory && (
         <div className="modal fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="modal-content bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full">
             <div className="flex items-center justify-between mb-4 border-b pb-3">
               <h3 className="text-xl font-semibold flex items-center text-primary">
                 <IconContainer iconLink={infoIcon} size={20} className="mr-2" />
-                Chi tiết đơn vị tính
+                Chi tiết loại sản phẩm 
               </h3>
               <Button
                 onClick={() => setShowDetailModal(false)}

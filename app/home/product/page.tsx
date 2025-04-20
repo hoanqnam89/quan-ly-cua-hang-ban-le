@@ -330,12 +330,9 @@ const columns: Array<IColumnProps<collectionType>> = [
 ];
 
 const handleChangeBusinessId = (e: ChangeEvent<HTMLSelectElement>): void => {
-  const selectedBusinessId = e.target.value;
-  // Tìm business tương ứng từ ID
-  const selectedBusiness = supplier.find(business => business._id === selectedBusinessId);
   setProduct({
     ...product,
-    _id: selectedBusinessId,
+    supplier_id: e.target.value,
   });
 }
 const handleChangeCategoryId = (e: ChangeEvent<HTMLSelectElement>): void => {

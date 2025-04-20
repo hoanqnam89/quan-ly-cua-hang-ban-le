@@ -49,7 +49,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   try {
     connectToDatabase();
 
-    if (!isValidObjectId(orderForm.supplier_id))
+    if (!isValidObjectId(orderForm.business_id))
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
@@ -61,13 +61,13 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       );
 
     const foundSupplier: IBusiness | null =
-      await BusinessModel.findById(orderForm.supplier_id);
+      await BusinessModel.findById(orderForm.business_id);
 
     if (!foundSupplier)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `The ${ECollectionNames.BUSINESS} with the ID '${orderForm.supplier_id}' does not exist in our records.`,
+          `The ${ECollectionNames.BUSINESS} with the ID '${orderForm.business_id}' does not exist in our records.`,
           path,
           `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`
         ),
@@ -164,7 +164,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     const newOrderForm = new collectionModel({
       created_at: new Date(),
       updated_at: new Date(),
-      supplier_id: orderForm.supplier_id,
+      supplier_id: orderForm.business_id,
       status: "Chưa hoàn thành", // Thêm trạng thái mặc định
       product_details: orderForm.product_details,
     });

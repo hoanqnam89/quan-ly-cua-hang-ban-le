@@ -7,6 +7,7 @@ import { ECollectionNames } from '@/enums';
 import { addCollection, deleteCollectionById, getCollectionById, updateCollectionById } from '@/services/api-service';
 import { LoadingScreen } from '@/components';
 import { boxIcon, infoIcon, pencilIcon, trashIcon, userIcon, checkIcon, plusIcon } from '@/public';
+import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 
 // Định nghĩa giao diện cho đơn vị tính
 interface IUnit {
@@ -271,15 +272,17 @@ export default function UnitPage() {
               <div className="pt-4 flex flex-col space-y-2">
                 <Button
                   onClick={handleSaveUnit}
-                  className="bg-primary text-white hover:bg-primary-dark w-full py-2 transition-colors flex items-center justify-center"
+                  className="text-white w-full py-2 transition-colors flex items-center justify-center font-bold"
+                  type={EButtonType.INFO}
                 >
-                  <IconContainer iconLink={checkIcon} size={16} className="mr-1" />
+                  {/* <IconContainer iconLink={checkIcon} size={16} className="mr-1" /> */}
                   {isEditing ? 'Cập nhật' : 'Lưu đơn vị tính'}
                 </Button>
                 {isEditing && (
                   <Button
                     onClick={resetForm}
-                    className="bg-gray-300 text-gray-800 hover:bg-gray-400 w-full py-2 transition-colors"
+                    className="text-white w-full py-2 transition-colors flex items-center justify-center font-bold"
+                    type={EButtonType.ERROR}
                   >
                     Hủy
                   </Button>
@@ -316,7 +319,7 @@ export default function UnitPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th>
+                      {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th> */}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên đơn vị tính</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng quy đổi</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
@@ -326,7 +329,7 @@ export default function UnitPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredUnits.map((u, index) => (
                       <tr key={index} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u._id}</td>
+                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u._id}</td> */}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{u.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">

@@ -20,40 +20,40 @@ const path: string = `${ROOT}/${collectionName.toLowerCase()}/[id]`;
 export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
   print(`${collectionName} API - PATCH ${collectionName}`, ETerminal.FgMagenta);
 
-  const product: collectionType = await req.json();
+  const category: collectionType = await req.json();
 
   try {
     connectToDatabase();
 
-    const foundProduct: collectionType | null =
-      await collectionModel.findById(product._id);
+    const foundCategory: collectionType | null =
+      await collectionModel.findById(category._id);
 
-    if (!foundProduct)
+    if (!foundCategory)
       return NextResponse.json(
         createErrorMessage(
           `Failed to update ${collectionName}.`,
-          `The ${collectionName} with the ID '${product._id}' does not exist in our records.`,
+          `The ${collectionName} with the ID '${category._id}' does not exist in our records.`,
           path,
           `Please check if the ${collectionName} ID is correct.`
         ),
         { status: EStatusCode.NOT_FOUND }
       );
 
-    const updatedProduct = await collectionModel.findOneAndUpdate(
-      { _id: product._id },
+    const updatedCategory = await collectionModel.findOneAndUpdate(
+      { _id: category._id },
       {
         $set: {
-          name: product.name,
-          description: product.description,
-          input_price: product.input_price,
-          output_price: product.output_price,
-          image_links: product.image_links,
+          name: category.name,
+          // description: category.,
+          // input_price: category.input_price,
+          // output_price: category.output_price,
+          // image_links: category.image_links,
           updated_at: new Date(),
         }
       }
     );
 
-    if (!updatedProduct)
+    if (!updatedCategory)
       return NextResponse.json(
         createErrorMessage(
           `Failed to update ${collectionName}.`,
@@ -64,7 +64,7 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
 
-    return NextResponse.json(updatedProduct, { status: EStatusCode.CREATED });
+    return NextResponse.json(updatedCategory, { status: EStatusCode.CREATED });
   } catch (error: unknown) {
     console.error(error);
 
@@ -106,16 +106,16 @@ export async function GET(
       );
     }
 
-    const product = await ProductModel.findById(id);
+    const category = await CategoryModel.findById(id);
 
-    if (!product) {
+    if (!category) {
       return NextResponse.json(
         { error: 'Không tìm thấy sản phẩm' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(product);
+    return NextResponse.json(category);
   } catch (error) {
     console.error('Error fetching product:', error);
     return NextResponse.json(
