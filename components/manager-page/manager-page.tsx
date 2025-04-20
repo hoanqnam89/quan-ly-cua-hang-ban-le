@@ -6,28 +6,32 @@ import Table from '@/components/table/table';
 import { ECollectionNames, EStatusCode } from '@/enums';
 import { deleteCollections, deleteCollectionById, addCollection, getCollectionById, updateCollectionById } from '@/services/api-service';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
-import { LoadingScreen, Text } from '@/components';
+import { LoadingScreen, Text, Button, IconContainer } from '@/components';
 import CollectionForm from './collection-form/collection-form';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '../notify/notification/notification';
 import { translateCollectionName } from '@/utils/translate-collection-name';
+import { EButtonType } from '@/components/button/interfaces/button-type.interface';
+import { plusIcon } from '@/public';
 
 export interface ICollectionIdNotify {
   id: string
   isClicked: boolean
 }
 
-export interface IManagerPageProps<T> {
+export interface IManagerPageProps<T extends { _id: string }> {
   children: ReactElement
-  columns: Array<IColumnProps<T>>
+  columns: Array<IColumnProps<any>>
   collectionName: ECollectionNames
   defaultCollection: T
   collection: T
-  setCollection: Dispatch<SetStateAction<T>>
+  setCollection: Dispatch<SetStateAction<any>>
   isModalReadonly: boolean,
   setIsModalReadonly: Dispatch<SetStateAction<boolean>>
   isClickShowMore: ICollectionIdNotify
+  setIsClickShowMore?: Dispatch<SetStateAction<ICollectionIdNotify>>
   isClickDelete: ICollectionIdNotify
+  setIsClickDelete?: Dispatch<SetStateAction<ICollectionIdNotify>>
   isLoaded?: boolean
   handleOpenModal?: (isOpen: boolean) => boolean
   onExitModalForm?: () => void
@@ -39,9 +43,19 @@ export interface IManagerPageProps<T> {
   setAllItems?: Dispatch<SetStateAction<T[]>>
   additionalButtons?: ReactElement
   additionalProcessing?: (items: T[]) => T[]
+  dateFilter?: string
+  renderFilters?: () => ReactElement
+  customHandleAddCollection?: () => Promise<void>
+  pageCollection?: ECollectionNames
+  itemModalOpening?: boolean
+  setItemModalOpening?: (isOpen: boolean) => boolean
+  additionalFiltersRender?: () => ReactElement
+  gridColumns?: string
+  itemForm?: ReactElement
+  handleFetchData?: () => Promise<T[]>
 }
 
-export default function ManagerPage<T extends { _id: string, index?: number }>({
+export default function ManagerPage<T extends { _id: string }>({
   children,
   columns,
   collectionName,
@@ -51,7 +65,9 @@ export default function ManagerPage<T extends { _id: string, index?: number }>({
   isModalReadonly,
   setIsModalReadonly,
   isClickShowMore,
+  setIsClickShowMore,
   isClickDelete,
+  setIsClickDelete,
   isLoaded = false,
   handleOpenModal = (isOpen: boolean): boolean => !isOpen,
   onExitModalForm = () => { },
@@ -63,6 +79,16 @@ export default function ManagerPage<T extends { _id: string, index?: number }>({
   setAllItems,
   additionalButtons,
   additionalProcessing,
+  dateFilter,
+  renderFilters,
+  customHandleAddCollection,
+  pageCollection,
+  itemModalOpening,
+  setItemModalOpening,
+  additionalFiltersRender,
+  gridColumns,
+  itemForm,
+  handleFetchData,
 }: Readonly<IManagerPageProps<T>>): ReactElement {
   const translatedCollectionName: string =
     translateCollectionName(collectionName);
@@ -85,29 +111,34 @@ export default function ManagerPage<T extends { _id: string, index?: number }>({
   const getCollections: () => Promise<void> = useCallback(
     async (): Promise<void> => {
       setIsLoading(true);
-      let fetchedCollections = await fetchGetCollections<T>(collectionName);
+      try {
+        let fetchedCollections = await fetchGetCollections<T>(collectionName);
 
-      // Áp dụng xử lý bổ sung nếu có
-      if (additionalProcessing) {
-        fetchedCollections = additionalProcessing(fetchedCollections);
+        // Áp dụng xử lý bổ sung nếu có
+        if (additionalProcessing) {
+          fetchedCollections = additionalProcessing(fetchedCollections);
+        }
+
+        setAllCollections(fetchedCollections);
+
+        if (setAllItems) {
+          setAllItems(fetchedCollections);
+        }
+
+        if (displayedItems) {
+          setCollections(displayedItems);
+        } else {
+          const startIndex = (currentPage - 1) * itemsPerPage;
+          setCollections(fetchedCollections.slice(startIndex, startIndex + itemsPerPage));
+        }
+      } catch (error) {
+        console.error("Error fetching collections:", error);
+      } finally {
+        setIsLoading(false);
       }
-
-      setAllCollections(fetchedCollections);
-
-      if (setAllItems) {
-        setAllItems(fetchedCollections);
-      }
-
-      if (displayedItems) {
-        setCollections(displayedItems);
-      } else {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        setCollections(fetchedCollections.slice(startIndex, startIndex + itemsPerPage));
-      }
-
-      setIsLoading(false);
     },
-    [collectionName, setAllItems, displayedItems, currentPage, itemsPerPage, additionalProcessing],
+    // Loại bỏ additionalProcessing khỏi dependency array vì nó thay đổi mỗi khi render
+    [collectionName, setAllItems, displayedItems, currentPage, itemsPerPage],
   );
 
   // Update collections when page changes
@@ -142,6 +173,11 @@ export default function ManagerPage<T extends { _id: string, index?: number }>({
   );
 
   const handleAddCollection = async (): Promise<void> => {
+    if (customHandleAddCollection) {
+      await customHandleAddCollection();
+      return;
+    }
+
     setIsLoading(true);
 
     const addCollectionApiResponse: Response =
@@ -175,9 +211,20 @@ export default function ManagerPage<T extends { _id: string, index?: number }>({
         notificationText = `Tạo ${translatedCollectionName} thất bại! Lỗi không xác định.`;
     }
 
+    let errorText = 'Không thể tạo sản phẩm.';
+    try {
+      const errorData = await addCollectionApiResponse.json();
+      console.log('Chi tiết lỗi:', errorData);
+      if (errorData && errorData.message) {
+        errorText += ' ' + errorData.message;
+      }
+    } catch (e) {
+      console.log('Không thể đọc phản hồi lỗi');
+    }
+
     createNotification({
       id: 0,
-      children: <Text>{notificationText}</Text>,
+      children: <Text>{errorText}</Text>,
       type: notificationType,
       isAutoClose: true,
     });
@@ -366,43 +413,46 @@ export default function ManagerPage<T extends { _id: string, index?: number }>({
   const managerPage: ReactElement = isLoading
     ? <LoadingScreen></LoadingScreen>
     : <>
-      <title>{`Quản lý ${name}`}</title>
+      <div className={`bg-white rounded-xl border border-gray-200 shadow-sm`}>
+        {/* Render filters nếu có */}
+        {renderFilters && (
+          <div className="px-6 py-3 border-b border-gray-100">
+            {renderFilters()}
+          </div>
+        )}
 
-      <div className="flex gap-2 mb-4">
-        {additionalButtons}
+        <Table<T>
+          name={translatedCollectionName}
+          isGetDatasDone={isLoading}
+          datas={tableData}
+          columns={columns}
+          onClickAdd={toggleAddCollectionModal}
+          onClickDelete={handleDeleteCollection}
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          totalItems={totalItems || allCollections.length}
+        />
+
+        <CollectionForm<T>
+          collection={collection}
+          collectionName={collectionName}
+          isModalOpen={isAddCollectionModalOpen}
+          setIsModalOpen={setIsAddCollectionModalOpen}
+          okAction={isModalReadonly
+            ? handleClickUpdateCollection
+            : isUpdateCollection
+              ? handleUpdateCollection
+              : handleAddCollection
+          }
+          isReadOnly={isModalReadonly}
+          isUpdateCollection={isUpdateCollection}
+          isLoading={isLoading || isLoaded}
+        >
+          {children}
+        </CollectionForm>
+
+        {notificationElements}
       </div>
-
-      <Table<T>
-        name={translatedCollectionName}
-        isGetDatasDone={isLoading}
-        datas={tableData}
-        columns={columns}
-        onClickAdd={toggleAddCollectionModal}
-        onClickDelete={handleDeleteCollection}
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        totalItems={totalItems || allCollections.length}
-      />
-
-      <CollectionForm<T>
-        collection={collection}
-        collectionName={collectionName}
-        isModalOpen={isAddCollectionModalOpen}
-        setIsModalOpen={setIsAddCollectionModalOpen}
-        okAction={isModalReadonly
-          ? handleClickUpdateCollection
-          : isUpdateCollection
-            ? handleUpdateCollection
-            : handleAddCollection
-        }
-        isReadOnly={isModalReadonly}
-        isUpdateCollection={isUpdateCollection}
-        isLoading={isLoading || isLoaded}
-      >
-        {children}
-      </CollectionForm>
-
-      {notificationElements}
     </>
 
   return managerPage;

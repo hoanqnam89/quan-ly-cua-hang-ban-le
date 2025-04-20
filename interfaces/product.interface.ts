@@ -3,7 +3,7 @@ export interface IProduct {
   created_at: Date
   updated_at: Date
 
-  supplier_id: string
+  code: string
   name: string
   description: string
   image_links: string[]

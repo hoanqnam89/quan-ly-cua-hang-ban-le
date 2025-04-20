@@ -1,4 +1,4 @@
-import { IOrderFormProductDetail } from "./order-form.interface";
+import { IOrderFormProductDetail } from "@/interfaces/order-form.interface";
 
 export interface IReceiptProduct {
     _id: string;

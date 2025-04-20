@@ -1,42 +1,45 @@
 import { ObjectId } from 'mongodb';
 import { models, model, Schema } from 'mongoose';
+import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 
 const ProductSchema = new Schema({
-  id: { type: ObjectId, }, 
-  created_at: { 
-    type: Date, 
+  id: { type: ObjectId, },
+  created_at: {
+    type: Date,
     default: () => Date.now(),
     immutable: true,
-  }, 
-  updated_at: { 
+  },
+  updated_at: {
     default: () => Date.now(),
-    type: Date, 
-  }, 
+    type: Date,
+  },
 
-  supplier_id: { 
-    type: ObjectId, 
-    required: [true, `Supplier is required!`], 
-  }, 
+  code: {
+    type: String,
+    unique: true,
+    required: [true, `Mã sản phẩm là bắt buộc!`],
+  },
   name: {
-    type: String, 
-    required: [true, `Name is required!`], 
-  }, 
+    type: String,
+    required: [true, `Name is required!`],
+  },
   description: {
-    type: String, 
-    required: [true, `Description is required!`], 
-  }, 
+    type: String,
+    required: [true, `Description is required!`],
+  },
   image_links: {
-    type: [String], 
-    required: [true, `Image Links is required!`], 
-  }, 
+    type: [String],
+    required: [true, `Image Links is required!`],
+  },
   input_price: {
-    type: Number, 
-    required: [true, `Input Price is required!`], 
-  }, 
+    type: Number,
+    required: [true, `Input Price is required!`],
+  },
   output_price: {
-    type: Number, 
-    required: [true, `Output Price is required!`], 
-  }, 
+    type: Number,
+    required: [true, `Output Price is required!`],
+  },
 });
+
 
 export const ProductModel = models.Product || model(`Product`, ProductSchema);

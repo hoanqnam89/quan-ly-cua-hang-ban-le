@@ -2,7 +2,7 @@ import { Types } from 'mongoose';
 
 export interface IProduct {
     _id: string;
-    supplier_id: string;
+    business_name: string;
     name: string;
     description?: string;
     image_links?: string[];

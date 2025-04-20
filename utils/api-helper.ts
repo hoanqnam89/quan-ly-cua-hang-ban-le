@@ -11,8 +11,7 @@ import { IQueryString } from "@/app/api/interfaces/query-string.interface";
 import { CONTACT_INFORMATION } from "@/constants";
 
 const getCollections = async <T>(model: Model<T>): Promise<NextResponse> => {
-  const collections: T[] = await model.find({});
-
+  const collections: any[] = await model.find({}).lean();
   return NextResponse.json(collections, { status: EStatusCode.OK });
 }
 
@@ -26,31 +25,31 @@ const deleteCollections = async <T>(model: Model<T>): Promise<NextResponse> => {
 }
 
 const getCollectionById = async <T>(
-  id: string, 
-  model: Model<T>, 
-  collectionName: ECollectionNames, 
-  path: string, 
+  id: string,
+  model: Model<T>,
+  collectionName: ECollectionNames,
+  path: string,
 ): Promise<NextResponse> => {
-  if ( !isValidObjectId(id) )
+  if (!isValidObjectId(id))
     return NextResponse.json(
       createErrorMessage(
         `Failed to ${EApiAction.READ} ${collectionName} by ID ${id}.`,
         `The ID '${id}' is not valid.`,
-        path, 
-        `Please check if the ${collectionName} ID is valid.`, 
+        path,
+        `Please check if the ${collectionName} ID is valid.`,
       ),
       { status: EStatusCode.UNPROCESSABLE_ENTITY }
     );
 
-  const foundCollection: T | null = await model.findById(id);
+  const foundCollection: any = await model.findById(id).lean();
 
-  if ( !foundCollection )
+  if (!foundCollection)
     return NextResponse.json(
       createErrorMessage(
         `Failed to ${EApiAction.READ} ${collectionName} by ID ${id}.`,
         `The ${collectionName} with the ID '${id}' does not exist in our records.`,
-        path, 
-        `Please check if the ${collectionName} ID is correct.`, 
+        path,
+        `Please check if the ${collectionName} ID is correct.`,
       ),
       { status: EStatusCode.NOT_FOUND }
     );
@@ -59,36 +58,36 @@ const getCollectionById = async <T>(
 }
 
 const deleteCollectionById = async <T>(
-  id: string, 
-  model: Model<T>, 
-  collectionName: ECollectionNames, 
-  path: string, 
+  id: string,
+  model: Model<T>,
+  collectionName: ECollectionNames,
+  path: string,
 ): Promise<NextResponse> => {
-  if ( !isValidObjectId(id) )
+  if (!isValidObjectId(id))
     return NextResponse.json(
       createErrorMessage(
         `Failed to ${EApiAction.DELETE} ${collectionName} by ID ${id}.`,
         `The ID '${id}' is not valid.`,
-        path, 
-        `Please check if the ${collectionName} ID is valid.`, 
+        path,
+        `Please check if the ${collectionName} ID is valid.`,
       ),
       { status: EStatusCode.UNPROCESSABLE_ENTITY }
     );
 
-  const foundCollection: T | null = await model.findById(id);
+  const foundCollection: any = await model.findById(id);
 
-  if ( !foundCollection )
+  if (!foundCollection)
     return NextResponse.json(
       createErrorMessage(
         `Failed to ${EApiAction.DELETE} ${collectionName} by ID ${id}.`,
         `The ${collectionName} with the ID '${id}' does not exist in our records.`,
-        path, 
-        `Please check if the ${collectionName} ID is correct.`, 
+        path,
+        `Please check if the ${collectionName} ID is correct.`,
       ),
       { status: EStatusCode.NOT_FOUND }
     );
 
-  const deleteCollectionResult: DeleteResult | null = 
+  const deleteCollectionResult: DeleteResult | null =
     await model.findByIdAndDelete(id);
 
   if (!deleteCollectionResult)
@@ -98,11 +97,12 @@ const deleteCollectionById = async <T>(
 }
 
 const getCollectionsApi = async <T>(
-  collectionName: ECollectionNames, 
-  model: Model<T>, 
-  path: string, 
+  collectionName: ECollectionNames,
+  model: Model<T>,
+  path: string,
 ): Promise<NextResponse> => {
-  print(`${collectionName} API - GET ${collectionName}s`, ETerminal.FgGreen);
+  const startTime = Date.now();
+  print(`${collectionName} API - Bắt đầu GET ${collectionName}s`, ETerminal.FgGreen);
 
   // const cookieStore: ReadonlyRequestCookies = await cookies();
   // const isUserAdmin = await isAdmin(
@@ -123,18 +123,70 @@ const getCollectionsApi = async <T>(
   //   );
 
   try {
-    connectToDatabase();
+    // Kết nối đến database
+    const dbConnectStart = Date.now();
+    print(`${collectionName} API - Đang kết nối đến database...`, ETerminal.FgYellow);
 
-    return await getCollections<T>(model);
+    await connectToDatabase();
+
+    const dbConnectTime = Date.now() - dbConnectStart;
+    print(`${collectionName} API - Đã kết nối đến database sau ${dbConnectTime}ms`, ETerminal.FgGreen);
+
+    // Đo thời gian truy vấn
+    const queryStart = Date.now();
+    print(`${collectionName} API - Đang truy vấn dữ liệu...`, ETerminal.FgYellow);
+
+    // Gia tăng thời gian timeout
+    const queryTimeoutMs = 30000; // 30 giây
+
+    // Đảm bảo truy vấn không bị timeout bằng cách tối ưu hóa query
+    try {
+      // Đếm số lượng bản ghi
+      const count = await model.countDocuments({});
+      print(`${collectionName} API - Tổng số ${count} bản ghi`, ETerminal.FgGreen);
+
+      // Giới hạn số lượng bản ghi trả về nếu quá nhiều
+      const limit = count > 1000 ? 1000 : count;
+
+      // Sử dụng các tùy chọn tối ưu hóa
+      const collections = await model.find({})
+        .lean()
+        .sort({ created_at: -1 })
+        .limit(limit)
+        .maxTimeMS(queryTimeoutMs); // Đặt timeout tối đa cho query MongoDB
+
+      const queryTime = Date.now() - queryStart;
+      print(`${collectionName} API - Đã truy vấn xong ${collections.length} bản ghi sau ${queryTime}ms`, ETerminal.FgGreen);
+
+      const totalTime = Date.now() - startTime;
+      print(`${collectionName} API - Hoàn thành sau ${totalTime}ms`, ETerminal.FgGreen);
+
+      return NextResponse.json(collections, {
+        status: EStatusCode.OK,
+        headers: {
+          'X-Processing-Time': `${totalTime}ms`,
+          'X-Total-Count': String(collections.length),
+          'X-Complete': String(collections.length >= count)
+        }
+      });
+    } catch (queryError) {
+      console.error(`Query error:`, queryError);
+      throw new Error(`Truy vấn dữ liệu quá thời gian: ${queryError}`);
+    }
   } catch (error: unknown) {
-    console.error(error);
+    const errorTime = Date.now() - startTime;
+    console.error(`${collectionName} API - Lỗi sau ${errorTime}ms:`, error);
+
+    if (error instanceof Error) {
+      print(`${collectionName} API - Lỗi: ${error.message}`, ETerminal.FgRed);
+    }
 
     return NextResponse.json(
       createErrorMessage(
         `Failed to ${EApiAction.READ} ${collectionName}s.`,
-        error as string,
-        path, 
-        CONTACT_INFORMATION, 
+        error instanceof Error ? error.message : String(error),
+        path,
+        `${CONTACT_INFORMATION} - Lỗi xảy ra sau ${errorTime}ms`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
@@ -142,9 +194,9 @@ const getCollectionsApi = async <T>(
 }
 
 const deleteCollectionsApi = async <T>(
-  collectionName: ECollectionNames, 
-  model: Model<T>, 
-  path: string, 
+  collectionName: ECollectionNames,
+  model: Model<T>,
+  path: string,
 ): Promise<NextResponse> => {
   print(`${collectionName} API - DELETE ${collectionName}s`, ETerminal.FgRed);
 
@@ -177,8 +229,8 @@ const deleteCollectionsApi = async <T>(
       createErrorMessage(
         `Failed to ${EApiAction.DELETE} ${collectionName}s.`,
         error as string,
-        path, 
-        CONTACT_INFORMATION, 
+        path,
+        CONTACT_INFORMATION,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
@@ -186,13 +238,13 @@ const deleteCollectionsApi = async <T>(
 }
 
 const getCollectionByIdApi = async <T>(
-  model: Model<T>, 
-  collectionName: ECollectionNames, 
-  path: string, 
-  query: IQueryString, 
+  model: Model<T>,
+  collectionName: ECollectionNames,
+  path: string,
+  query: IQueryString,
 ): Promise<NextResponse> => {
-  print(`${collectionName} API - GET ${collectionName} by ID`, 
-    ETerminal.FgGreen, 
+  print(`${collectionName} API - GET ${collectionName} by ID`,
+    ETerminal.FgGreen,
   );
 
   // const cookieStore: ReadonlyRequestCookies = await cookies();
@@ -226,8 +278,8 @@ const getCollectionByIdApi = async <T>(
       createErrorMessage(
         `Failed to ${EApiAction.READ} ${collectionName} by ID ${id}.`,
         error as string,
-        path, 
-        CONTACT_INFORMATION, 
+        path,
+        CONTACT_INFORMATION,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
@@ -235,13 +287,13 @@ const getCollectionByIdApi = async <T>(
 }
 
 const deleteCollectionByIdApi = async <T>(
-  model: Model<T>, 
-  collectionName: ECollectionNames, 
-  path: string, 
-  query: IQueryString, 
+  model: Model<T>,
+  collectionName: ECollectionNames,
+  path: string,
+  query: IQueryString,
 ): Promise<NextResponse> => {
-  print(`${collectionName} API - DELETE ${collectionName} by ID`, 
-    ETerminal.FgRed, 
+  print(`${collectionName} API - DELETE ${collectionName} by ID`,
+    ETerminal.FgRed,
   );
 
   // const cookieStore: ReadonlyRequestCookies = await cookies();
@@ -276,8 +328,8 @@ const deleteCollectionByIdApi = async <T>(
       createErrorMessage(
         `Failed to ${EApiAction.DELETE} ${collectionName} by ID ${id}.`,
         error as string,
-        path, 
-        CONTACT_INFORMATION, 
+        path,
+        CONTACT_INFORMATION,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
@@ -285,12 +337,12 @@ const deleteCollectionByIdApi = async <T>(
 }
 
 export {
-  getCollections, 
-  deleteCollections, 
-  getCollectionById, 
-  deleteCollectionById, 
-  getCollectionsApi, 
-  deleteCollectionsApi, 
-  getCollectionByIdApi, 
-  deleteCollectionByIdApi, 
+  getCollections,
+  deleteCollections,
+  getCollectionById,
+  deleteCollectionById,
+  getCollectionsApi,
+  deleteCollectionsApi,
+  getCollectionByIdApi,
+  deleteCollectionByIdApi,
 }

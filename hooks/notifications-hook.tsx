@@ -1,17 +1,21 @@
 'use client'
 
 import CustomNotification, { INotification } from '@/components/notify/notification/notification';
-import { ReactElement, useState } from 'react'
+import { ReactElement, useState, useRef } from 'react'
 
 export default function useNotificationsHook() {
   const [notifications, setNotifications] = useState<INotification[]>([]);
+  const nextIdRef = useRef<number>(0);
 
   const createNotification = (notification: INotification): void => {
+    const nextId = nextIdRef.current;
+    nextIdRef.current += 1;
+
     setNotifications([
-      ...notifications, 
+      ...notifications,
       {
-        ...notification, 
-        id: notifications.length, 
+        ...notification,
+        id: nextId,
       }
     ])
   }
@@ -26,8 +30,8 @@ export default function useNotificationsHook() {
 
   const notificationElements = notifications.map(
     (notification: INotification): ReactElement => (
-      <CustomNotification 
-        key={notification.id} 
+      <CustomNotification
+        key={`notification-${notification.id}`}
         type={notification.type}
         isAutoClose={notification.isAutoClose}
         onDelete={() => deleteNotification(notification.id)}
@@ -38,9 +42,9 @@ export default function useNotificationsHook() {
   );
 
   return {
-    notifications, 
-    createNotification, 
-    deleteNotification, 
-    notificationElements, 
+    notifications,
+    createNotification,
+    deleteNotification,
+    notificationElements,
   }
 }

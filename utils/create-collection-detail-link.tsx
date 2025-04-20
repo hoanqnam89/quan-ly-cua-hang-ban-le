@@ -6,22 +6,28 @@ import { createMoreInfoTooltip } from "./create-tooltip";
 import { externalLinkIcon } from "@/public";
 
 export const createCollectionDetailLink = (
-  collectionName: ECollectionNames, 
+  collectionName: ECollectionNames,
   id: string
 ): ReactElement => {
-  
-  let targetUrl = `/home/${nameToHyphenAndLowercase(collectionName)}/${id}`;
-  
-  
-  if (collectionName === ECollectionNames.PRODUCT_DETAIL) {
-    targetUrl = `/home/product/${id}`;
+
+  let targetUrl = '';
+
+  // Kiểm tra nếu collectionName không tồn tại
+  if (!collectionName) {
+    targetUrl = '/home';
+  } else {
+    targetUrl = `/home/${nameToHyphenAndLowercase(collectionName)}/${id}`;
+
+    if (collectionName === ECollectionNames.PRODUCT_DETAIL) {
+      targetUrl = `/home/product/${id}`;
+    }
   }
-  
+
   return (
-    <a 
+    <a
       href={targetUrl}
     >
-      <IconContainer 
+      <IconContainer
         tooltip={createMoreInfoTooltip(collectionName)}
         iconLink={externalLinkIcon}
       >

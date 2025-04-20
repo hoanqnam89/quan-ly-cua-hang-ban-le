@@ -4,7 +4,7 @@ import { Button, IconContainer, SelectDropdown, Text, TextInput } from '@/compon
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
-import React, { ChangeEvent, ReactElement, useEffect, useRef, useState } from 'react'
+import React, { ChangeEvent, ReactElement, useEffect, useRef, useState, useCallback } from 'react'
 import InputSection from '../components/input-section/input-section';
 import { externalLinkIcon, infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
@@ -31,99 +31,97 @@ export default function Product() {
   const [business, setBusiness] = useState<collectionType>(DEFAULT_BUSINESS);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
-    id: ``, 
+    id: ``,
     isClicked: false
   });
   const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({
-    id: ``, 
+    id: ``,
     isClicked: false
   });
-  
-  const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files)
-      return;
 
-    const file: File = e.target.files[0];
-    if (!file)
-      return;
+  // Optimize image handling with useMemo to prevent unnecessary re-renders
+  const handleChangeImage = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !e.target.files[0]) return;
+    setImageFile(e.target.files[0]);
+  }, []);
 
-    setImageFile(file);
-  }
-
+  // Optimize image loading with proper cleanup
   useEffect(() => {
+    if (!imageFile) return;
+
     let isCancel = false;
     const fileReader: FileReader = new FileReader();
 
-    if (imageFile) {
-      fileReader.onload = (e: ProgressEvent<FileReader>) => {
-        const result = e.target?.result;
-        if (result && !isCancel) {
-          setBusiness({
-            ...business, 
-            logo: result.toString(), 
-          });
-        }
+    fileReader.onload = (e: ProgressEvent<FileReader>) => {
+      const result = e.target?.result;
+      if (result && !isCancel) {
+        setBusiness(prevBusiness => ({
+          ...prevBusiness,
+          logo: result.toString(),
+        }));
       }
-      fileReader.readAsDataURL(imageFile);
     }
+
+    fileReader.readAsDataURL(imageFile);
 
     return () => {
       isCancel = true;
-      if (fileReader.readyState === 1) {
+      if (fileReader && fileReader.readyState === 1) {
         fileReader.abort();
       }
     }
-  }, [imageFile, business]);
+  }, [imageFile]);
 
   const columns: Array<IColumnProps<collectionType>> = [
     {
       key: `index`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `#`,
       size: `1fr`,
     },
     {
       key: `_id`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Mã`,
       size: `6fr`,
     },
     {
       key: `name`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Tên doanh nghiệp`,
-      size: `3fr`, 
+      size: `3fr`,
     },
     {
       key: `email`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Email`,
-      size: `3fr`, 
+      size: `3fr`,
     },
     {
       key: `logo`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Hình ảnh`,
-      size: `3fr`, 
-      render: (collection: collectionType): ReactElement => collection.logo 
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement => collection.logo
         ? <div className={`relative ${styles[`image-container`]}`}>
-            <Image 
-              className={`w-full max-w-full max-h-full`}
-              src={collection.logo} 
-              alt={``}
-              width={0}
-              height={0}
-              quality={10}
-            >
-            </Image>
-          </div> 
+          <Image
+            className={`w-full max-w-full max-h-full`}
+            src={collection.logo}
+            alt={``}
+            width={100}
+            height={100}
+            quality={10}
+            loading="lazy"
+          >
+          </Image>
+        </div>
         : <Text isItalic={true}>Không có hình ảnh</Text>
-    }, 
+    },
     {
       key: `address`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Địa chỉ`,
-      size: `5fr`, 
+      size: `5fr`,
       render: (collection: collectionType): ReactElement => {
         const address: string = `${collection.address.number} ${collection.address.street}, ${collection.address.ward}, ${collection.address.district}, ${collection.address.city}, ${collection.address.country}`;
         return <Text isEllipsis={true} tooltip={address}>{address}</Text>
@@ -131,11 +129,11 @@ export default function Product() {
     },
     {
       key: `type`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Loại`,
-      size: `3fr`, 
+      size: `3fr`,
       render: (collection: collectionType): ReactElement => {
-        const type: string = collection.type === EBusinessType.MANUFACTURER 
+        const type: string = collection.type === EBusinessType.MANUFACTURER
           ? `Nhà sản xuất`
           : `Nhà cung cấp`;
         return <Text isEllipsis={true} tooltip={type}>{type}</Text>
@@ -143,9 +141,9 @@ export default function Product() {
     },
     {
       key: `created_at`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Ngày tạo`,
-      size: `4fr`, 
+      size: `4fr`,
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.created_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
@@ -153,9 +151,9 @@ export default function Product() {
     },
     {
       key: `updated_at`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Ngày cập nhật`,
-      size: `4fr`, 
+      size: `4fr`,
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.updated_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
@@ -163,18 +161,18 @@ export default function Product() {
     },
     {
       title: `Xem thêm`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => <Button 
+      ref: useRef(null),
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement => <Button
         title={createMoreInfoTooltip(collectionName)}
         onClick={(): void => {
           setIsClickShowMore({
-            id: collection._id, 
-            isClicked: !isClickShowMore.isClicked, 
+            id: collection._id,
+            isClicked: !isClickShowMore.isClicked,
           });
         }}
       >
-        <IconContainer 
+        <IconContainer
           tooltip={createMoreInfoTooltip(collectionName)}
           iconLink={infoIcon}
         >
@@ -183,28 +181,28 @@ export default function Product() {
     },
     {
       title: `Xem chi tiết`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => 
+      ref: useRef(null),
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement =>
         createCollectionDetailLink(
-          collectionName, 
+          collectionName,
           collection._id
         )
     },
     {
       title: `Xóa`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => <Button 
+      ref: useRef(null),
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement => <Button
         title={createDeleteTooltip(collectionName)}
         onClick={(): void => {
           setIsClickDelete({
-            id: collection._id, 
-            isClicked: !isClickShowMore.isClicked, 
+            id: collection._id,
+            isClicked: !isClickShowMore.isClicked,
           });
         }}
       >
-        <IconContainer 
+        <IconContainer
           tooltip={createDeleteTooltip(collectionName)}
           iconLink={trashIcon}
         >
@@ -213,44 +211,69 @@ export default function Product() {
     },
   ];
 
-  const handleChangeBusiness = (e: ChangeEvent<HTMLInputElement>): void => {
-    setBusiness({
-      ...business, 
-      [e.target.name]: e.target.value, 
-    });
-  }
+  const handleChangeBusiness = useCallback((e: ChangeEvent<HTMLInputElement>): void => {
+    setBusiness(prevBusiness => ({
+      ...prevBusiness,
+      [e.target.name]: e.target.value,
+    }));
+  }, []); // Empty dependency array if it doesn't depend on any props or state
 
   const handleChangeAddress = (e: ChangeEvent<HTMLInputElement>): void => {
     setBusiness({
-      ...business, 
+      ...business,
       address: {
-        ...business.address, 
-        [e.target.name]: e.target.value, 
+        ...business.address,
+        [e.target.name]: e.target.value,
       }
     });
   }
 
   const handleChangeBusinessType = (e: ChangeEvent<HTMLSelectElement>): void => {
     setBusiness({
-      ...business, 
-      type: e.target.value, 
+      ...business,
+      type: e.target.value,
     });
   }
 
   const handleDeleteImage = (): void => {
     setBusiness({
-      ...business, 
-      logo: undefined, 
+      ...business,
+      logo: undefined,
     });
     setImageFile(null);
   }
+
+  const renderBusinessLogo = (): ReactElement | null => {
+    if (!business.logo) {
+      return null;
+    }
+
+    return (
+      <div className={`relative ${styles[`image-container`]}`}>
+        <Image
+          className={`w-full max-w-full max-h-full`}
+          src={business.logo}
+          alt={business.name}
+          width={100}
+          height={100}
+          quality={10}
+          loading="lazy"
+        />
+        {!isModalReadOnly && (
+          <Button onClick={handleDeleteImage}>
+            <IconContainer iconLink={trashIcon} tooltip="Xóa ảnh" />
+          </Button>
+        )}
+      </div>
+    );
+  };
 
   const gridColumns: string = `200px 1fr`;
 
   const businessTypeOptions: ISelectOption[] = enumToKeyValueArray(EBusinessType)
     .map((array: string[]): ISelectOption => ({
-      label: array[0], 
-      value: array[1], 
+      label: array[0],
+      value: array[1],
     }));
 
   return (
@@ -260,7 +283,7 @@ export default function Product() {
       defaultCollection={DEFAULT_BUSINESS}
       collection={business}
       setCollection={setBusiness}
-      isModalReadonly={isModalReadOnly} 
+      isModalReadonly={isModalReadOnly}
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
@@ -287,13 +310,13 @@ export default function Product() {
             </TextInput>
           </InputSection>
 
-          <InputSection label={`Loại`}>
+          <InputSection label={`Loại`} gridColumns={gridColumns}>
             <SelectDropdown
               isDisable={isModalReadOnly}
               options={businessTypeOptions}
               defaultOptionIndex={getSelectedOptionIndex(
-                businessTypeOptions, 
-                (business.type 
+                businessTypeOptions,
+                (business.type
                   ? business.type
                   : EBusinessType.MANUFACTURER
                 ) as unknown as string
@@ -315,32 +338,8 @@ export default function Product() {
               </input> : null}
 
               <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
-                {
-                  business.logo ? <div 
-                    className={`relative ${styles[`image-container`]}`}
-                  >
-                    <Image 
-                      className={`w-full max-w-full max-h-full`}
-                      src={business.logo} 
-                      alt={``}
-                      width={0}
-                      height={0}
-                      quality={10}
-                    >
-                    </Image>
-
-                    {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
-                      <Button 
-                        className={`absolute top-0 right-0`} 
-                        onClick={() => handleDeleteImage()}
-                      >
-                        <IconContainer iconLink={trashIcon}>
-                        </IconContainer>
-                      </Button>
-                    </div> : null}
-                  </div> : <></>
-                }
-              </div> 
+                {renderBusinessLogo()}
+              </div>
             </div>
           </InputSection>
 

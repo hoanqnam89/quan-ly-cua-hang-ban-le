@@ -7,6 +7,7 @@ import { IUnit } from "@/interfaces/unit.interface";
 import { BusinessModel } from "@/models/Business";
 import { OrderFormModel } from "@/models/OrderForm";
 import { ProductDetailModel } from "@/models/ProductDetail";
+import { ProductModel } from "@/models/Product";
 import { UnitModel } from "@/models/Unit";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
@@ -23,7 +24,7 @@ const collectionModel = OrderFormModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
-  print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow );
+  print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow);
 
   // const cookieStore: ReadonlyRequestCookies = await cookies();
   // const isUserAdmin = await isAdmin(
@@ -48,102 +49,124 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   try {
     connectToDatabase();
 
-    if ( !isValidObjectId(orderForm.supplier_id) ) 
+    if (!isValidObjectId(orderForm.supplier_id))
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `Some of the ID in order form's products is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`, 
+          path,
+          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
-    const foundSupplier: IBusiness | null = 
+    const foundSupplier: IBusiness | null =
       await BusinessModel.findById(orderForm.supplier_id);
 
-    if (!foundSupplier) 
+    if (!foundSupplier)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `The ${ECollectionNames.BUSINESS} with the ID '${orderForm.supplier_id}' does not exist in our records.`,
-          path, 
+          path,
           `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`
-        ),          
+        ),
         { status: EStatusCode.NOT_FOUND }
       );
-    
-    const orderFormProductDetailIds: string[] = 
+
+    const orderFormProductDetailIds: string[] =
       orderForm.product_details.map(
-        (orderFormProductDetail: IOrderFormProductDetail): string => 
+        (orderFormProductDetail: IOrderFormProductDetail): string =>
           orderFormProductDetail._id
       );
 
-    if ( !isIdsValid( orderFormProductDetailIds )) 
+    if (!isIdsValid(orderFormProductDetailIds))
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `Some of the ${ECollectionNames.PRODUCT_DETAIL} in order form's product details is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`, 
-        ),          
+          path,
+          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`,
+        ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
     const isProductDetailIdsExist: boolean = await isIdsExist<IProductDetail>(
-      orderFormProductDetailIds, 
+      orderFormProductDetailIds,
       ProductDetailModel
     );
 
-    if ( !isProductDetailIdsExist ) 
+    if (!isProductDetailIdsExist)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `Some of the ${ECollectionNames.PRODUCT_DETAIL} in order form's product details does not exist in our records.`,
-          path, 
-          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`, 
-        ),          
+          path,
+          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`,
+        ),
         { status: EStatusCode.NOT_FOUND }
       );
-    
-    const orderFormProductDetailUnitIds: string[] = 
+
+    const orderFormProductDetailUnitIds: string[] =
       orderForm.product_details.map(
-        (orderFormProductDetail: IOrderFormProductDetail): string => 
+        (orderFormProductDetail: IOrderFormProductDetail): string =>
           orderFormProductDetail.unit_id
       );
 
-    if ( !isIdsValid( orderFormProductDetailUnitIds )) 
+    if (!isIdsValid(orderFormProductDetailUnitIds))
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `Some of the ${ECollectionNames.UNIT} in order form's product details is not valid.`,
-          path, 
-          `Please check if the ${ECollectionNames.UNIT} ID is correct.`, 
-        ),          
+          path,
+          `Please check if the ${ECollectionNames.UNIT} ID is correct.`,
+        ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
     const isProductDetailUnitIdsExist: boolean = await isIdsExist<IUnit>(
-      orderFormProductDetailUnitIds, 
-      UnitModel 
+      orderFormProductDetailUnitIds,
+      UnitModel
     );
 
-    if ( !isProductDetailUnitIdsExist ) 
+    if (!isProductDetailUnitIdsExist)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           `Some of the ${ECollectionNames.UNIT} in order form's product details does not exist in our records.`,
-          path, 
-          `Please check if the ${ECollectionNames.UNIT} ID is correct.`, 
-        ),          
+          path,
+          `Please check if the ${ECollectionNames.UNIT} ID is correct.`,
+        ),
         { status: EStatusCode.NOT_FOUND }
       );
-    
+
+    // Cập nhật giá bán cho sản phẩm dựa trên giá nhập mới nhập vào
+    for (const productDetail of orderForm.product_details) {
+      if (productDetail.input_price) {
+        // Tìm sản phẩm từ chi tiết sản phẩm
+        const productDetailDoc = await ProductDetailModel.findById(productDetail._id);
+        if (productDetailDoc && productDetailDoc.product_id) {
+          // Tính giá bán mới = giá nhập + 30% giá nhập
+          const newOutputPrice = productDetail.input_price + (productDetail.input_price * 0.3);
+
+          // Cập nhật giá nhập và giá bán cho sản phẩm
+          await ProductModel.findByIdAndUpdate(productDetailDoc.product_id, {
+            $set: {
+              input_price: productDetail.input_price,
+              output_price: newOutputPrice,
+              updated_at: new Date()
+            }
+          });
+        }
+      }
+    }
+
     const newOrderForm = new collectionModel({
-      created_at: new Date(), 
-      updated_at: new Date(), 
-      supplier_id: orderForm.supplier_id, 
-      product_details: orderForm.product_details, 
+      created_at: new Date(),
+      updated_at: new Date(),
+      supplier_id: orderForm.supplier_id,
+      status: "Chưa hoàn thành", // Thêm trạng thái mặc định
+      product_details: orderForm.product_details,
     });
 
     const savedOrderForm: collectionType = await newOrderForm.save();
@@ -153,8 +176,8 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           ``,
-          path, 
-          `Please contact for more information.`, 
+          path,
+          `Please contact for more information.`,
         ),
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
@@ -167,24 +190,24 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       createErrorMessage(
         `Failed to create ${collectionName}.`,
         error as string,
-        path, 
-        `Please contact for more information.`, 
+        path,
+        `Please contact for more information.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
   }
 }
 
-export const GET = async (): Promise<NextResponse> => 
+export const GET = async (): Promise<NextResponse> =>
   await getCollectionsApi<collectionType>(
-    collectionName, 
-    collectionModel, 
+    collectionName,
+    collectionModel,
     path
   );
 
-export const DELETE = async (): Promise<NextResponse> => 
+export const DELETE = async (): Promise<NextResponse> =>
   await deleteCollectionsApi<collectionType>(
-    collectionName, 
-    collectionModel, 
+    collectionName,
+    collectionModel,
     path
   );

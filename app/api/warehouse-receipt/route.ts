@@ -201,6 +201,17 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       );
     });
 
+    // Cập nhật trạng thái phiếu đặt hàng thành "Hoàn thành"
+    await OrderFormModel.findByIdAndUpdate(
+      warehouseReceipt.supplier_receipt_id,
+      {
+        $set: {
+          status: "Hoàn thành",
+          updated_at: new Date(),
+        }
+      }
+    );
+
     return NextResponse.json(
       savedWarehouseReceipt,
       { status: EStatusCode.CREATED }

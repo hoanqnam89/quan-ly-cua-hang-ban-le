@@ -9,17 +9,32 @@ import IconContainer from '@/components/icon-container/icon-container';
 import { xIcon } from '@/public';
 
 export enum ENotificationType {
-  INFO = `info`, 
-  SUCCESS = `success`, 
-  ERROR = `error`, 
-  WARNING = `warning`, 
+  INFO = `info`,
+  SUCCESS = `success`,
+  ERROR = `error`,
+  WARNING = `warning`,
 }
+
+const notificationIcons = {
+  [ENotificationType.INFO]: '/icons/info-circle.svg',
+  [ENotificationType.SUCCESS]: '/icons/check-circle.svg',
+  [ENotificationType.ERROR]: '/icons/x-circle.svg',
+  [ENotificationType.WARNING]: '/icons/exclamation-circle.svg',
+};
+
+const notificationTitles = {
+  [ENotificationType.INFO]: 'Thông tin',
+  [ENotificationType.SUCCESS]: 'Thành công',
+  [ENotificationType.ERROR]: 'Lỗi',
+  [ENotificationType.WARNING]: 'Cảnh báo',
+};
 
 export interface INotification {
   children: ReactNode
-  id: number
+  id?: number
   type: ENotificationType
   isAutoClose: boolean
+  title?: string
 }
 
 interface INotificationProps {
@@ -28,21 +43,23 @@ interface INotificationProps {
   onDelete?: () => void
   timeToDelete?: number
   isAutoClose?: boolean
+  title?: string
 }
 
 export default function CustomNotification({
-  children, 
-  type = ENotificationType.INFO, 
-  onDelete = () => {}, 
-  timeToDelete = 3000, 
-  isAutoClose = true, 
+  children,
+  type = ENotificationType.INFO,
+  onDelete = () => { },
+  timeToDelete = 3000,
+  isAutoClose = true,
+  title,
 }: Readonly<INotificationProps>): ReactElement {
   const [isClosing, setIsClosing] = useState<boolean>(false);
   const container: HTMLElement = createContainer(document);
 
   useEffect((): (() => void) | undefined => {
     if (isAutoClose) {
-      const timeOutId: ReturnType<typeof setTimeout> = 
+      const timeOutId: ReturnType<typeof setTimeout> =
         setTimeout((): void => setIsClosing(true), timeToDelete);
 
       return (): void => {
@@ -53,7 +70,7 @@ export default function CustomNotification({
 
   useEffect((): (() => void) | undefined => {
     if (isClosing) {
-      const timeOutId: ReturnType<typeof setTimeout> = 
+      const timeOutId: ReturnType<typeof setTimeout> =
         setTimeout(onDelete, 300);
 
       return (): void => {
@@ -64,15 +81,31 @@ export default function CustomNotification({
 
   return createPortal(
     <div className={`${styles.container} ${isClosing ? styles.shrink : ``}`}>
-      <div className={`${styles.notification} ${styles[type]} ${isClosing ? styles[`slide-out`] : styles[`slide-in`]} overflow-hidden font-bold relative flex gap-2 items-center p-2 rounded-lg`}>
-        {children}
-        <div>
-          <Button onClick={(): void => setIsClosing(true)}>
+      <div className={`${styles.notification} ${styles[type]} ${isClosing ? styles[`slide-out`] : styles[`slide-in`]} overflow-hidden relative flex gap-2 items-center p-3 rounded-lg`}>
+        <div className={styles.iconWrapper}>
+          <img
+            src={notificationIcons[type]}
+            alt={type}
+            className={styles.typeIcon}
+            width={20}
+            height={20}
+          />
+        </div>
+        <div className={styles.contentWrapper}>
+          {title || notificationTitles[type] ? (
+            <div className={styles.title}>
+              {title || notificationTitles[type]}
+            </div>
+          ) : null}
+          <div className={styles.message}>{children}</div>
+        </div>
+        <div className={styles.closeButtonWrapper}>
+          <Button onClick={(): void => setIsClosing(true)} className={styles.closeButton}>
             <IconContainer iconLink={xIcon}></IconContainer>
           </Button>
         </div>
       </div>
-    </div>, 
-    container, 
+    </div>,
+    container,
   )
 }

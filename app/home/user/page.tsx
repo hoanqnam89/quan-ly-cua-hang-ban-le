@@ -21,8 +21,6 @@ import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import DateInput from '@/components/date-input/date-input';
 import styles from './style.module.css';
-import { getDate } from '@/utils/get-date';
-import { getSameDayOfYear } from '@/utils/get-same-date-of-year';
 import { MINIMUM_WORKING_AGE } from '@/constants/minimum-working-age.constant';
 import { MAXIMUM_WORKING_AGE } from '@/constants/maximum-working-age.constant';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
@@ -38,12 +36,12 @@ export default function User() {
   const [user, setUser] = useState<IUser>(DEFAULT_USER);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
-    id: ``, 
-    isClicked: false, 
+    id: ``,
+    isClicked: false,
   });
   const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({
-    id: ``, 
-    isClicked: false, 
+    id: ``,
+    isClicked: false,
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [accountOptions, setAccountOptions] = useState<ISelectOption[]>([]);
@@ -51,12 +49,12 @@ export default function User() {
   const getAccounts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
       const newAccounts: IAccount[] = await fetchGetCollections<IAccount>(
-        ECollectionNames.ACCOUNT, 
+        ECollectionNames.ACCOUNT,
       );
 
       setUser({
-        ...user, 
-        account_id: newAccounts[0]._id, 
+        ...user,
+        account_id: newAccounts[0]._id,
       });
       setAccountOptions([
         ...newAccounts.map((account: IAccount): ISelectOption => ({
@@ -65,7 +63,7 @@ export default function User() {
         }))
       ]);
       setIsLoading(false);
-    }, 
+    },
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
     [user.account_id],
   );
@@ -90,8 +88,8 @@ export default function User() {
         const result = e.target?.result;
         if (result && !isCancel) {
           setUser({
-            ...user, 
-            avatar: result.toString(), 
+            ...user,
+            avatar: result.toString(),
           });
         }
       }
@@ -110,36 +108,36 @@ export default function User() {
     getAccounts();
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
-  
+
   const columns: Array<IColumnProps<collectionType>> = [
     {
       key: `index`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `#`,
       size: `1fr`,
     },
     {
       key: `_id`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Mã`,
       size: `6fr`,
     },
     {
       key: `account_id`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Tài khoản`,
-      size: `3fr`, 
-      render: (collection: collectionType): ReactElement => 
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement =>
         createCollectionDetailLink(
-          ECollectionNames.ACCOUNT, 
+          ECollectionNames.ACCOUNT,
           collection.account_id
         )
     },
     {
       key: `name`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Họ tên`,
-      size: `3fr`, 
+      size: `3fr`,
       render: (user: collectionType): ReactElement => {
         const name: string = `${user.name.first} ${user.name.middle + ` `}${user.name.last}`;
         return <Text isEllipsis={true} tooltip={name}>{name}</Text>
@@ -147,9 +145,9 @@ export default function User() {
     },
     {
       key: `address`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Địa chỉ`,
-      size: `3fr`, 
+      size: `3fr`,
       render: (collection: collectionType): ReactElement => {
         const address: string = `${collection.address.number} ${collection.address.street}, ${collection.address.ward}, ${collection.address.district}, ${collection.address.city}, ${collection.address.country}`;
         return <Text isEllipsis={true} tooltip={address}>{address}</Text>
@@ -157,17 +155,17 @@ export default function User() {
     },
     {
       key: `email`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Email`,
-      size: `3fr`, 
+      size: `3fr`,
     },
     {
       key: `birthday`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Ngày sinh`,
-      size: `3fr`, 
+      size: `3fr`,
       render: (collection: collectionType): ReactElement => {
-        if ( !collection.birthday )
+        if (!collection.birthday)
           return <Text isEllipsis={true}>NaN</Text>
 
         const date: string = new Date(collection.birthday).toLocaleString();
@@ -176,11 +174,11 @@ export default function User() {
     },
     {
       key: `gender`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Giới tính`,
-      size: `3fr`, 
+      size: `3fr`,
       render: (collection: collectionType): ReactElement => {
-        const gender: string = collection.gender === EUserGender.MALE 
+        const gender: string = collection.gender === EUserGender.MALE
           ? `Nam`
           : collection.gender === EUserGender.FEMALE
             ? `Nữ`
@@ -190,28 +188,28 @@ export default function User() {
     },
     {
       key: `avatar`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Hình ảnh`,
-      size: `3fr`, 
-      render: (collection: collectionType): ReactElement => collection.avatar 
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement => collection.avatar
         ? <div className={`relative ${styles[`image-container`]}`}>
-            <Image 
-              className={`w-full max-w-full max-h-full`}
-              src={collection.avatar} 
-              alt={``}
-              width={0}
-              height={0}
-              quality={10}
-            >
-            </Image>
-          </div> 
+          <Image
+            className={`w-full max-w-full max-h-full`}
+            src={collection.avatar}
+            alt={``}
+            width={0}
+            height={0}
+            quality={10}
+          >
+          </Image>
+        </div>
         : <Text isItalic={true}>Không có hình ảnh</Text>
-    }, 
+    },
     {
       key: `created_at`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Ngày tạo`,
-      size: `4fr`, 
+      size: `4fr`,
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.created_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
@@ -219,9 +217,9 @@ export default function User() {
     },
     {
       key: `updated_at`,
-      ref: useRef(null), 
+      ref: useRef(null),
       title: `Ngày cập nhật`,
-      size: `4fr`, 
+      size: `4fr`,
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.updated_at).toLocaleString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
@@ -229,18 +227,18 @@ export default function User() {
     },
     {
       title: `Xem thêm`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => <Button 
+      ref: useRef(null),
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement => <Button
         title={createMoreInfoTooltip(collectionName)}
         onClick={(): void => {
           setIsClickShowMore({
-            id: collection._id, 
-            isClicked: !isClickShowMore.isClicked, 
+            id: collection._id,
+            isClicked: !isClickShowMore.isClicked,
           });
         }}
       >
-        <IconContainer 
+        <IconContainer
           tooltip={createMoreInfoTooltip(collectionName)}
           iconLink={infoIcon}
         >
@@ -249,28 +247,28 @@ export default function User() {
     },
     {
       title: `Xem chi tiết`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => 
+      ref: useRef(null),
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement =>
         createCollectionDetailLink(
-          collectionName, 
+          collectionName,
           collection._id
         )
     },
     {
       title: `Xóa`,
-      ref: useRef(null), 
-      size: `2fr`, 
-      render: (collection: collectionType): ReactElement => <Button 
+      ref: useRef(null),
+      size: `2fr`,
+      render: (collection: collectionType): ReactElement => <Button
         title={createDeleteTooltip(collectionName)}
         onClick={(): void => {
           setIsClickDelete({
-            id: collection._id, 
-            isClicked: !isClickDelete.isClicked, 
+            id: collection._id,
+            isClicked: !isClickDelete.isClicked,
           });
         }}
       >
-        <IconContainer 
+        <IconContainer
           tooltip={createDeleteTooltip(collectionName)}
           iconLink={trashIcon}
         >
@@ -281,64 +279,64 @@ export default function User() {
 
   const handleChangeAccountId = (e: ChangeEvent<HTMLSelectElement>): void => {
     setUser({
-      ...user, 
-      account_id: e.target.value, 
+      ...user,
+      account_id: e.target.value,
     });
   }
 
   const handleChangeName = (e: ChangeEvent<HTMLInputElement>): void => {
     setUser({
-      ...user, 
+      ...user,
       name: {
-        ...user.name, 
-        [e.target.name]: e.target.value, 
+        ...user.name,
+        [e.target.name]: e.target.value,
       }
     });
   }
 
   const handleChangeAddress = (e: ChangeEvent<HTMLInputElement>): void => {
     setUser({
-      ...user, 
+      ...user,
       address: {
-        ...user.address, 
-        [e.target.name]: e.target.value, 
+        ...user.address,
+        [e.target.name]: e.target.value,
       }
     });
   }
 
   const handleChangeEmail = (e: ChangeEvent<HTMLInputElement>): void => {
     setUser({
-      ...user, 
-      email: e.target.value, 
+      ...user,
+      email: e.target.value,
     });
   }
 
   const handleChangeBirthday = (e: ChangeEvent<HTMLInputElement>): void => {
     setUser({
-      ...user, 
-      birthday: new Date(e.target.value), 
+      ...user,
+      birthday: new Date(e.target.value),
     });
   }
 
   const handleChangeGender = (e: ChangeEvent<HTMLSelectElement>): void => {
     setUser({
-      ...user, 
-      gender: e.target.value, 
+      ...user,
+      gender: e.target.value,
     });
   }
 
   const handleDeleteImage = (): void => {
     setUser({
-      ...user, 
-      avatar: undefined, 
+      ...user,
+      avatar: undefined,
     });
     setImageFile(null);
   }
 
   const genderOptions: ISelectOption[] = enumToKeyValueArray(EUserGender)
     .map((array: string[]): ISelectOption => ({
-      label: array[0], 
-      value: array[1], 
+      label: array[0],
+      value: array[1],
     }));
 
   const handleOpenModal = (prev: boolean): boolean => {
@@ -347,7 +345,7 @@ export default function User() {
         id: 0,
         children: <Text>Thêm tài khoản vào trước khi thêm người dùng!</Text>,
         type: ENotificationType.ERROR,
-        isAutoClose: true, 
+        isAutoClose: true,
       });
       return prev;
     }
@@ -358,12 +356,12 @@ export default function User() {
 
   return (
     <ManagerPage<collectionType>
-      columns={columns} 
-      collectionName={collectionName} 
+      columns={columns}
+      collectionName={collectionName}
       defaultCollection={DEFAULT_USER}
       collection={user}
       setCollection={setUser}
-      isModalReadonly={isModalReadOnly} 
+      isModalReadonly={isModalReadOnly}
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
@@ -489,15 +487,19 @@ export default function User() {
               </TextInput>
             </InputSection>
 
-            {user.birthday ? 
+            {user.birthday ?
               <InputSection label={`Ngày sinh`}>
                 <DateInput
-                  min={getDate(getSameDayOfYear(
-                    new Date(), -MAXIMUM_WORKING_AGE
-                  ))}
-                  max={getDate(getSameDayOfYear(
-                    new Date(), -MINIMUM_WORKING_AGE
-                  ))}
+                  min={(() => {
+                    const date = new Date();
+                    date.setFullYear(date.getFullYear() - MAXIMUM_WORKING_AGE);
+                    return date.toISOString().split('T')[0];
+                  })()}
+                  max={(() => {
+                    const date = new Date();
+                    date.setFullYear(date.getFullYear() - MINIMUM_WORKING_AGE);
+                    return date.toISOString().split('T')[0];
+                  })()}
                   name={`birthday`}
                   isDisable={isModalReadOnly}
                   value={user.birthday}
@@ -512,9 +514,9 @@ export default function User() {
                 isDisable={isModalReadOnly}
                 options={genderOptions}
                 defaultOptionIndex={getSelectedOptionIndex(
-                  genderOptions, 
-                  (user.gender 
-                    ? user.gender 
+                  genderOptions,
+                  (user.gender
+                    ? user.gender
                     : EUserGender.FEMALE
                   ) as unknown as string
                 )}
@@ -522,7 +524,7 @@ export default function User() {
               >
               </SelectDropdown>
             </InputSection>
-          
+
             <InputSection label={`Hình đại diện của nhân viên`}>
               <div>
                 {!isModalReadOnly ? <input
@@ -536,12 +538,12 @@ export default function User() {
 
                 <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
                   {
-                    user.avatar ? <div 
+                    user.avatar ? <div
                       className={`relative ${styles[`image-container`]}`}
                     >
-                      <Image 
+                      <Image
                         className={`w-full max-w-full max-h-full`}
-                        src={user.avatar} 
+                        src={user.avatar}
                         alt={``}
                         width={0}
                         height={0}
@@ -550,8 +552,8 @@ export default function User() {
                       </Image>
 
                       {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
-                        <Button 
-                          className={`absolute top-0 right-0`} 
+                        <Button
+                          className={`absolute top-0 right-0`}
                           onClick={() => handleDeleteImage()}
                         >
                           <IconContainer iconLink={trashIcon}>
@@ -560,7 +562,7 @@ export default function User() {
                       </div> : null}
                     </div> : <></>
                   }
-                </div> 
+                </div>
               </div>
             </InputSection>
           </TabItem>

@@ -13,8 +13,12 @@ const collectionName: ECollectionNames = ECollectionNames.BUSINESS;
 const collectionModel = BusinessModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
+// Cache settings
+const CACHE_DURATION = 5 * 60 * 1000; // 5 phút (ms)
+let cachedBusinesses: { data: IBusiness[]; timestamp: number; } | null = null;
+
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
-  print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow );
+  print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow);
 
   // const cookieStore: ReadonlyRequestCookies = await cookies();
   // const isUserAdmin = await isAdmin(
@@ -38,15 +42,15 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
 
   try {
     connectToDatabase();
-    
+
     const newBusiness = new collectionModel({
-      created_at: new Date(), 
-      updated_at: new Date(), 
+      created_at: new Date(),
+      updated_at: new Date(),
       name: business.name,
       logo: business.logo,
       address: business.address,
       email: business.email,
-      type: business.type, 
+      type: business.type,
     });
 
     const savedBusiness: collectionType = await newBusiness.save();
@@ -56,11 +60,14 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         createErrorMessage(
           `Failed to create ${collectionName}.`,
           ``,
-          path, 
-          `Please contact for more information.`, 
+          path,
+          `Please contact for more information.`,
         ),
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
+
+    // Vô hiệu hóa cache khi tạo business mới
+    cachedBusinesses = null;
 
     return NextResponse.json(savedBusiness, { status: EStatusCode.CREATED });
   } catch (error: unknown) {
@@ -70,24 +77,24 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       createErrorMessage(
         `Failed to create ${collectionName}.`,
         error as string,
-        path, 
-        `Please contact for more information.`, 
+        path,
+        `Please contact for more information.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
   }
 }
 
-export const GET = async (): Promise<NextResponse> => 
+export const GET = async (): Promise<NextResponse> =>
   await getCollectionsApi<collectionType>(
-    collectionName, 
-    collectionModel, 
+    collectionName,
+    collectionModel,
     path
   );
 
-export const DELETE = async (): Promise<NextResponse> => 
+export const DELETE = async (): Promise<NextResponse> =>
   await deleteCollectionsApi<collectionType>(
-    collectionName, 
-    collectionModel, 
+    collectionName,
+    collectionModel,
     path
   );

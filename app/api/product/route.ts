@@ -7,6 +7,7 @@ import { BusinessModel } from "@/models/Business";
 import { deleteCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
+import { nameToHyphenAndLowercase } from "@/utils/name-to-hyphen-and-lowercase";
 import { print } from "@/utils/print";
 import { isValidObjectId } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
@@ -18,7 +19,7 @@ const collectionModel = ProductModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
 // Cache kết quả API trong 5 phút (300000ms)
-const CACHE_DURATION = 300000;
+const CACHE_DURATION = 0;
 let cachedProducts: { data: IProduct[]; timestamp: number } | null = null;
 
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
@@ -45,37 +46,25 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   const product: collectionType = await req.json();
 
   try {
-    connectToDatabase();
+    await connectToDatabase();
 
-    if (!isValidObjectId(product.supplier_id))
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `The ID '${product.supplier_id}' is not valid.`,
-          path,
-          `Please check if the ${ECollectionNames.ACCOUNT} ID is correct.`,
-        ),
-        { status: EStatusCode.UNPROCESSABLE_ENTITY }
-      );
+    // Đảm bảo có code hợp lệ và độc nhất
+    if (!product.code || product.code.trim() === '') {
+      product.code = `${nameToHyphenAndLowercase(product.name)}-${Date.now()}`;
+    }
 
-    const foundBusiness: IBusiness | null =
-      await BusinessModel.findById(product.supplier_id);
-
-    if (!foundBusiness)
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `The ${ECollectionNames.ACCOUNT} with the ID '${product.supplier_id}' does not exist in our records.`,
-          path,
-          `Please check if the ${ECollectionNames.ACCOUNT} ID is correct.`
-        ),
-        { status: EStatusCode.NOT_FOUND }
-      );
+    // Kiểm tra xem code đã tồn tại chưa
+    const existingProduct = await collectionModel.findOne({ code: product.code });
+    if (existingProduct) {
+      // Nếu đã tồn tại, tạo mã mới với timestamp
+      product.code = `${product.code}-${Date.now()}`;
+    }
 
     const newProduct = new collectionModel({
       created_at: new Date(),
       updated_at: new Date(),
-      supplier_id: product.supplier_id,
+      code: product.code,
+      business_id: product._id,
       name: product.name,
       description: product.description,
       image_links: product.image_links,
@@ -83,23 +72,37 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       output_price: product.output_price,
     });
 
-    const savedProduct: collectionType = await newProduct.save();
+    try {
+      const savedProduct: collectionType = await newProduct.save();
 
-    if (!savedProduct)
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          ``,
-          path,
-          `Please contact for more information.`,
-        ),
-        { status: EStatusCode.INTERNAL_SERVER_ERROR }
-      );
+      if (!savedProduct)
+        return NextResponse.json(
+          createErrorMessage(
+            `Failed to create ${collectionName}.`,
+            ``,
+            path,
+            `Please contact for more information.`,
+          ),
+          { status: EStatusCode.INTERNAL_SERVER_ERROR }
+        );
 
-    // Khi tạo mới sản phẩm, cần vô hiệu hóa cache để lần tải tiếp theo sẽ lấy dữ liệu mới nhất
-    cachedProducts = null;
+      // Khi tạo mới sản phẩm, cần vô hiệu hóa cache để lần tải tiếp theo sẽ lấy dữ liệu mới nhất
+      cachedProducts = null;
 
-    return NextResponse.json(savedProduct, { status: EStatusCode.CREATED });
+      return NextResponse.json(savedProduct, { status: EStatusCode.CREATED });
+    } catch (saveError: any) {
+      // Xử lý lỗi trùng lặp khóa
+      if (saveError.code === 11000) {
+        // Tạo mã mới với timestamp hiện tại và thử lại
+        newProduct.code = `${product.code}-${Date.now()}`;
+        const savedProduct = await newProduct.save();
+
+        cachedProducts = null;
+        return NextResponse.json(savedProduct, { status: EStatusCode.CREATED });
+      }
+
+      throw saveError; // Nếu không phải lỗi trùng lặp, ném lại lỗi
+    }
   } catch (error: unknown) {
     console.error(error);
 
@@ -151,12 +154,14 @@ export const GET = async (req: NextRequest): Promise<NextResponse> => {
       // Mặc định chỉ lấy các trường cần thiết cho danh sách sản phẩm
       projection = {
         _id: 1,
+        code: 1,
         name: 1,
         description: 1,
         image_links: 1,
         input_price: 1,
         output_price: 1,
-        supplier_id: 1,
+        business_id: 1,
+        supplier_name: 1,
         created_at: 1,
         updated_at: 1
       };
@@ -166,17 +171,17 @@ export const GET = async (req: NextRequest): Promise<NextResponse> => {
     const products = await collectionModel
       .find({}, projection)
       .limit(limit)
-      .lean() // Chuyển kết quả sang plain JavaScript objects để tăng hiệu suất
+      .lean<IProduct[]>() // Chuyển kết quả sang plain JavaScript objects với kiểu IProduct
       .exec();
 
     // Lưu kết quả vào cache
-    cachedProducts = { data: products, timestamp: now };
+    cachedProducts = { data: products as IProduct[], timestamp: now };
 
     // Trả về kết quả với Cache-Control header
     return NextResponse.json(products, {
       status: EStatusCode.OK,
       headers: {
-        'Cache-Control': 'public, max-age=300', // Cache 5 phút ở client
+        'Cache-Control': 'public, max-age=0', // Cache 5 phút ở client
         'X-Cached-Response': 'false'
       }
     });
