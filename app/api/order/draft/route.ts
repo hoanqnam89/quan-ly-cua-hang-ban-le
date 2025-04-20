@@ -35,10 +35,10 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json(draftOrder, { status: 201 });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error saving draft order:', error);
         return NextResponse.json(
-            { error: 'Không thể lưu đơn hàng: ' + error.message },
+            { error: 'Không thể lưu đơn hàng: ' + error },
             { status: 500 }
         );
     }
@@ -58,10 +58,10 @@ export async function GET() {
             .exec();
 
         return NextResponse.json(pendingOrders);
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error fetching pending orders:', error);
         return NextResponse.json(
-            { error: 'Không thể lấy danh sách đơn hàng chờ thanh toán: ' + error.message },
+            { error: 'Không thể lấy danh sách đơn hàng chờ thanh toán: ' + error },
             { status: 500 }
         );
     }
@@ -92,10 +92,10 @@ export async function PATCH(req: Request) {
         }
 
         return NextResponse.json(updatedOrder);
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Error updating order status:', error);
         return NextResponse.json(
-            { error: 'Không thể cập nhật đơn hàng: ' + error.message },
+            { error: 'Không thể cập nhật đơn hàng: ' + error },
             { status: 500 }
         );
     }

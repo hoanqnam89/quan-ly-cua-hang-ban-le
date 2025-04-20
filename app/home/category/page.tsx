@@ -1,33 +1,15 @@
 'use client';
 
-import { Button, IconContainer, NumberInput, Text, TextInput } from '@/components'
+import { Button, IconContainer, TextInput } from '@/components'
 import React, { ChangeEvent, useEffect, useState } from 'react'
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { ECollectionNames } from '@/enums';
 import { addCollection, deleteCollectionById, getCollectionById, updateCollectionById } from '@/services/api-service';
 import { LoadingScreen } from '@/components';
-import { boxIcon, infoIcon, pencilIcon, trashIcon, userIcon, checkIcon, plusIcon } from '@/public';
+import { boxIcon, infoIcon, pencilIcon, trashIcon, userIcon, plusIcon } from '@/public';
 import { ICategory } from '@/interfaces/category.interface';
 import { DEFAULT_CATEGORY } from '@/constants/category.constant';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
-
-// Định nghĩa giao diện cho loại sản phẩm 
-interface IUnit {
-  _id: string;
-  name: string;
-  equal: number;
-  created_at: Date;
-  updated_at: Date;
-}
-
-// Định nghĩa giá trị mặc định cho loại sản phẩm 
-const DEFAULT_UNIT: IUnit = {
-  _id: '',
-  name: '',
-  equal: 1,
-  created_at: new Date(),
-  updated_at: new Date(),
-};
 
 // Hàm tạo mã loại sản phẩm  theo định dạng DV-(NgayThangNam)-0001
 const generateUnitId = (index: number): string => {
@@ -300,7 +282,7 @@ export default function CategoryPage() {
               <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
                 <IconContainer iconLink={boxIcon} size={48} className="mx-auto mb-3 opacity-25" />
                 {searchTerm ? (
-                  <p>Không tìm thấy loại sản phẩm  phù hợp với từ khóa "{searchTerm}"</p>
+                  <p>Không tìm thấy loại sản phẩm  phù hợp với từ khóa &apos;{searchTerm}&apos;</p>
                 ) : (
                   <p>Chưa có loại sản phẩm  nào. Vui lòng thêm loại sản phẩm  mới.</p>
                 )}

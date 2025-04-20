@@ -3,23 +3,23 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import { formatCurrency } from './format'
 
-interface IProduct {
-    stt: number
-    name: string
-    unit: string
-    expiryDate: string
-    price: number
-    quantity: number
-    total: number
-}
+// interface IProduct {
+//     stt: number
+//     name: string
+//     unit: string
+//     expiryDate: string
+//     price: number
+//     quantity: number
+//     total: number
+// }
 
-interface ICompany {
-    name: string
-    address: string
-    phone: string
-    invoiceNumber: string
-    date: string
-}
+// interface ICompany {
+//     name: string
+//     address: string
+//     phone: string
+//     invoiceNumber: string
+//     date: string
+// }
 
 interface OrderItem {
     product: {

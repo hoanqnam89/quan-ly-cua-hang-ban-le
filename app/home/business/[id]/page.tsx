@@ -6,7 +6,7 @@ import { IPageParams } from '@/interfaces/page-params.interface'
 import { getCollectionById } from '@/services/api-service';
 import React, { ReactElement, use, useEffect, useState } from 'react'
 import InputSection from '../../components/input-section/input-section';
-import { TextInput, Text, SelectDropdown, Button, LoadingScreen } from '@/components';
+import { TextInput, Text, SelectDropdown, LoadingScreen } from '@/components';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IBusiness } from '@/interfaces/business.interface';
@@ -45,7 +45,7 @@ export default function Detail({
       setIsLoading(false);
     }
     getCollectionNameById();
-  }, []);
+  }, [id]);
 
   return (
     <>

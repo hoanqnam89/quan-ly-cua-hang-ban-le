@@ -1,12 +1,12 @@
 'use client';
 
-import { Button, IconContainer, NumberInput, Text, TextInput } from '@/components'
+import { Button, IconContainer, NumberInput, TextInput } from '@/components'
 import React, { ChangeEvent, useEffect, useState } from 'react'
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { ECollectionNames } from '@/enums';
 import { addCollection, deleteCollectionById, getCollectionById, updateCollectionById } from '@/services/api-service';
 import { LoadingScreen } from '@/components';
-import { boxIcon, infoIcon, pencilIcon, trashIcon, userIcon, checkIcon, plusIcon } from '@/public';
+import { boxIcon, infoIcon, pencilIcon, trashIcon, userIcon, plusIcon } from '@/public';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 
 // Định nghĩa giao diện cho đơn vị tính
@@ -309,7 +309,7 @@ export default function UnitPage() {
               <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
                 <IconContainer iconLink={boxIcon} size={48} className="mx-auto mb-3 opacity-25" />
                 {searchTerm ? (
-                  <p>Không tìm thấy đơn vị tính phù hợp với từ khóa "{searchTerm}"</p>
+                  <p>Không tìm thấy đơn vị tính phù hợp với từ khóa &apos;{searchTerm}&apos;</p>
                 ) : (
                   <p>Chưa có đơn vị tính nào. Vui lòng thêm đơn vị tính mới.</p>
                 )}

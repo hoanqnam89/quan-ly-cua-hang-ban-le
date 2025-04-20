@@ -5,6 +5,7 @@ import { ECollectionNames } from "@/enums";
 import { getCollectionCount } from "@/services/api-service";
 import Script from 'next/script';
 import Image from 'next/image';
+import { IProductDetail } from "@/interfaces/product-detail.interface";
 
 // Kiểu cho Google Charts
 declare global {
@@ -23,10 +24,10 @@ interface IRevenueData {
   value: number;
 }
 
-interface ICustomerData {
-  date: string;
-  value: number;
-}
+// interface ICustomerData {
+//   date: string;
+//   value: number;
+// }
 
 interface IProductInventoryData {
   date: string;
@@ -154,7 +155,7 @@ export default function Home(): ReactElement {
         let stockQuantity = 0;
 
         // Tính tổng kho từ chi tiết sản phẩm (input_quantity)
-        productDetails.forEach((detail: any) => {
+        productDetails.forEach((detail: IProductDetail) => {
           const inputQuantity = detail.input_quantity || 0;
           const outputQuantity = detail.output_quantity || 0;
           const remainingQuantity = inputQuantity - outputQuantity;
@@ -173,7 +174,7 @@ export default function Home(): ReactElement {
           const dateArray = generateDatesBetween(startDate, endDate, 7);
 
           // Phân bổ tổng kho đều cho các ngày
-          dateArray.forEach((date, index) => {
+          dateArray.forEach((date) => {
             const dateKey = `${date.getDate()}/${date.getMonth() + 1}`;
             byDate[dateKey] = totalStockQuantity;
           });
@@ -294,9 +295,9 @@ export default function Home(): ReactElement {
         });
 
         // Doanh thu trung bình hàng ngày (chỉ tính những ngày có doanh thu)
-        const avgDailyRevenue = totalDaysWithRevenue > 0
-          ? Math.round(totalRevenue / totalDaysWithRevenue)
-          : 0;
+        // const avgDailyRevenue = totalDaysWithRevenue > 0
+        //   ? Math.round(totalRevenue / totalDaysWithRevenue)
+        //   : 0;
 
         // Đặt tổng doanh thu từ dữ liệu thực tế trong khoảng thời gian
         setTotalRevenue(totalRevenue);
@@ -410,7 +411,7 @@ export default function Home(): ReactElement {
         if (actualInventory.total > 0) {
           setTotalInventory(actualInventory.total);
         }
-      } catch (revenueError) {
+      } catch {
         // Nếu không lấy được doanh thu, sử dụng dữ liệu ước tính
         setTotalRevenue(estimatedRevenue);
       }
@@ -719,7 +720,7 @@ export default function Home(): ReactElement {
             const productDetailData = await response.json();
 
             // Tính số lượng trên quầy và số lượng tồn kho
-            productDetailData.forEach((detail: any) => {
+            productDetailData.forEach((detail: IProductDetail) => {
               const inputQuantity = detail.input_quantity || 0;
               const outputQuantity = detail.output_quantity || 0;
               const remaining = inputQuantity - outputQuantity;
@@ -781,7 +782,7 @@ export default function Home(): ReactElement {
         window.removeEventListener('google-charts-loaded', initGoogleCharts);
       }
     };
-  }, [isLoading, totalRevenue, totalProducts, totalProductDetails, totalOrders, totalInventory]);
+  }, [isLoading, totalRevenue, totalProducts, totalProductDetails, totalOrders, totalInventory, productInventoryData]);
 
   // Hàm format số tiền
   const formatCurrency = (amount: number): string => {

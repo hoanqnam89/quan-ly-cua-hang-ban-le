@@ -35,7 +35,7 @@ export default function Detail({
       setIsLoading(false);
     }
     getCollectionNameById();
-  }, []);
+  }, [id]);
 
   return (
     <>

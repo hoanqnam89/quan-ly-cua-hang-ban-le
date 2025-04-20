@@ -14,8 +14,8 @@ const collectionModel = BusinessModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
 // Cache settings
-const CACHE_DURATION = 5 * 60 * 1000; // 5 phút (ms)
-let cachedBusinesses: { data: IBusiness[]; timestamp: number; } | null = null;
+// const CACHE_DURATION = 5 * 60 * 1000; // 5 phút (ms)
+// let cachedBusinesses: { data: IBusiness[]; timestamp: number; } | null = null;
 
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
   print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow);

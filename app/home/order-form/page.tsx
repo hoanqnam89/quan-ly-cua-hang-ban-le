@@ -9,7 +9,6 @@ import { infoIcon, plusIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
-import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { IProduct } from '@/interfaces/product.interface';
@@ -21,12 +20,8 @@ import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '@/components/notify/notification/notification';
 import { IOrderForm, IOrderFormProductDetail, OrderFormStatus } from '@/interfaces/order-form.interface';
 import { DEFAULT_ORDER_FORM } from '@/constants/order-form.constant';
-import { IBusiness } from '@/interfaces/business.interface';
-import { EBusinessType } from '@/enums/business-type.enum';
 import InputSection from '../components/input-section/input-section';
-import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { IUnit } from '@/interfaces/unit.interface';
-import { formatCurrency } from '@/utils/format-currency';
 import { fetchBusinessNames, fetchProductsBySupplier } from '@/utils/fetch-helpers';
 import { IExtendedSelectOption } from '@/interfaces/extended-select-option.interface';
 
@@ -578,7 +573,7 @@ export default function Product() {
 
       setFilteredOrderCount(filteredOrders.length);
       return filteredOrders;
-    } catch (error) {
+    } catch {
       setFilteredOrderCount(orders.length);
       return orders;
     }
@@ -592,33 +587,33 @@ export default function Product() {
   }, [filterOrdersByDate]);
 
   // Lấy thông tin đơn vị tính mặc định cho sản phẩm dựa trên id
-  const getProductDefaultUnit = (productDetailId: string): string => {
-    // Lấy thông tin sản phẩm từ productDetailId
-    const productDetail = productDetailOptions.find(option => option.value === productDetailId);
-    if (!productDetail) return unitOptions.length > 0 ? unitOptions[0].value : '';
+  // const getProductDefaultUnit = (productDetailId: string): string => {
+  //   // Lấy thông tin sản phẩm từ productDetailId
+  //   const productDetail = productDetailOptions.find(option => option.value === productDetailId);
+  //   if (!productDetail) return unitOptions.length > 0 ? unitOptions[0].value : '';
 
-    // Tìm sản phẩm trong allProducts
-    const product = allProducts.find(p => p._id === (productDetail as any).productId);
-    if (!product) return unitOptions.length > 0 ? unitOptions[0].value : '';
+  //   // Tìm sản phẩm trong allProducts
+  //   const product = allProducts.find(p => p._id === (productDetail as any).productId);
+  //   if (!product) return unitOptions.length > 0 ? unitOptions[0].value : '';
 
-    // Trả về đơn vị mặc định hoặc đơn vị đầu tiên trong danh sách
-    return unitOptions.length > 0 ? unitOptions[0].value : '';
-  };
+  //   // Trả về đơn vị mặc định hoặc đơn vị đầu tiên trong danh sách
+  //   return unitOptions.length > 0 ? unitOptions[0].value : '';
+  // };
 
   // Cập nhật filteredProductDetailOptions khi không có sản phẩm
   useEffect(() => {
     if (filteredProductDetailOptions.length === 0 && productDetailOptions.length > 0) {
-      const message = 'Không tìm thấy sản phẩm nào cho nhà cung cấp này';
+      // const message = 'Không tìm thấy sản phẩm nào cho nhà cung cấp này';
     }
   }, [filteredProductDetailOptions, productDetailOptions]);
 
   // Dùng useMemo để tối ưu hóa các option
-  const memoizedFilteredOptions = useMemo(() =>
-    productDetailOptions.filter(
-      option => option.business_id === orderForm.business_id
-    ),
-    [productDetailOptions, orderForm.business_id]
-  );
+  // const memoizedFilteredOptions = useMemo(() =>
+  //   productDetailOptions.filter(
+  //     option => option.business_id === orderForm.business_id
+  //   ),
+  //   [productDetailOptions, orderForm.business_id]
+  // );
 
   // Dùng useMemo cho dateFilter options
   const dateFilterOptions = useMemo(() =>
@@ -734,7 +729,7 @@ export default function Product() {
                       </div>
                       <div>
                         <Text className="text-lg font-medium text-gray-700">Chưa có sản phẩm nào trong phiếu đặt hàng</Text>
-                        <Text className="text-sm text-gray-500 mt-2">Bấm nút "Thêm sản phẩm" phía dưới để thêm sản phẩm vào phiếu đặt hàng</Text>
+                        <Text className="text-sm text-gray-500 mt-2">Bấm nút &apos;Thêm sản phẩm&apos; phía dưới để thêm sản phẩm vào phiếu đặt hàng</Text>
                       </div>
                     </div>
                   </div>

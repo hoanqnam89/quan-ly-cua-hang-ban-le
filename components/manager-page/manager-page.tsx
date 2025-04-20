@@ -6,7 +6,7 @@ import Table from '@/components/table/table';
 import { ECollectionNames, EStatusCode } from '@/enums';
 import { deleteCollections, deleteCollectionById, addCollection, getCollectionById, updateCollectionById } from '@/services/api-service';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
-import { LoadingScreen, Text, Button, IconContainer } from '@/components';
+import { LoadingScreen, Text } from '@/components';
 import CollectionForm from './collection-form/collection-form';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '../notify/notification/notification';

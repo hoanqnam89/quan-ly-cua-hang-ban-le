@@ -3,7 +3,6 @@
 import { Button } from '@/components';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import ProductList from '../../../components/ProductList';
 import type { IProduct } from '../../../interfaces/product.interface';
 import { useEffect, useState } from 'react';
 import { formatCurrency } from '@/app/utils/format';
@@ -22,7 +21,6 @@ interface OrderItem {
 
 export default function CreateOrder() {
     const router = useRouter();
-    const [selectedTab, setSelectedTab] = useState<'products' | 'cart'>('products');
     const [products, setProducts] = useState<IProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -257,7 +255,7 @@ export default function CreateOrder() {
 
     const handlePaymentAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         // Loại bỏ tất cả các ký tự không phải số
-        let value = e.target.value.replace(/[^\d]/g, '');
+        const value = e.target.value.replace(/[^\d]/g, '');
 
         // Nếu value rỗng, set về 0
         if (!value) {

@@ -3,10 +3,9 @@
 import { Button, LoadingScreen, Text } from '@/components';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 import { COMPANY } from '@/constants/company.constant';
-import { DEFAULT_ORDER_FORM } from '@/constants/order-form.constant';
 import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import { ECollectionNames } from '@/enums';
-import { IOrderForm, IOrderFormProductDetail } from '@/interfaces/order-form.interface';
+import { IOrderFormProductDetail } from '@/interfaces/order-form.interface';
 import { IPageParams } from '@/interfaces/page-params.interface';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { IProduct } from '@/interfaces/product.interface';

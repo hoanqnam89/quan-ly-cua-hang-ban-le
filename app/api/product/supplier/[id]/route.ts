@@ -1,6 +1,5 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { IProduct } from "@/interfaces/product.interface";
 import { ProductModel } from "@/models";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
@@ -8,7 +7,7 @@ import { print } from "@/utils/print";
 import { isValidObjectId } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
 
-type collectionType = IProduct;
+// type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
 const collectionModel = ProductModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}/supplier/[id]`;

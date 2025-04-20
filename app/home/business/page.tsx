@@ -6,7 +6,7 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { ECollectionNames } from '@/enums'
 import React, { ChangeEvent, ReactElement, useEffect, useRef, useState, useCallback } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { externalLinkIcon, infoIcon, trashIcon } from '@/public';
+import { infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
@@ -20,7 +20,6 @@ import { ISelectOption } from '@/components/select-dropdown/interfaces/select-op
 import { enumToKeyValueArray } from '@/utils/enum-to-array';
 import { EBusinessType } from '@/enums/business-type.enum';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
-import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 
 type collectionType = IBusiness;

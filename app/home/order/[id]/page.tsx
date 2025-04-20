@@ -51,7 +51,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
                 const productIds = data.items.map((item: OrderItem) => item.product_id);
                 const uniqueProductIds = [...new Set(productIds)];
 
-                const productData: { [key: string]: any } = {};
+                const productData: { [key: string]: string } = {};
                 const productImageData: { [key: string]: string[] } = {};
 
                 for (const productId of uniqueProductIds) {

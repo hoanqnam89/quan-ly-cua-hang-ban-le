@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
                     { status: 400 }
                 );
             }
-            if (error.name === 'MongoError' && (error as any).code === 11000) {
+            if (error.name === 'MongoError' && (error as unknown).code === 11000) {
                 return NextResponse.json(
                     { error: 'Mã đơn hàng đã tồn tại' },
                     { status: 400 }

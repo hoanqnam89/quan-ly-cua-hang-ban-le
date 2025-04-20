@@ -7,7 +7,7 @@ import { ECollectionNames } from '@/enums'
 import { IAccount } from '@/interfaces'
 import React, { ChangeEvent, ReactElement, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { externalLinkIcon, infoIcon, trashIcon } from '@/public';
+import { infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import { DEFAULT_ACCOUNT } from '@/constants/account.constant';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
@@ -15,7 +15,6 @@ import Tabs from '@/components/tabs/tabs';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import Checkbox from '@/components/checkbox/checkbox';
 import { translateCollectionName } from '@/utils/translate-collection-name';
-import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 
 type collectionType = IAccount;

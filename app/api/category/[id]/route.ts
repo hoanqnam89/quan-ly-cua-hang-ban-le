@@ -6,8 +6,6 @@ import { print } from "@/utils/print";
 import { connectToDatabase } from "@/utils/database";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { ROOT } from "@/constants/root.constant";
-import { IProduct } from "@/interfaces/product.interface";
-import { ProductModel } from "@/models/Product";
 import { isValidObjectId } from "mongoose";
 import { ICategory } from "@/interfaces/category.interface";
 import { CategoryModel } from "@/models/Category";

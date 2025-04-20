@@ -10,12 +10,10 @@ import { infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
-import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { IWarehouseReceipt } from '@/interfaces/warehouse-receipt.interface';
 import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { translateCollectionName } from '@/utils/translate-collection-name';
-import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 import { IOrderForm, IOrderFormProductDetail, OrderFormStatus } from '@/interfaces/order-form.interface';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
@@ -23,7 +21,6 @@ import { DEFAULT_ORDER_FORM } from '@/constants/order-form.constant';
 import styles from './style.module.css';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { IProduct } from '@/interfaces/product.interface';
-import { formatCurrency } from '@/utils/format-currency';
 import { IBusiness } from '@/interfaces/business.interface';
 import { EBusinessType } from '@/enums/business-type.enum';
 import { IUnit } from '@/interfaces/unit.interface';
@@ -31,8 +28,7 @@ import { EButtonType } from '@/components/button/interfaces/button-type.interfac
 import Textarea from '@/components/textarea/Textarea';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '@/components/notify/notification/notification';
-import { updateCollectionById, addCollection, fetchCollection, updateOrderStatus } from '@/services/api-service';
-import { ROOT } from '@/constants/root.constant';
+import { addCollection, fetchCollection, updateOrderStatus } from '@/services/api-service';
 import { EStatusCode } from '@/enums/status-code.enum';
 
 // Thêm interface cho bộ lọc ngày
@@ -94,7 +90,7 @@ const cleanupOldCaches = (): void => {
             sessionStorage.removeItem(key);
             console.log(`Đã xóa cache cũ: ${key}`);
           }
-        } catch (e) {
+        } catch {
           // Nếu không parse được, xóa luôn key đó
           sessionStorage.removeItem(key);
         }
@@ -195,7 +191,6 @@ export default function Product() {
   // Thêm state cho bộ lọc
   const [dateFilter, setDateFilter] = useState<string>('0');
   const [filteredReceiptCount, setFilteredReceiptCount] = useState<number>(0);
-  const [allWarehouseReceipts, setAllWarehouseReceipts] = useState<IWarehouseReceipt[]>([]);
 
   // Danh sách các bộ lọc ngày
   const dateFilters: IDateFilter[] = [
@@ -271,7 +266,7 @@ export default function Product() {
 
       setFilteredReceiptCount(filteredReceipts.length);
       return filteredReceipts;
-    } catch (error) {
+    } catch {
       setFilteredReceiptCount(receipts.length);
       return receipts;
     }
@@ -973,60 +968,60 @@ export default function Product() {
     },
   ];
 
-  const handleChangeWarehouseReceiptProductId = (
-    e: ChangeEvent<HTMLSelectElement>,
-    changeIndex: number,
-  ): void => {
-    setWarehouseReceipt({
-      ...warehouseReceipt,
-      product_details: [
-        ...warehouseReceipt.product_details.map((
-          warehouseReceiptProductDetail: IOrderFormProductDetail,
-          index: number
-        ): IOrderFormProductDetail => {
-          if (index === changeIndex)
-            return {
-              ...warehouseReceiptProductDetail,
-              _id: e.target.value
-            }
-          else
-            return warehouseReceiptProductDetail;
-        }),
-      ],
-    });
-  }
+  // const handleChangeWarehouseReceiptProductId = (
+  //   e: ChangeEvent<HTMLSelectElement>,
+  //   changeIndex: number,
+  // ): void => {
+  //   setWarehouseReceipt({
+  //     ...warehouseReceipt,
+  //     product_details: [
+  //       ...warehouseReceipt.product_details.map((
+  //         warehouseReceiptProductDetail: IOrderFormProductDetail,
+  //         index: number
+  //       ): IOrderFormProductDetail => {
+  //         if (index === changeIndex)
+  //           return {
+  //             ...warehouseReceiptProductDetail,
+  //             _id: e.target.value
+  //           }
+  //         else
+  //           return warehouseReceiptProductDetail;
+  //       }),
+  //     ],
+  //   });
+  // }
 
-  const handleChangeWarehouseReceiptProductUnitId = (
-    e: ChangeEvent<HTMLSelectElement>,
-    changeIndex: number,
-  ): void => {
-    setWarehouseReceipt({
-      ...warehouseReceipt,
-      product_details: [
-        ...warehouseReceipt.product_details.map((
-          warehouseReceiptProductDetail: IOrderFormProductDetail,
-          index: number
-        ): IOrderFormProductDetail => {
-          if (index === changeIndex)
-            return {
-              ...warehouseReceiptProductDetail,
-              unit_id: e.target.value
-            }
-          else
-            return warehouseReceiptProductDetail;
-        }),
-      ],
-    });
-  }
+  // const handleChangeWarehouseReceiptProductUnitId = (
+  //   e: ChangeEvent<HTMLSelectElement>,
+  //   changeIndex: number,
+  // ): void => {
+  //   setWarehouseReceipt({
+  //     ...warehouseReceipt,
+  //     product_details: [
+  //       ...warehouseReceipt.product_details.map((
+  //         warehouseReceiptProductDetail: IOrderFormProductDetail,
+  //         index: number
+  //       ): IOrderFormProductDetail => {
+  //         if (index === changeIndex)
+  //           return {
+  //             ...warehouseReceiptProductDetail,
+  //             unit_id: e.target.value
+  //           }
+  //         else
+  //           return warehouseReceiptProductDetail;
+  //       }),
+  //     ],
+  //   });
+  // }
 
-  const handleChangeWarehouseReceiptSupplierId = (
-    e: ChangeEvent<HTMLSelectElement>,
-  ): void => {
-    setWarehouseReceipt({
-      ...warehouseReceipt,
-      supplier_id: e.target.value,
-    });
-  }
+  // const handleChangeWarehouseReceiptSupplierId = (
+  //   e: ChangeEvent<HTMLSelectElement>,
+  // ): void => {
+  //   setWarehouseReceipt({
+  //     ...warehouseReceipt,
+  //     supplier_id: e.target.value,
+  //   });
+  // }
 
   const handleChangeWarehouseReceiptProductQuantity = (
     e: ChangeEvent<HTMLInputElement>,

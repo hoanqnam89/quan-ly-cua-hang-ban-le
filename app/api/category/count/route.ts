@@ -1,8 +1,6 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { ICategory } from "@/interfaces/category.interface";
-import { IProduct } from "@/interfaces/product.interface";
-import { ProductModel } from "@/models";
 import { CategoryModel } from "@/models/Category";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";

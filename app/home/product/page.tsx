@@ -10,7 +10,6 @@ import { infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
-import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import Image from 'next/image';
 import styles from './style.module.css';
 import { MAX_PRICE } from '@/constants/max-price.constant';
@@ -22,10 +21,7 @@ import { EBusinessType } from '@/enums/business-type.enum';
 import { VND_UNIT } from '@/constants/vnd-unit.constant';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { formatCurrency } from '@/utils/format-currency';
-import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
-import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 import useNotificationsHook from '@/hooks/notifications-hook';
-import { ENotificationType } from '@/components/notify/notification/notification';
 import { ICategory } from '@/interfaces/category.interface';
 import { IProduct } from '@/interfaces/product.interface';
 import { DEFAULT_PROCDUCT } from '@/constants/product.constant';
@@ -78,7 +74,7 @@ export default function Product() {
       ]);
       setIsLoading(false);
     },
-    [],
+    [product],
   );
   const getCategory: () => Promise<void> = useCallback(
     async (): Promise<void> => {
@@ -101,7 +97,7 @@ export default function Product() {
       ]);
       setIsLoading(false);
     },
-    [],
+    [product],
   );
 
   useEffect((): void => {
@@ -373,22 +369,22 @@ const handleOpenModal = (prev: boolean): boolean => {
 }
 
 // Trong hàm xử lý submit form
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+// const handleSubmit = async (e: React.FormEvent) => {
+//   e.preventDefault();
 
-  if (!product.supplier_id) {
-    createNotification({
-      id: Date.now(),
-      children: <Text>Vui lòng chọn nhà cung cấp!</Text>,
-      type: ENotificationType.ERROR,
-      isAutoClose: true,
-    });
-    return;
-  }
+//   if (!product.supplier_id) {
+//     createNotification({
+//       id: Date.now(),
+//       children: <Text>Vui lòng chọn nhà cung cấp!</Text>,
+//       type: ENotificationType.ERROR,
+//       isAutoClose: true,
+//     });
+//     return;
+//   }
 
-  // Gửi dữ liệu lên server
-  // ...
-};
+//   // Gửi dữ liệu lên server
+//   // ...
+// };
 
 function handleChangeProduct(e: ChangeEvent<HTMLInputElement>): void {
   const { name, value } = e.target;
@@ -560,15 +556,15 @@ return (
 );
 }
 
-function loadBusinessNames() {
-  throw new Error('Function not implemented.');
-}
+// function loadBusinessNames() {
+//   throw new Error('Function not implemented.');
+// }
 
-function getCategory() {
-  throw new Error('Function not implemented.');
-}
+// function getCategory() {
+//   throw new Error('Function not implemented.');
+// }
 
-function setImageFiles(arg0: File[]) {
-  throw new Error('Function not implemented.');
-}
+// function setImageFiles(arg0: File[]) {
+//   throw new Error('Function not implemented.');
+// }
 

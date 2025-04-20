@@ -6,7 +6,6 @@ import { getCollectionById } from '@/services/api-service';
 import React, { ReactElement, use, useEffect, useState } from 'react'
 import InputSection from '../../components/input-section/input-section';
 import { TextInput, Text, NumberInput, LoadingScreen } from '@/components';
-import Checkbox from '@/components/checkbox/checkbox';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IUnit } from '@/interfaces/unit.interface';
@@ -35,7 +34,7 @@ export default function Detail({
       setIsLoading(false);
     }
     getCollectionNameById();
-  }, []);
+  }, [id]);
 
   return (
     <>

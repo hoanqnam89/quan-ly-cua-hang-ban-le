@@ -1,18 +1,16 @@
 'use client';
 
-import { Button, IconContainer, NumberInput, SelectDropdown, Text } from '@/components'
+import { Button, IconContainer, SelectDropdown, Text } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
-import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState, ReactNode, Dispatch, SetStateAction, useMemo } from 'react'
+import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState, ReactNode, Dispatch, SetStateAction } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { infoIcon, trashIcon, externalLinkIcon } from '@/public';
+import { infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
-import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { IProduct } from '@/interfaces/product.interface';
-import { MAX_PRICE } from '@/constants/max-price.constant';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
@@ -20,10 +18,8 @@ import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { DEFAULT_PROCDUCT_DETAIL } from '@/constants/product-detail.constant';
 import DateInput from '@/components/date-input/date-input';
-import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 import { ENotificationType } from '@/components/notify/notification/notification';
 import useNotificationsHook from '@/hooks/notifications-hook';
-import { useRouter } from 'next/navigation';
 import { deleteCollectionById } from '@/services/api-service';
 import { differenceInDays } from 'date-fns';
 import styles from './style.module.css';
@@ -103,7 +99,7 @@ interface ExpirationModalProps {
   onDeleteSuccess?: (deletedDetailId: string) => void;
 }
 
-function ExpirationModal({ isOpen, setIsOpen, onDeleteSuccess }: ExpirationModalProps) {
+function ExpirationModal({ isOpen, setIsOpen }: ExpirationModalProps) {
   const [products, setProducts] = useState<ProductWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [confirmDeleteModal, setConfirmDeleteModal] = useState(false);
@@ -265,7 +261,7 @@ function ExpirationModal({ isOpen, setIsOpen, onDeleteSuccess }: ExpirationModal
         expiringObserverRef.current.disconnect();
       }
     };
-  }, [isOpen]);
+  }, []);
 
   // Function to load more expired products
   const loadMoreExpiredProducts = () => {
@@ -358,20 +354,20 @@ function ExpirationModal({ isOpen, setIsOpen, onDeleteSuccess }: ExpirationModal
     }
   };
 
-  const checkExpirationStatus = (expiryDate: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Set time to start of day for accurate comparison
-    const expiry = new Date(expiryDate);
-    expiry.setHours(0, 0, 0, 0);
-    const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  // const checkExpirationStatus = (expiryDate: Date) => {
+  //   const today = new Date();
+  //   today.setHours(0, 0, 0, 0); // Set time to start of day for accurate comparison
+  //   const expiry = new Date(expiryDate);
+  //   expiry.setHours(0, 0, 0, 0);
+  //   const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (daysUntilExpiry <= 0) { // Changed from < 0 to <= 0 to include today
-      return { status: 'expired', className: 'text-red-600', bgClass: 'bg-red-50' };
-    } else if (daysUntilExpiry <= 10) { // Thay đổi từ 30 ngày xuống còn 10 ngày
-      return { status: 'expiring-soon', className: 'text-yellow-600', bgClass: 'bg-yellow-50' };
-    }
-    return { status: 'good', className: 'text-green-600', bgClass: 'bg-green-50' };
-  };
+  //   if (daysUntilExpiry <= 0) { // Changed from < 0 to <= 0 to include today
+  //     return { status: 'expired', className: 'text-red-600', bgClass: 'bg-red-50' };
+  //   } else if (daysUntilExpiry <= 10) { // Thay đổi từ 30 ngày xuống còn 10 ngày
+  //     return { status: 'expiring-soon', className: 'text-yellow-600', bgClass: 'bg-yellow-50' };
+  //   }
+  //   return { status: 'good', className: 'text-green-600', bgClass: 'bg-green-50' };
+  // };
 
   return (
     <>
@@ -627,7 +623,7 @@ type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
 
 export default function Product() {
-  const router = useRouter();
+  // const router = useRouter();
   const { createNotification, notificationElements } = useNotificationsHook();
   const [productDetail, setProductDetail] = useState<collectionType>(
     DEFAULT_PROCDUCT_DETAIL
@@ -648,7 +644,7 @@ export default function Product() {
   const [selectedProductDetail, setSelectedProductDetail] = useState<{ id: string; name: string; isGroup?: boolean; productName?: string; childCount?: number } | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger cho việc refresh dữ liệu
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  // const [itemsPerPage] = useState(10);
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const [continuousIndex, setContinuousIndex] = useState<number>(1);
 
@@ -674,7 +670,9 @@ export default function Product() {
   );
 
   // Xử lý khi có sản phẩm bị xóa từ modal ExpirationModal
-  const handleExpirationModalDelete = useCallback((deletedDetailId: string) => {
+  const handleExpirationModalDelete = useCallback((
+    // deletedDetailId: string
+  ) => {
     // Tăng giá trị refreshTrigger để trigger useEffect refresh dữ liệu
     setRefreshTrigger(prev => prev + 1);
 

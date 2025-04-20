@@ -24,7 +24,6 @@ import styles from './style.module.css';
 import { MINIMUM_WORKING_AGE } from '@/constants/minimum-working-age.constant';
 import { MAXIMUM_WORKING_AGE } from '@/constants/maximum-working-age.constant';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
-import { ENotificationType } from '@/components/notify/notification/notification';
 import useNotificationsHook from '@/hooks/notifications-hook';
 
 type collectionType = IUser;
@@ -339,19 +338,19 @@ export default function User() {
       value: array[1],
     }));
 
-  const handleOpenModal = (prev: boolean): boolean => {
-    if (accountOptions.length === 0) {
-      createNotification({
-        id: 0,
-        children: <Text>Thêm tài khoản vào trước khi thêm người dùng!</Text>,
-        type: ENotificationType.ERROR,
-        isAutoClose: true,
-      });
-      return prev;
-    }
+  // const handleOpenModal = (prev: boolean): boolean => {
+  //   if (accountOptions.length === 0) {
+  //     createNotification({
+  //       id: 0,
+  //       children: <Text>Thêm tài khoản vào trước khi thêm người dùng!</Text>,
+  //       type: ENotificationType.ERROR,
+  //       isAutoClose: true,
+  //     });
+  //     return prev;
+  //   }
 
-    return !prev;
-  }
+  //   return !prev;
+  // }
 
 
   return (

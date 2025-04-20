@@ -50,7 +50,7 @@ export default function PaymentModal({ isOpen, onClose, onComplete, orderId, tot
 
     const handlePaymentAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         // Loại bỏ tất cả các ký tự không phải số
-        let value = e.target.value.replace(/[^\d]/g, '');
+        const value = e.target.value.replace(/[^\d]/g, '');
 
         // Nếu value rỗng, set về 0
         if (!value) {

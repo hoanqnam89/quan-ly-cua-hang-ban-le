@@ -1,5 +1,3 @@
-import { Types } from 'mongoose';
-
 export interface IProduct {
     _id: string;
     business_name: string;

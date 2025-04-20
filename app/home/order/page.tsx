@@ -1,32 +1,12 @@
 'use client';
 
-import { Button, IconContainer, NumberInput, SelectDropdown, Text } from '@/components'
-import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
-import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
-import { ECollectionNames } from '@/enums'
-import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
-import InputSection from '../components/input-section/input-section';
-import { infoIcon, trashIcon } from '@/public';
-import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
-import TabItem from '@/components/tabs/components/tab-item/tab-item';
-import Tabs from '@/components/tabs/tabs';
-import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
-import { IProduct } from '@/interfaces/product.interface';
-import { MAX_PRICE } from '@/constants/max-price.constant';
-import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
-import { fetchGetCollections } from '@/utils/fetch-get-collections';
-import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
-import { translateCollectionName } from '@/utils/translate-collection-name';
-import { IProductDetail } from '@/interfaces/product-detail.interface';
-import { DEFAULT_PROCDUCT_DETAIL } from '@/constants/product-detail.constant';
-import DateInput from '@/components/date-input/date-input';
+import { Button } from '@/components'
+import React, { useEffect, useState } from 'react'
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/app/utils/format';
 import PaymentModal from '@/app/components/PaymentModal';
-
-type collectionType = IProductDetail;
-const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
+import { IProductDetail } from '@/interfaces/product-detail.interface';
 
 interface OrderItem {
   product_id: string;
@@ -210,7 +190,7 @@ const ImportOrderList = () => {
 
       // Bước 2: Lấy thông tin chi tiết từng sản phẩm
       const itemsWithProductDetails = await Promise.all(
-        orderData.items.map(async (item: any) => {
+        orderData.items.map(async (item: IProductDetail) => {
           try {
             if (!item.product_id) {
               console.warn("Sản phẩm không có ID:", item);
@@ -591,7 +571,7 @@ const ImportOrderList = () => {
                     <tr
                       key={order._id}
                       className="hover:bg-slate-50 cursor-pointer"
-                      onClick={(event: React.MouseEvent) => {
+                      onClick={() => {
                         router.push(`/home/order/${order._id}`);
                       }}
                     >

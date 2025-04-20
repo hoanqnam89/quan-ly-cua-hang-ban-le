@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteCollectionByIdApi, getCollectionByIdApi } from "@/utils/api-helper";
-import { IQueryString } from "../../interfaces/query-string.interface";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { print } from "@/utils/print";
 import { connectToDatabase } from "@/utils/database";
@@ -8,7 +6,6 @@ import { createErrorMessage } from "@/utils/create-error-message";
 import { ROOT } from "@/constants/root.constant";
 import { IProductDetail } from "@/interfaces/product-detail.interface";
 import { ProductDetailModel } from "@/models/ProductDetail";
-import { ObjectId } from "mongodb";
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
@@ -61,7 +58,7 @@ export const PATCH = async (
       );
 
     // Chuẩn bị đối tượng cập nhật
-    const updateData: any = {
+    const updateData: IProductDetail = {
       updated_at: new Date(),
     };
 

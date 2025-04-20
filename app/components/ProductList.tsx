@@ -3,7 +3,6 @@
 import { IProduct } from '../interfaces/product.interface';
 import Image from 'next/image';
 import { formatCurrency } from '../utils/format';
-import { useState } from 'react';
 
 interface ProductListProps {
     products: IProduct[];

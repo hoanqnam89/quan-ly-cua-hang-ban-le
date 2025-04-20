@@ -1,13 +1,12 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { IBusiness } from "@/interfaces/business.interface";
 import { BusinessModel } from "@/models/Business";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { print } from "@/utils/print";
 import { NextResponse } from "next/server";
 
-type collectionType = IBusiness;
+// type collectionType = IBusiness;
 const collectionName: ECollectionNames = ECollectionNames.BUSINESS;
 const collectionModel = BusinessModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}/names`;

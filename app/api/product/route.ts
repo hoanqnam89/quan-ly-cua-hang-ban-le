@@ -1,17 +1,13 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { IBusiness } from "@/interfaces/business.interface";
 import { IProduct } from "@/interfaces/product.interface";
 import { ProductModel } from "@/models";
-import { BusinessModel } from "@/models/Business";
 import { deleteCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { nameToHyphenAndLowercase } from "@/utils/name-to-hyphen-and-lowercase";
 import { print } from "@/utils/print";
-import { isValidObjectId } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
-import { cache } from "react";
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
