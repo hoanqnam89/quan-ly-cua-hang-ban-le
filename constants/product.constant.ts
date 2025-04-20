@@ -6,12 +6,12 @@ export const DEFAULT_PROCDUCT: IProduct = {
   created_at: new Date(),
   updated_at: new Date(),
 
-  code: `pepsi-390ml-${Date.now()}`,
-  business_id: ``,
-  supplier_name: ``,
-  name: `Pepsi 390ml`,
-  description: `Nước ngọt giải khát`,
+  supplier_id: ``,
+  name: ``,
+  description: ``,
   image_links: [],
-  input_price: 9000,
-  output_price: 10000,
+  input_price: 0,
+  output_price: 0,
+  category_id: "",
+  code: ""
 }

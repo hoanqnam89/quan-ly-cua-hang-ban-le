@@ -5,6 +5,6 @@ export const DEFAULT_UNIT: IUnit = {
   created_at: new Date(),
   updated_at: new Date(),
 
-  name: `Cái`,
-  equal: 1, 
+  name: ``,
+  equal: 0, 
 }

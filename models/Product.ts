@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+import { Code, ObjectId } from 'mongodb';
 import { models, model, Schema } from 'mongoose';
 import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 
@@ -14,10 +14,17 @@ const ProductSchema = new Schema({
     type: Date,
   },
 
+  supplier_id: {
+    type: ObjectId,
+    required: [true, `Supplier is required!`],
+  },
+  category_id: {
+    type: ObjectId,
+    required: [true, `Category is required!`],
+  },
   code: {
     type: String,
-    unique: true,
-    required: [true, `Mã sản phẩm là bắt buộc!`],
+    required: [true, `Name is required!`],
   },
   name: {
     type: String,

@@ -8,21 +8,21 @@ export const DEFAULT_USER: IUser = {
 
   account_id: ``,
   name: {
-    first: `Trần`,
-    middle: `Nguyễn Hoàng`,
-    last: `Nam`
+    first: "",
+    middle: "",
+    last: ""
   },
   address: {
-    number: `45/1`,
-    street: `Đinh Bộ Lĩnh`,
-    city: `Hồ Chí Minh`,
-    ward: `24`,
-    district: `Bình Thạnh`,
-    country: `Việt Nam`
+    number: "",
+    street: "",
+    city: "",
+    ward: "",
+    district: "",
+    country: ""
   },
-  email: `namnguyen@gmail.com`,
-  birthday: new Date(`2002-03-07`),
+  email: "",
+  birthday: new Date(""),
   gender: EUserGender.MALE,
   avatar: ``,
-  position: `Nhân viên`
+  position: ""
 }

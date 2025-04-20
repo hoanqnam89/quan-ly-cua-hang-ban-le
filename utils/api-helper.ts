@@ -11,7 +11,9 @@ import { IQueryString } from "@/app/api/interfaces/query-string.interface";
 import { CONTACT_INFORMATION } from "@/constants";
 
 const getCollections = async <T>(model: Model<T>): Promise<NextResponse> => {
-  const collections: any[] = await model.find({}).lean();
+  console.log(model)
+  const collections: T[] = await model.find({});
+
   return NextResponse.json(collections, { status: EStatusCode.OK });
 }
 
@@ -101,9 +103,8 @@ const getCollectionsApi = async <T>(
   model: Model<T>,
   path: string,
 ): Promise<NextResponse> => {
-  const startTime = Date.now();
-  print(`${collectionName} API - Bắt đầu GET ${collectionName}s`, ETerminal.FgGreen);
-
+  print(`${collectionName} API - GET ${collectionName}s`, ETerminal.FgGreen);
+  console.log(collectionName, model, path);
   // const cookieStore: ReadonlyRequestCookies = await cookies();
   // const isUserAdmin = await isAdmin(
   //   cookieStore, 

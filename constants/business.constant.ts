@@ -6,15 +6,15 @@ export const DEFAULT_BUSINESS: IBusiness = {
   created_at: new Date(),
   updated_at: new Date(),
 
-  name: `Vinshop`,
+  name: ``,
   address: {
-    number: `28`,
-    street: `Bis Mạc Đĩnh Chi`,
-    city: `Hồ Chí Minh`,
-    ward: `Đa Kao`,
-    district: `1`,
-    country: `Việt Nam`
+    number: ``,
+    street: ``,
+    city: ``,
+    ward: ``,
+    district: ``,
+    country: ``
   }, 
-  email: `vinshop@gmail.com`, 
+  email: ``, 
   type: EBusinessType.MANUFACTURER, 
 }

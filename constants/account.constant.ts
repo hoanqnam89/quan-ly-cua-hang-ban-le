@@ -5,7 +5,7 @@ export const DEFAULT_ACCOUNT: IAccount = {
   created_at: new Date(),
   updated_at: new Date(),
 
-  username: `admin`,
-  password: `admin`,
-  is_admin: true,
+  username: ``,
+  password: ``,
+  is_admin: false,
 }

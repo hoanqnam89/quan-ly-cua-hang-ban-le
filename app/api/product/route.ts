@@ -44,6 +44,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   //   );
 
   const product: collectionType = await req.json();
+  console.log(product)
 
   try {
     await connectToDatabase();
@@ -63,59 +64,61 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     const newProduct = new collectionModel({
       created_at: new Date(),
       updated_at: new Date(),
-      code: product.code,
-      business_id: product._id,
+      supplier_id: product.supplier_id,
+      category_id: product.category_id,
       name: product.name,
+      code: product.code,
       description: product.description,
       image_links: product.image_links,
       input_price: product.input_price,
       output_price: product.output_price,
     });
+    console.log('new Product', newProduct)
 
-    try {
-      const savedProduct: collectionType = await newProduct.save();
+    const savedProduct: collectionType = await newProduct.save();
+    console.log('save Product', savedProduct)
 
-      if (!savedProduct)
-        return NextResponse.json(
-          createErrorMessage(
-            `Failed to create ${collectionName}.`,
-            ``,
-            path,
-            `Please contact for more information.`,
-          ),
-          { status: EStatusCode.INTERNAL_SERVER_ERROR }
-        );
+    if (!savedProduct)
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          ``,
+          path,
+          `Please contact for more information.`,
+        ),
+        { status: EStatusCode.INTERNAL_SERVER_ERROR }
+      );
 
-      // Khi tạo mới sản phẩm, cần vô hiệu hóa cache để lần tải tiếp theo sẽ lấy dữ liệu mới nhất
+    // Khi tạo mới sản phẩm, cần vô hiệu hóa cache để lần tải tiếp theo sẽ lấy dữ liệu mới nhất
+    cachedProducts = null;
+
+    return NextResponse.json(savedProduct, { status: EStatusCode.CREATED });
+  } catch (saveError: any) {
+    // Xử lý lỗi trùng lặp khóa
+    if (saveError.code === 11000) {
+      // Tạo mã mới với timestamp hiện tại và thử lại
+      newProduct.code = `${product.code}-${Date.now()}`;
+      const savedProduct = await newProduct.save();
+
       cachedProducts = null;
-
       return NextResponse.json(savedProduct, { status: EStatusCode.CREATED });
-    } catch (saveError: any) {
-      // Xử lý lỗi trùng lặp khóa
-      if (saveError.code === 11000) {
-        // Tạo mã mới với timestamp hiện tại và thử lại
-        newProduct.code = `${product.code}-${Date.now()}`;
-        const savedProduct = await newProduct.save();
-
-        cachedProducts = null;
-        return NextResponse.json(savedProduct, { status: EStatusCode.CREATED });
-      }
-
-      throw saveError; // Nếu không phải lỗi trùng lặp, ném lại lỗi
     }
-  } catch (error: unknown) {
-    console.error(error);
 
-    return NextResponse.json(
-      createErrorMessage(
-        `Failed to create ${collectionName}.`,
-        error as string,
-        path,
-        `Please contact for more information.`,
-      ),
-      { status: EStatusCode.INTERNAL_SERVER_ERROR }
-    );
+    throw saveError; // Nếu không phải lỗi trùng lặp, ném lại lỗi
   }
+} catch (error: unknown) {
+  console.error(error);
+
+  return NextResponse.json(
+    createErrorMessage(
+      `Failed to create ${collectionName}.`,
+      error as string,
+      path,
+      `Please contact for more information.`,
+    ),
+    { status: EStatusCode.INTERNAL_SERVER_ERROR }
+  );
+}
 };
 
 export const GET = async (req: NextRequest): Promise<NextResponse> => {
@@ -163,7 +166,9 @@ export const GET = async (req: NextRequest): Promise<NextResponse> => {
         business_id: 1,
         supplier_name: 1,
         created_at: 1,
-        updated_at: 1
+        updated_at: 1,
+        category_id: 1,
+        code: 1,
       };
     }
 
