@@ -30,7 +30,7 @@ type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
 
 export default function Product() {
-  const { createNotification, notificationElements } = useNotificationsHook();
+  const { createNotification , notificationElements } = useNotificationsHook();
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [product, setProduct] = useState<collectionType>(DEFAULT_PROCDUCT);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
@@ -106,6 +106,7 @@ export default function Product() {
 useEffect((): void => {
   getCategory();
 }, []);
+
 
 const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
   const { files } = e.target;

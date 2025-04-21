@@ -6,7 +6,7 @@ import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { ECollectionNames } from '@/enums';
 import { addCollection, deleteCollectionById, getCollectionById, updateCollectionById } from '@/services/api-service';
 import { LoadingScreen } from '@/components';
-import { boxIcon, infoIcon, pencilIcon, trashIcon, userIcon, plusIcon } from '@/public';
+import { boxIcon, infoIcon, pencilIcon, trashIcon, userIcon } from '@/public';
 import { ICategory } from '@/interfaces/category.interface';
 import { DEFAULT_CATEGORY } from '@/constants/category.constant';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
@@ -159,9 +159,9 @@ export default function CategoryPage() {
     setSearchTerm(e.target.value);
   }
 
-  const filteredCategories = categories.filter(u =>
-    u._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCategories = categories.filter(c =>
+    c._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
@@ -171,7 +171,7 @@ export default function CategoryPage() {
   return (
     <div className="container mx-auto p-4">
       <div className="mb-6 flex items-center justify-between bg-white p-4 rounded-xl shadow-sm">
-        <h1 className="text-2xl font-bold flex items-center text-primary">
+        <h1 className="text-2xl font-bold flex items-center text-primary gap-2">
           <IconContainer iconLink={boxIcon} size={28} className="mr-3 text-primary" />
           Quản lý loại sản phẩm
         </h1>
@@ -190,9 +190,10 @@ export default function CategoryPage() {
           </div>
           <Button
             onClick={resetForm}
-            className="bg-primary text-white hover:bg-primary-dark transition-colors flex items-center"
+            className="bg-primary text-white hover:bg-primary-dark transition-colors flex items-center font-bold gap-2"
+            type={EButtonType.SUCCESS}
           >
-            <IconContainer iconLink={plusIcon} size={16} className="mr-1" />
+            {/* <IconContainer iconLink={plusIcon} size={16} className="mr-2"/> */}
             Thêm mới
           </Button>
         </div>
@@ -203,7 +204,7 @@ export default function CategoryPage() {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 h-full">
             <div className="border-b pb-4 mb-4">
-              <h2 className="text-xl font-semibold flex items-center text-gray-800">
+              <h2 className="text-xl font-semibold flex items-center text-gray-800 gap-2">
                 {isEditing ? (
                   <>
                     <IconContainer iconLink={pencilIcon} size={20} className="mr-2 text-yellow-600" />
@@ -269,7 +270,7 @@ export default function CategoryPage() {
         <div className="lg:col-span-2">
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 h-full">
             <div className="border-b pb-4 mb-4">
-              <h2 className="text-xl font-semibold flex items-center text-gray-800">
+              <h2 className="text-xl font-semibold flex items-center text-gray-800 gap-2">
                 <IconContainer iconLink={boxIcon} size={20} className="mr-2 text-primary" />
                 Danh sách loại sản phẩm
                 <span className="ml-2 text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
@@ -295,41 +296,41 @@ export default function CategoryPage() {
                       {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th> */}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên loại sản phẩm </th>
                       {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng quy đổi</th> */}
-                      {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th> */}
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredCategories.map((u, index) => (
+                    {filteredCategories.map((c, index) => (
                       <tr key={index} className="hover:bg-gray-50 transition-colors">
                         {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u._id}</td> */}
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{u.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.name}</td>
                         {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                             {u.equal}
                           </span>
                         </td> */}
-                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(u.created_at).toLocaleDateString()}
-                        </td> */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(c.created_at).toLocaleDateString()}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                           <div className="flex justify-center space-x-2">
                             <Button
-                              onClick={() => handleViewDetail(u._id)}
+                              onClick={() => handleViewDetail(c._id)}
                               className="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-full transition-colors"
                               title="Xem chi tiết"
                             >
                               <IconContainer iconLink={infoIcon} size={16} />
                             </Button>
                             <Button
-                              onClick={() => handleEditCategory(u._id)}
+                              onClick={() => handleEditCategory(c._id)}
                               className="bg-yellow-100 text-yellow-700 hover:bg-yellow-200 p-2 rounded-full transition-colors"
                               title="Sửa"
                             >
                               <IconContainer iconLink={pencilIcon} size={16} />
                             </Button>
                             <Button
-                              onClick={() => handleDeleteUnit(u._id)}
+                              onClick={() => handleDeleteUnit(c._id)}
                               className="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-full transition-colors"
                               title="Xóa"
                             >
@@ -352,13 +353,13 @@ export default function CategoryPage() {
         <div className="modal fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="modal-content bg-white p-6 rounded-lg shadow-lg max-w-2xl w-full">
             <div className="flex items-center justify-between mb-4 border-b pb-3">
-              <h3 className="text-xl font-semibold flex items-center text-primary">
-                <IconContainer iconLink={infoIcon} size={20} className="mr-2" />
+              <h3 className="text-xl font-semibold flex items-center text-primary w-full gap-3">
+                <IconContainer iconLink={infoIcon} size={30} className="mr-3" />
                 Chi tiết loại sản phẩm 
               </h3>
               <Button
                 onClick={() => setShowDetailModal(false)}
-                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full transition-colors"
+                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-full transition-colors w-min"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -391,14 +392,15 @@ export default function CategoryPage() {
                   setShowDetailModal(false);
                   handleEditCategory(selectedCategory._id);
                 }}
-                className="bg-blue-600 text-white hover:bg-blue-700 mr-2 transition-colors flex items-center"
+                className="text-white w-full py-2 transition-colors flex items-center justify-center font-bold hover:bg-green-400"
+                type={EButtonType.INFO}
               >
-                <IconContainer iconLink={pencilIcon} size={16} className="mr-1" />
+                {/* <IconContainer iconLink={pencilIcon} size={16} className="mr-1" /> */}
                 Chỉnh sửa
               </Button>
               <Button
                 onClick={() => setShowDetailModal(false)}
-                className="bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors"
+                className="bg-gray-200 text-white hover:bg-gray-300 transition-colors font-bold" type={EButtonType.ERROR}
               >
                 Đóng
               </Button>
