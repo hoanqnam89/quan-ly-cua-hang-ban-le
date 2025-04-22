@@ -10,7 +10,7 @@ import { infoIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
-import { IProduct } from '@/interfaces/product.interface';
+import { IProduct } from '../../interfaces/product.interface';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
@@ -23,6 +23,11 @@ import useNotificationsHook from '@/hooks/notifications-hook';
 import { deleteCollectionById } from '@/services/api-service';
 import { differenceInDays } from 'date-fns';
 import styles from './style.module.css';
+import { EButtonType } from '@/components/button/interfaces/button-type.interface';
+import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { formatCurrency } from '@/utils/format-currency';
+import Image from 'next/image';
+import ProductGroupList from '../../components/ProductGroupList';
 
 interface ModalProps {
   isOpen: boolean;
@@ -81,16 +86,6 @@ function Modal({ isOpen, onClose, children, className = '' }: Omit<ModalProps, '
 
 interface ProductWithDetails extends IProduct {
   details: IProductDetail[];
-}
-
-// Mở rộng interface IProductDetail để hỗ trợ nhóm sản phẩm
-interface IExtendedProductDetail extends IProductDetail {
-  _productName?: string;
-  _totalInventory?: number;
-  _totalInputQuantity?: number;
-  _totalOutputQuantity?: number;
-  _isGroupHeader?: boolean;
-  _isGroupItem?: boolean;
 }
 
 interface ExpirationModalProps {
@@ -185,7 +180,7 @@ function ExpirationModal({ isOpen, setIsOpen }: ExpirationModalProps) {
             expiry.setHours(0, 0, 0, 0);
 
             const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-            if (daysUntilExpiry > 0 && daysUntilExpiry <= 10) { // Chỉ hiển thị sản phẩm sắp hết hạn trong 10 ngày
+            if (daysUntilExpiry > 0 && daysUntilExpiry <= 30) { // Chỉ hiển thị sản phẩm sắp hết hạn trong 10 ngày
               expiringItems.push({
                 product,
                 detail,
@@ -353,21 +348,6 @@ function ExpirationModal({ isOpen, setIsOpen }: ExpirationModalProps) {
       console.error('Error deleting product detail:', error);
     }
   };
-
-  // const checkExpirationStatus = (expiryDate: Date) => {
-  //   const today = new Date();
-  //   today.setHours(0, 0, 0, 0); // Set time to start of day for accurate comparison
-  //   const expiry = new Date(expiryDate);
-  //   expiry.setHours(0, 0, 0, 0);
-  //   const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-
-  //   if (daysUntilExpiry <= 0) { // Changed from < 0 to <= 0 to include today
-  //     return { status: 'expired', className: 'text-red-600', bgClass: 'bg-red-50' };
-  //   } else if (daysUntilExpiry <= 10) { // Thay đổi từ 30 ngày xuống còn 10 ngày
-  //     return { status: 'expiring-soon', className: 'text-yellow-600', bgClass: 'bg-yellow-50' };
-  //   }
-  //   return { status: 'good', className: 'text-green-600', bgClass: 'bg-green-50' };
-  // };
 
   return (
     <>
@@ -623,7 +603,6 @@ type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
 
 export default function Product() {
-  // const router = useRouter();
   const { createNotification, notificationElements } = useNotificationsHook();
   const [productDetail, setProductDetail] = useState<collectionType>(
     DEFAULT_PROCDUCT_DETAIL
@@ -641,9 +620,14 @@ export default function Product() {
   });
   const [isExpirationModalOpen, setIsExpirationModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selectedProductDetail, setSelectedProductDetail] = useState<{ id: string; name: string; isGroup?: boolean; productName?: string; childCount?: number } | null>(null);
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger cho việc refresh dữ liệu
+  const [selectedProductDetail, setSelectedProductDetail] = useState<{ id: string; name: string } | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'list' | 'group'>('list');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [confirmDeleteModal, setConfirmDeleteModal] = useState(false);
+  const [products, setProducts] = useState<IProduct[]>([]);
+  const [productStockInfo, setProductStockInfo] = useState<Record<string, number>>({});
 
   const getProducts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
@@ -666,17 +650,13 @@ export default function Product() {
     [],
   );
 
-  // Xử lý khi có sản phẩm bị xóa từ modal ExpirationModal
-  const handleExpirationModalDelete = useCallback((
-    // deletedDetailId: string
-  ) => {
-    // Tăng giá trị refreshTrigger để trigger useEffect refresh dữ liệu
+  const handleExpirationModalDelete = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
     createNotification({
       type: ENotificationType.SUCCESS,
       children: <div>Đã xóa sản phẩm hết hạn thành công</div>,
       isAutoClose: true,
-      id: 0, // id sẽ được ghi đè trong hook
+      id: 0,
     });
   }, [createNotification]);
 
@@ -692,14 +672,11 @@ export default function Product() {
           setIsLoading(false);
         }
       };
-
       refreshData();
     }
   }, [refreshTrigger, getProducts]);
 
-  // Effect riêng cho việc chuyển trang
   useEffect(() => {
-    // Cập nhật dữ liệu khi chuyển trang
     const refreshPage = async () => {
       if (currentPage > 0) {
         try {
@@ -712,7 +689,6 @@ export default function Product() {
         }
       }
     };
-
     refreshPage();
   }, [currentPage, getProducts]);
 
@@ -720,91 +696,33 @@ export default function Product() {
     getProducts();
   }, []);
 
-  // Sửa lại hàm combineProductDetails để tính toán số thứ tự đúng
-  const combineProductDetails = (productDetails: collectionType[]): collectionType[] => {
-    if (!productDetails || productDetails.length === 0) {
-      return [];
-    }
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch('/api/product');
+        const data = await response.json();
+        setProducts(data);
 
-    // Tạo map để nhóm sản phẩm theo tên
-    const productGroups = new Map<string, Array<IExtendedProductDetail>>();
+        // Tính toán tồn kho cho mỗi sản phẩm
+        const stockInfo: Record<string, number> = {};
+        const detailsResponse = await fetch('/api/product-detail');
+        const details = await detailsResponse.json();
 
-    // Nhóm các sản phẩm có cùng tên vào các mảng riêng
-    productDetails.forEach((detail) => {
-      const productOption = productOptions.find(
-        option => option.value === detail.product_id
-      );
-      const productName = productOption?.label || 'Không xác định';
-
-      if (!productGroups.has(productName)) {
-        productGroups.set(productName, []);
-      }
-
-      productGroups.get(productName)!.push({ ...detail } as IExtendedProductDetail);
-    });
-
-    // Kết quả cuối cùng
-    const result: IExtendedProductDetail[] = [];
-    let countItems = 0; // Đếm số sản phẩm thực tế (không tính header)
-
-    // Xử lý từng nhóm sản phẩm
-    productGroups.forEach((details, productName) => {
-      // Nếu chỉ có một chi tiết sản phẩm, không cần gộp
-      if (details.length === 1) {
-        const item = details[0];
-        countItems++;
-        (item as any).displayIndex = countItems;
-        result.push(item);
-        return;
-      }
-
-      // Sắp xếp theo ngày hạn sử dụng tăng dần
-      details.sort((a, b) => {
-        const dateA = new Date(a.expiry_date);
-        const dateB = new Date(b.expiry_date);
-        return dateA.getTime() - dateB.getTime();
-      });
-
-      // Tính tổng kho và số lượng của nhóm
-      const totalInventory = details.reduce((sum, item) => sum + item.inventory, 0);
-      const totalInputQuantity = details.reduce((sum, item) => sum + item.input_quantity, 0);
-      const totalOutputQuantity = details.reduce((sum, item) => sum + item.output_quantity, 0);
-
-      // Tạo một đại diện cho nhóm sản phẩm (dựa trên mục đầu tiên)
-      const groupRepresentative = { ...details[0] } as IExtendedProductDetail;
-      groupRepresentative._productName = productName;
-      groupRepresentative._totalInventory = totalInventory;
-      groupRepresentative._totalInputQuantity = totalInputQuantity;
-      groupRepresentative._totalOutputQuantity = totalOutputQuantity;
-      groupRepresentative._isGroupHeader = true;
-      groupRepresentative.inventory = totalInventory;  // Gán trực tiếp vào trường inventory
-      groupRepresentative.input_quantity = totalInputQuantity;  // Gán trực tiếp vào trường input_quantity
-      groupRepresentative.output_quantity = totalOutputQuantity;  // Gán trực tiếp vào trường output_quantity
-      (groupRepresentative as any).childCount = details.length; // Thêm số lượng sản phẩm con
-      (groupRepresentative as any).groupName = productName; // Thêm tên nhóm
-
-      // Thêm đại diện nhóm vào kết quả
-      result.push(groupRepresentative);
-
-      // Chỉ thêm các sản phẩm con nếu nhóm không bị đóng
-      if (!collapsedGroups[groupRepresentative._id]) {
-        // Thêm các sản phẩm con trong nhóm với định dạng lùi vào
-        details.forEach(detail => {
-          const childItem = { ...detail } as IExtendedProductDetail;
-          childItem._productName = productName;
-          childItem._isGroupItem = true;
-          countItems++;
-          (childItem as any).displayIndex = countItems;
-          result.push(childItem);
+        details.forEach((detail: IProductDetail) => {
+          if (!stockInfo[detail.product_id]) {
+            stockInfo[detail.product_id] = 0;
+          }
+          stockInfo[detail.product_id] += (detail.input_quantity - detail.output_quantity);
         });
+
+        setProductStockInfo(stockInfo);
+      } catch (error) {
+        console.error('Error fetching products:', error);
       }
-    });
+    };
 
-    // Cập nhật tổng số thứ tự đã sử dụng
-    setContinuousIndex(countItems);
-
-    return result as unknown as collectionType[];
-  };
+    fetchProducts();
+  }, []);
 
   const columns: Array<IColumnProps<collectionType>> = [
     {
@@ -813,145 +731,38 @@ export default function Product() {
       title: '#',
       size: '1fr',
       render: (collection: collectionType): ReactElement => {
-        const detail = collection as unknown as IExtendedProductDetail;
-        // Sử dụng displayIndex đã được tính toán trong combineProductDetails
-        const displayIndex = (collection as any).displayIndex;
-
-        if (detail._isGroupHeader) {
-          // Ẩn số thứ tự của header nhóm
-          return <div className={styles.hiddenCell} />;
-        }
-
-        if (detail._isGroupItem) {
-          return (
-            <div className={styles.productGroupItem}>
-              <div className={styles.indexCell}>{displayIndex}</div>
-            </div>
-          );
-        }
-
+        const itemsPerPage = 10;
+        const sequentialIndex = ((currentPage - 1) * itemsPerPage) + (collection as any).index + 1;
         return (
           <div className={styles.indexCell}>
-            {displayIndex}
+            {sequentialIndex}
           </div>
         );
       }
     },
-    {
-      key: `_id`,
-      ref: useRef(null),
-      title: `Mã`,
-      size: `5fr`,
-      render: (collection: collectionType): ReactElement => {
-        const detail = collection as unknown as IExtendedProductDetail;
-
-        if (detail._isGroupHeader) {
-          const childCount = (collection as any).childCount || 0;
-          const groupId = collection._id;
-          const isCollapsed = collapsedGroups[groupId] || false;
-          const groupName = (collection as any).groupName || detail._productName || '';
-
-          return (
-            <div
-              className={`${styles.productGroupHeader} ${styles.fullWidth} ${isCollapsed ? 'border-b border-blue-200' : ''}`}
-              onClick={(e) => {
-                // Chỉ xử lý click trên vùng không phải các nút
-                if ((e.target as HTMLElement).tagName !== 'BUTTON' &&
-                  !(e.target as HTMLElement).closest('button')) {
-                  toggleGroupCollapse(groupId);
-                }
-              }}
-            >
-              <div className={styles.groupHeader}>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // Ngăn sự kiện nổi bọt
-                      toggleGroupCollapse(groupId);
-                    }}
-                    className={`p-1 rounded-md hover:bg-blue-100 transition-colors ${isCollapsed ? 'bg-blue-50' : ''}`}
-                  >
-                    <svg className={`w-5 h-5 text-blue-600 transition-transform duration-200 ${isCollapsed ? 'rotate-0' : 'rotate-180'}`}
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                  <div className={styles.productName}>
-                    {groupName}
-                    {isCollapsed && childCount > 0 && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                        Đã thu gọn
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={styles.productTotalInventory}>
-                    {detail.inventory} sản phẩm
-                  </span>
-                  {childCount > 0 && (
-                    <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-xs">
-                      {childCount} mục
-                    </span>
-                  )}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation(); // Ngăn sự kiện nổi bọt
-                      handleDeleteClick(collection);
-                    }}
-                    className="ml-3 p-1.5 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition-colors"
-                    title="Xóa nhóm sản phẩm"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
-        }
-
-        if (detail._isGroupItem) {
-          return (
-            <div className={styles.productGroupItem}>
-              <Text>{collection._id}</Text>
-            </div>
-          );
-        }
-
-        return (
-          <div>
-            <Text>{collection._id}</Text>
-          </div>
-        );
-      }
-    },
+    // {
+    //   key: `_id`,
+    //   ref: useRef(null),
+    //   title: `Mã`,
+    //   size: `5fr`,
+    //   render: (collection: collectionType): ReactElement => {
+    //     return (
+    //       <div>
+    //         <Text>{collection._id}</Text>
+    //       </div>
+    //     );
+    //   }
+    // },
     {
       key: `product_id`,
       ref: useRef(null),
       title: `Sản phẩm`,
-      size: `5fr`,
+      size: `4fr`,
       render: (collection: collectionType): ReactElement => {
-        const detail = collection as unknown as IExtendedProductDetail;
         const productOption = productOptions.find(
           option => option.value === collection.product_id
         );
         const name = productOption?.label || 'Không xác định';
-
-        // Dòng header đã được xử lý trong cột Mã
-        if (detail._isGroupHeader) {
-          return <div className={styles.hiddenCell} />;
-        }
-
-        if (detail._isGroupItem) {
-          return (
-            <div className={styles.productGroupItem}>
-              <Text>{name}</Text>
-            </div>
-          );
-        }
-
         return (
           <div>
             <Text>{name}</Text>
@@ -965,30 +776,9 @@ export default function Product() {
       title: `Tồn kho`,
       size: `3fr`,
       render: (collection: collectionType): ReactElement => {
-        const detail = collection as unknown as IExtendedProductDetail;
-
-        // Nếu là header của nhóm, ẩn thông tin này vì đã hiển thị trong tên
-        if (detail._isGroupHeader) {
-          return (
-            <div className={`${styles.productGroupHeader} ${styles.hiddenCell}`}>
-              <Text>{detail.inventory}</Text>
-            </div>
-          );
-        }
-
-        // Nếu là mục con trong nhóm
-        if (detail._isGroupItem) {
-          return (
-            <div className={styles.productGroupItem}>
-              <Text>{detail.inventory}</Text>
-            </div>
-          );
-        }
-
-        // Trường hợp thông thường
         return (
           <div>
-            <Text>{detail.inventory}</Text>
+            <Text>{collection.inventory}</Text>
           </div>
         );
       }
@@ -999,30 +789,9 @@ export default function Product() {
       title: `Số lượng nhập`,
       size: `4fr`,
       render: (collection: collectionType): ReactElement => {
-        const detail = collection as unknown as IExtendedProductDetail;
-
-        // Nếu là header của nhóm, hiển thị tổng số lượng nhập
-        if (detail._isGroupHeader) {
-          return (
-            <div className={`${styles.productGroupHeader} ${styles.hiddenCell}`}>
-              <Text>{detail.input_quantity}</Text>
-            </div>
-          );
-        }
-
-        // Nếu là mục con trong nhóm
-        if (detail._isGroupItem) {
-          return (
-            <div className={styles.productGroupItem}>
-              <Text>{detail.input_quantity}</Text>
-            </div>
-          );
-        }
-
-        // Trường hợp thông thường
         return (
           <div>
-            <Text>{detail.input_quantity}</Text>
+            <Text>{collection.input_quantity}</Text>
           </div>
         );
       }
@@ -1033,30 +802,9 @@ export default function Product() {
       title: `Số lượng xuất`,
       size: `4fr`,
       render: (collection: collectionType): ReactElement => {
-        const detail = collection as unknown as IExtendedProductDetail;
-
-        // Nếu là header của nhóm, hiển thị tổng số lượng xuất
-        if (detail._isGroupHeader) {
-          return (
-            <div className={`${styles.productGroupHeader} ${styles.hiddenCell}`}>
-              <Text>{detail.output_quantity}</Text>
-            </div>
-          );
-        }
-
-        // Nếu là mục con trong nhóm
-        if (detail._isGroupItem) {
-          return (
-            <div className={styles.productGroupItem}>
-              <Text>{detail.output_quantity}</Text>
-            </div>
-          );
-        }
-
-        // Trường hợp thông thường
         return (
           <div>
-            <Text>{detail.output_quantity}</Text>
+            <Text>{collection.output_quantity}</Text>
           </div>
         );
       }
@@ -1067,26 +815,8 @@ export default function Product() {
       title: `Ngày sản xuất`,
       size: `3fr`,
       render: (collection: collectionType): ReactElement => {
-        const detail = collection as unknown as IExtendedProductDetail;
         const date = new Date(collection.date_of_manufacture);
         const formattedDate = date.toLocaleDateString('vi-VN');
-
-        if (detail._isGroupHeader) {
-          return (
-            <div className={`${styles.productGroupHeader} ${styles.hiddenCell}`}>
-              <Text isEllipsis={true} tooltip={formattedDate}>{formattedDate}</Text>
-            </div>
-          );
-        }
-
-        if (detail._isGroupItem) {
-          return (
-            <div className={styles.productGroupItem}>
-              <Text isEllipsis={true} tooltip={formattedDate}>{formattedDate}</Text>
-            </div>
-          );
-        }
-
         return (
           <div>
             <Text isEllipsis={true} tooltip={formattedDate}>{formattedDate}</Text>
@@ -1100,36 +830,15 @@ export default function Product() {
       title: `Ngày hết hạn`,
       size: `3fr`,
       render: (collection: collectionType): ReactElement => {
-        const detail = collection as unknown as IExtendedProductDetail;
         const date = new Date(collection.expiry_date);
         const formattedDate = date.toLocaleDateString('vi-VN');
-
-        // Kiểm tra trạng thái hết hạn
         const now = new Date();
         now.setHours(0, 0, 0, 0);
         const isExpired = date < now;
         const isExpiringSoon = date > now && differenceInDays(date, now) <= 10;
-
         const textClass = isExpired ? styles.expiredDate
           : isExpiringSoon ? styles.expiringDate
             : '';
-
-        if (detail._isGroupHeader) {
-          return (
-            <div className={`${styles.productGroupHeader} ${styles.hiddenCell}`}>
-              <Text isEllipsis={true} tooltip={formattedDate}>{formattedDate}</Text>
-            </div>
-          );
-        }
-
-        if (detail._isGroupItem) {
-          return (
-            <div className={`${styles.productGroupItem} ${textClass}`}>
-              <Text isEllipsis={true} tooltip={formattedDate}>{formattedDate}</Text>
-            </div>
-          );
-        }
-
         return (
           <div className={textClass}>
             <Text isEllipsis={true} tooltip={formattedDate}>{formattedDate}</Text>
@@ -1142,15 +851,8 @@ export default function Product() {
       ref: useRef(null),
       size: `1.5fr`,
       render: (collection: collectionType): ReactElement => {
-        const detail = collection as unknown as IExtendedProductDetail;
-
-        // Ẩn nút "Xem thêm" ở dòng header nhóm
-        if (detail._isGroupHeader) {
-          return <div className={styles.hiddenCell} />;
-        }
-
         return (
-          <div className={detail._isGroupItem ? styles.productGroupItem : ''}>
+          <div>
             <Button
               className={styles.actionButton}
               title={createMoreInfoTooltip(collectionName)}
@@ -1176,15 +878,8 @@ export default function Product() {
       ref: useRef(null),
       size: `1.5fr`,
       render: (collection: collectionType): ReactElement => {
-        const detail = collection as unknown as IExtendedProductDetail;
-
-        // Ẩn nút "Xóa" ở dòng header nhóm
-        if (detail._isGroupHeader) {
-          return <div className={styles.hiddenCell} />;
-        }
-
         return (
-          <div className={detail._isGroupItem ? styles.productGroupItem : ''}>
+          <div>
             <Button
               className={`text-white bg-red-600 hover:bg-red-700 ${styles.actionButton}`}
               title={createDeleteTooltip(collectionName)}
@@ -1217,28 +912,14 @@ export default function Product() {
   }
 
   const handleDeleteClick = (collection: collectionType): void => {
-    const detail = collection as unknown as IExtendedProductDetail;
     const productOption = productOptions.find(
       (option) => option.value === collection.product_id
     );
     const productName = productOption?.label || 'Không xác định';
-
-    if (detail._isGroupHeader) {
-      // Xóa cả nhóm sản phẩm
-      setSelectedProductDetail({
-        id: collection._id,
-        name: productName,
-        isGroup: true,
-        productName: detail._productName || productName,
-        childCount: (collection as any).childCount || 0
-      });
-    } else {
-      // Xóa một sản phẩm
-      setSelectedProductDetail({
-        id: collection._id,
-        name: productName
-      });
-    }
+    setSelectedProductDetail({
+      id: collection._id,
+      name: productName
+    });
     setDeleteModalOpen(true);
   };
 
@@ -1246,56 +927,17 @@ export default function Product() {
     if (!selectedProductDetail) return;
 
     try {
-      if (selectedProductDetail.isGroup) {
-        // Hiển thị thông báo đang xóa
-        createNotification({
-          type: ENotificationType.INFO,
-          children: <div>Đang xóa nhóm sản phẩm {selectedProductDetail.productName}...</div>,
-          isAutoClose: true,
-          id: Math.random(),
-        });
-
-        // Tìm tất cả các sản phẩm trong nhóm để xóa
-        const allCollections = await fetchGetCollections<collectionType>(collectionName);
-        const productsToDelete = allCollections.filter(item => {
-          const productOption = productOptions.find(
-            (option) => option.value === item.product_id
-          );
-          const name = productOption?.label || 'Không xác định';
-          return name === selectedProductDetail.productName;
-        });
-
-        // Xóa tuần tự từng sản phẩm trong nhóm
-        let deletedCount = 0;
-        for (const product of productsToDelete) {
-          await deleteCollectionById(product._id, collectionName);
-          deletedCount++;
-        }
-
-        createNotification({
-          type: ENotificationType.SUCCESS,
-          children: <div>Đã xóa {deletedCount} sản phẩm {selectedProductDetail.productName} thành công</div>,
-          isAutoClose: true,
-          id: Math.random(),
-        });
-      } else {
-        // Xóa một sản phẩm
-        await deleteCollectionById(selectedProductDetail.id, collectionName);
-
-        createNotification({
-          type: ENotificationType.SUCCESS,
-          children: <div>Đã xóa sản phẩm {selectedProductDetail.name} thành công</div>,
-          isAutoClose: true,
-          id: Math.random(),
-        });
-      }
+      await deleteCollectionById(selectedProductDetail.id, collectionName);
+      createNotification({
+        type: ENotificationType.SUCCESS,
+        children: <div>Đã xóa sản phẩm {selectedProductDetail.name} thành công</div>,
+        isAutoClose: true,
+        id: Math.random(),
+      });
       setDeleteModalOpen(false);
-
-      // Refresh lại dữ liệu
       setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Error deleting product:', error);
-
       createNotification({
         type: ENotificationType.ERROR,
         children: <div>Có lỗi xảy ra khi xóa sản phẩm</div>,
@@ -1305,23 +947,20 @@ export default function Product() {
     }
   };
 
-  const gridColumns: string = `200px 1fr`;
+  const gridColumns: string = `00px 1fr`;
 
-  // Hàm để toggle trạng thái đóng/mở của một nhóm
-  const toggleGroupCollapse = (groupId: string) => {
-    setCollapsedGroups(prev => {
-      const newState = {
-        ...prev,
-        [groupId]: !prev[groupId]
-      };
+  const handleViewDetail = (product: IProduct) => {
+    window.location.href = `/home/product-detail/${product._id}`;
+  };
 
-      // Cập nhật lại số thứ tự sau khi đóng/mở nhóm
-      setTimeout(() => {
-        setRefreshTrigger(prev => prev + 1);
-      }, 100);
+  const handleEdit = (product: IProduct) => {
+    setSelectedProductDetail({ id: product._id, name: product.name });
+    setIsEditModalOpen(true);
+  };
 
-      return newState;
-    });
+  const handleDelete = (product: IProduct) => {
+    setSelectedProductDetail({ id: product._id, name: product.name });
+    setConfirmDeleteModal(true);
   };
 
   return (
@@ -1329,11 +968,25 @@ export default function Product() {
       <div className="mb-6">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Danh sách Chi tiết sản phẩm</h1>
+
           </div>
           <div className="flex items-center gap-3">
             <Button
-              className="bg-gradient-to-r from-zinc-300 to-slate-400 from-amber-500 to-amber-600 text-black px-4 py-2.5 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-sm hover:from-amber-600 hover:to-amber-700 border border-amber-500"
+              onClick={() => setViewMode(viewMode === 'list' ? 'group' : 'list')}
+              type={EButtonType.SUCCESS}
+              className="px-4 py-4 flex items-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {viewMode === 'list' ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                )}
+              </svg>
+              <Text>{viewMode === 'list' ? 'Xem theo nhóm' : 'Xem theo danh sách'}</Text>
+            </Button>
+            <Button
+              className="bg-gradient-to-r from-zinc-300 to-slate-400 from-amber-500 to-amber-600 text-black px-2 py-0.5 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-sm hover:from-amber-600 hover:to-amber-700 border border-amber-500"
               onClick={() => setIsExpirationModalOpen(true)}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1345,25 +998,34 @@ export default function Product() {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <ManagerPage<collectionType>
-            columns={columns}
-            collectionName={collectionName}
-            defaultCollection={DEFAULT_PROCDUCT_DETAIL}
-            collection={productDetail}
-            setCollection={setProductDetail}
-            isModalReadonly={isModalReadOnly}
-            setIsModalReadonly={setIsModalReadOnly}
-            isClickShowMore={isClickShowMore}
-            isClickDelete={isClickDelete}
-            isLoaded={isLoading}
-            additionalProcessing={combineProductDetails}
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-          >
-            <>
+          {viewMode === 'group' ? (
+            <div className="p-4">
+              <ProductGroupList
+                products={products}
+                onViewDetail={handleViewDetail}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                productStockInfo={productStockInfo}
+              />
+            </div>
+          ) : (
+            <ManagerPage<collectionType>
+              columns={columns}
+              collectionName={collectionName}
+              defaultCollection={DEFAULT_PROCDUCT_DETAIL}
+              collection={productDetail}
+              setCollection={setProductDetail}
+              isModalReadonly={isModalReadOnly}
+              setIsModalReadonly={setIsModalReadOnly}
+              isClickShowMore={isClickShowMore}
+              isClickDelete={isClickDelete}
+              isLoaded={isLoading}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+            >
               <Tabs>
-                <TabItem label={`${translateCollectionName(collectionName)}`}>
-                  <InputSection label={`Cho sản phẩm`}>
+                <TabItem label={translateCollectionName(collectionName)}>
+                  <InputSection label="Cho sản phẩm" children={
                     <div style={{ position: 'relative', zIndex: 100 }}>
                       <SelectDropdown
                         isLoading={isLoading}
@@ -1373,36 +1035,13 @@ export default function Product() {
                           productOptions, productDetail.product_id
                         )}
                         onInputChange={handleChangeProductId}
-                      >
-                      </SelectDropdown>
+                      />
                     </div>
-                  </InputSection>
-
-                  <InputSection label={`Ngày sản xuất`} gridColumns={gridColumns}>
-                    <DateInput
-                      name={`date_of_manufacture`}
-                      isDisable={isModalReadOnly}
-                      value={productDetail.date_of_manufacture}
-                      onInputChange={handleChangeProductDetail}
-                    >
-                    </DateInput>
-                  </InputSection>
-
-                  <InputSection label={`Hạn sử dụng`} gridColumns={gridColumns}>
-                    <DateInput
-                      name={`expiry_date`}
-                      isDisable={isModalReadOnly}
-                      value={productDetail.expiry_date}
-                      onInputChange={handleChangeProductDetail}
-                    >
-                    </DateInput>
-                  </InputSection>
+                  } />
                 </TabItem>
               </Tabs>
-
-              {notificationElements}
-            </>
-          </ManagerPage>
+            </ManagerPage>
+          )}
         </div>
       </div>
 
@@ -1411,58 +1050,6 @@ export default function Product() {
         setIsOpen={setIsExpirationModalOpen}
         onDeleteSuccess={handleExpirationModalDelete}
       />
-
-      <Modal
-        isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        className="w-[450px]"
-      >
-        <div className="p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center text-gray-800">
-            <svg className="h-6 w-6 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            Xác nhận xóa sản phẩm
-          </h2>
-          <div className="py-4 bg-gray-50 rounded-lg p-4 border border-gray-100">
-            {selectedProductDetail?.isGroup ? (
-              <Text>
-                Bạn có chắc chắn muốn xóa <span className="font-semibold text-red-600">TẤT CẢ {selectedProductDetail?.childCount || ""}</span> sản phẩm trong nhóm <span className="font-semibold">{selectedProductDetail?.productName}</span>?
-              </Text>
-            ) : (
-              <Text>
-                Bạn có chắc chắn muốn xóa sản phẩm <span className="font-semibold">{selectedProductDetail?.name}</span>?
-              </Text>
-            )}
-            <Text size={14} className="text-gray-500 mt-3 flex items-center">
-              <svg className="h-4 w-4 mr-1 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Hành động này không thể hoàn tác.
-            </Text>
-          </div>
-          <div className="flex justify-end gap-2 mt-6">
-            <button
-              onClick={() => setDeleteModalOpen(false)}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors flex items-center"
-            >
-              <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Hủy
-            </button>
-            <button
-              onClick={handleDeleteConfirm}
-              className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors flex items-center"
-            >
-              <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Xóa
-            </button>
-          </div>
-        </div>
-      </Modal>
     </>
   );
 }

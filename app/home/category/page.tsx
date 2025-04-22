@@ -6,7 +6,7 @@ import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { ECollectionNames } from '@/enums';
 import { addCollection, deleteCollectionById, getCollectionById, updateCollectionById } from '@/services/api-service';
 import { LoadingScreen } from '@/components';
-import { boxIcon, infoIcon, pencilIcon, trashIcon, userIcon } from '@/public';
+import { boxIcon, infoIcon, pencilIcon, plusIcon, trashIcon, userIcon } from '@/public';
 import { ICategory } from '@/interfaces/category.interface';
 import { DEFAULT_CATEGORY } from '@/constants/category.constant';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
@@ -124,7 +124,7 @@ export default function CategoryPage() {
       if (response.ok) {
         const categoryData = await response.json();
         console.log(categoryData);
-        
+
         setSelectedCategory(categoryData);
         setShowDetailModal(true);
       } else {
@@ -191,10 +191,10 @@ export default function CategoryPage() {
           </div>
           <Button
             onClick={resetForm}
-            className="bg-primary text-white hover:bg-primary-dark transition-colors flex items-center font-bold gap-2"
-            type={EButtonType.SUCCESS}
+            className="bg-primary text-white hover:bg-primary-dark transition-colors flex items-center font-medium gap-2"
+            type={EButtonType.INFO}
           >
-            {/* <IconContainer iconLink={plusIcon} size={16} className="mr-2"/> */}
+            <IconContainer iconLink={plusIcon} size={16} className="mr-2" />
             Thêm mới
           </Button>
         </div>
@@ -369,7 +369,7 @@ export default function CategoryPage() {
             <div className="flex items-center justify-between mb-4 border-b pb-3">
               <h3 className="text-xl font-semibold flex items-center text-primary w-full gap-3">
                 <IconContainer iconLink={infoIcon} size={30} className="mr-3" />
-                Chi tiết loại sản phẩm 
+                Chi tiết loại sản phẩm
               </h3>
               <Button
                 onClick={() => setShowDetailModal(false)}
@@ -390,7 +390,7 @@ export default function CategoryPage() {
                 <h4 className="font-medium text-gray-500 text-sm">Tên</h4>
                 <p className="text-lg font-semibold text-gray-800">{selectedCategory.name}</p>
               </div>
-               <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
+              <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
                 <h4 className="font-medium text-gray-500 text-sm">Hệ số giảm giá</h4>
                 <p className="text-base text-gray-700">{selectedCategory.discount}</p>
               </div>

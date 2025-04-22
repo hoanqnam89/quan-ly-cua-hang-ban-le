@@ -1,7 +1,7 @@
 import { ECollectionNames } from "@/enums";
 
 export const translateCollectionName = (
-  collectionName: ECollectionNames, 
+  collectionName: ECollectionNames,
   lang: string = `vn`
 ): string => {
   switch (lang) {
@@ -16,7 +16,7 @@ export const translateCollectionName = (
         case ECollectionNames.PRODUCT:
           return `Sản phẩm`;
         case ECollectionNames.PRODUCT_DETAIL:
-          return `Chi tiết sản phẩm`;
+          return `Chi tiết kho`;
         case ECollectionNames.BUSINESS:
           return `Doanh nghiệp`;
         case ECollectionNames.UNIT:

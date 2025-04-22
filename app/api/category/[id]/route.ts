@@ -13,70 +13,60 @@ import { CategoryModel } from "@/models/Category";
 type collectionType = ICategory;
 const collectionName: ECollectionNames = ECollectionNames.CATEGORY;
 const collectionModel = CategoryModel;
-const path: string = `${ROOT}/${collectionName.toLowerCase()}/[id]`;
+const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 
-export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
-  print(`${collectionName} API - PATCH ${collectionName}`, ETerminal.FgMagenta);
+export const PATCH = async (
+  req: NextRequest,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> => {
+  print(`${collectionName} API - PATCH ${collectionName}`, ETerminal.FgYellow);
 
+  const id: string = (await params).id;
   const category: collectionType = await req.json();
 
   try {
     connectToDatabase();
 
-    const foundCategory: collectionType | null =
-      await collectionModel.findById(category._id);
+    // Lỗi khi cập nhật không đảm bảo discount là số
+    const updatedData = {
+      ...category,
+      discount: Number(category.discount),
+      updated_at: new Date()
+    };
 
-    if (!foundCategory)
+    const updatedCategory = await collectionModel.findByIdAndUpdate(
+      id,
+      updatedData,
+      { new: true }
+    );
+
+    if (!updatedCategory) {
       return NextResponse.json(
         createErrorMessage(
-          `Failed to update ${collectionName}.`,
-          `The ${collectionName} with the ID '${category._id}' does not exist in our records.`,
+          `Cập nhật thất bại ${collectionName}.`,
+          `Không tìm thấy ${collectionName} với id: ${id}`,
           path,
-          `Please check if the ${collectionName} ID is correct.`
+          `Vui lòng kiểm tra xem loại sản phẩm có tồn tại không.`,
         ),
         { status: EStatusCode.NOT_FOUND }
       );
+    }
 
-    const updatedCategory = await collectionModel.findOneAndUpdate(
-      { _id: category._id },
-      {
-        $set: {
-          name: category.name,
-          // description: category.,
-          // input_price: category.input_price,
-          // output_price: category.output_price,
-          // image_links: category.image_links,
-          updated_at: new Date(),
-        }
-      }
-    );
-
-    if (!updatedCategory)
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to update ${collectionName}.`,
-          ``,
-          path,
-          `Please contact for more information.`,
-        ),
-        { status: EStatusCode.INTERNAL_SERVER_ERROR }
-      );
-
-    return NextResponse.json(updatedCategory, { status: EStatusCode.CREATED });
+    return NextResponse.json(updatedCategory, { status: EStatusCode.OK });
   } catch (error: unknown) {
     console.error(error);
 
     return NextResponse.json(
       createErrorMessage(
-        `Failed to update ${collectionName}.`,
+        `Cập nhật thất bại ${collectionName}.`,
         error as string,
         path,
-        `Please contact for more information.`,
+        `Vui lòng liên hệ để biết thêm thông tin.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
   }
-}
+};
 
 export const DELETE = async (
   _req: NextRequest, query: IQueryString

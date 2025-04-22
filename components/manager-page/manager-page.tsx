@@ -11,8 +11,6 @@ import CollectionForm from './collection-form/collection-form';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '../notify/notification/notification';
 import { translateCollectionName } from '@/utils/translate-collection-name';
-import { EButtonType } from '@/components/button/interfaces/button-type.interface';
-import { plusIcon } from '@/public';
 
 export interface ICollectionIdNotify {
   id: string
@@ -65,30 +63,18 @@ export default function ManagerPage<T extends { _id: string }>({
   isModalReadonly,
   setIsModalReadonly,
   isClickShowMore,
-  setIsClickShowMore,
   isClickDelete,
-  setIsClickDelete,
   isLoaded = false,
   handleOpenModal = (isOpen: boolean): boolean => !isOpen,
   onExitModalForm = () => { },
-  name = translateCollectionName(collectionName),
   currentPage: externalCurrentPage,
   setCurrentPage: externalSetCurrentPage,
   totalItems,
   displayedItems,
   setAllItems,
-  additionalButtons,
   additionalProcessing,
-  dateFilter,
   renderFilters,
   customHandleAddCollection,
-  pageCollection,
-  itemModalOpening,
-  setItemModalOpening,
-  additionalFiltersRender,
-  gridColumns,
-  itemForm,
-  handleFetchData,
 }: Readonly<IManagerPageProps<T>>): ReactElement {
   const translatedCollectionName: string =
     translateCollectionName(collectionName);
@@ -101,10 +87,9 @@ export default function ManagerPage<T extends { _id: string }>({
   const [allCollections, setAllCollections] = useState<T[]>([]);
   const itemsPerPage = 10;
 
-  // Internal page state when no external state is provided
   const [internalCurrentPage, setInternalCurrentPage] = useState<number>(1);
 
-  // Use external or internal page state
+
   const currentPage = externalCurrentPage || internalCurrentPage;
   const setCurrentPage = externalSetCurrentPage || setInternalCurrentPage;
 
@@ -114,7 +99,6 @@ export default function ManagerPage<T extends { _id: string }>({
       try {
         let fetchedCollections = await fetchGetCollections<T>(collectionName);
 
-        // Áp dụng xử lý bổ sung nếu có
         if (additionalProcessing) {
           fetchedCollections = additionalProcessing(fetchedCollections);
         }
@@ -147,7 +131,7 @@ export default function ManagerPage<T extends { _id: string }>({
       const startIndex = (currentPage - 1) * itemsPerPage;
 
       // Áp dụng xử lý bổ sung mỗi khi hiển thị dữ liệu mới
-      let filteredCollections = allCollections;
+      const filteredCollections = allCollections;
 
       setCollections(filteredCollections.slice(startIndex, startIndex + itemsPerPage));
     }
@@ -166,7 +150,7 @@ export default function ManagerPage<T extends { _id: string }>({
     (isReadOnly: boolean = false): void => {
       setIsModalReadonly(!isReadOnly);
       if (isReadOnly)
-        setCollection({...defaultCollection})
+        setCollection({ ...defaultCollection })
       setIsAddCollectionModalOpen((prev: boolean): boolean => handleOpenModal(prev));
     },
     [
@@ -410,7 +394,7 @@ export default function ManagerPage<T extends { _id: string }>({
   }, [handleDeleteCollectionById, isClickDelete]);
 
   const tableData = displayedItems || collections;
-  const totalPagesCount = Math.ceil((totalItems || allCollections.length) / itemsPerPage);
+
 
   const managerPage: ReactElement = isLoading
     ? <LoadingScreen></LoadingScreen>

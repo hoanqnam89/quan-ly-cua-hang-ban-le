@@ -53,7 +53,7 @@ const createReceiptHTML = (orderData: OrderData) => {
                 <div style="font-size: 9px;">Phường 17, Quận Gò Vấp, TP HCM</div>
             </div>
 
-            <div style="text-align: center; font-size: 10px; margin-bottom: 8px;">
+            <div style="text-align: center; font-size: 10px; margin-bottom: 8px;font-weight: bold;">
                 PHIẾU THANH TOÁN
             </div>
 
@@ -65,8 +65,8 @@ const createReceiptHTML = (orderData: OrderData) => {
 
             <div style="border-top: 1px dashed #000; margin: 4px 0;"></div>
 
-            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                <span>SL</span>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;font-weight: bold;font-size: 10px;">
+                <span>Sản phẩm</span>
                 <span style="margin-left: 20px;">Giá</span>
                 <span style="margin-left: 20px;">Giảm giá</span>
                 <span>T.Tiền</span>
@@ -89,22 +89,21 @@ const createReceiptHTML = (orderData: OrderData) => {
             <div style="border-top: 1px dashed #000; margin: 4px 0;"></div>
 
             <div style="margin-bottom: 8px;">
-                <div style="display: flex; justify-content: space-between;">
-                    <span>Tổng tiền:</span>
+                <div style="display: flex; justify-content: space-between; font-weight: bold;font-size: 10px;">
+                    <span>Thành tiền:</span>
                     <span>${formatCurrency(orderData.totalAmount).replace(' ₫', '')}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; font-weight: bold;font-size: 10px;">
                     <span>Thanh toán:</span>
-                    <span>${orderData.customerPayment}</span>
+                    <span>${formatCurrency(orderData.totalAmount).replace(' ₫', '')}</span>
                 </div>
-                <div style="text-align: center; font-style: italic;">(Đã làm tròn)</div>
-                <div style="display: flex; justify-content: space-between;">
-                    <span>Tiền mặt:</span>
-                    <span>${orderData.customerPayment}</span>
+                <div style="display: flex; justify-content: space-between; font-weight: bold;font-size: 10px;">
+                    <span>Tiền khách đưa:</span>
+                    <span>${formatCurrency(parseFloat(orderData.customerPayment)).replace(' ₫', '')}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; font-weight: bold;font-size: 10px;">
                     <span>Tiền thối lại:</span>
-                    <span>${orderData.changeAmount}</span>
+                    <span>${formatCurrency(orderData.totalAmount - parseFloat(orderData.customerPayment)).replace(' ₫', '')}</span>
                 </div>
             </div>
 
