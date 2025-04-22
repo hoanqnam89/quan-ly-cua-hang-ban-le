@@ -204,9 +204,10 @@ export default function UnitPage() {
           </div>
           <Button
             onClick={resetForm}
-            className="bg-primary text-white hover:bg-primary-dark transition-colors flex items-center"
+            className="bg-primary text-white hover:bg-primary-dark transition-colors flex items-center font-medium gap-2"
+            type={EButtonType.INFO}
           >
-            <IconContainer iconLink={plusIcon} size={16} className="mr-1" />
+            <IconContainer iconLink={plusIcon} size={16} className="mr-2" />
             Thêm mới
           </Button>
         </div>

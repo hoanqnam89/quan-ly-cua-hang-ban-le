@@ -543,7 +543,7 @@ export default function Product() {
     setOrderForm(foundOrderForm);
     setWarehouseReceipt({
       ...warehouseReceipt,
-      supplier_id: foundOrderForm.supplier_id,
+      supplier_id: foundOrderForm.business_id,
       supplier_receipt_id: foundOrderForm._id,
       product_details: [...foundOrderForm.product_details]
     });
@@ -1158,8 +1158,8 @@ export default function Product() {
                       options={supplierOptions}
                       defaultOptionIndex={getSelectedOptionIndex(
                         supplierOptions,
-                        (orderForm.supplier_id
-                          ? orderForm.supplier_id
+                        (orderForm.business_id
+                          ? orderForm.business_id
                           : 0
                         ) as unknown as string
                       )}
@@ -1170,7 +1170,7 @@ export default function Product() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-6 ">
                 <div className="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
                   <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-4">
                     <h3 className="font-semibold text-lg">Thông tin phiếu đặt hàng</h3>
@@ -1181,9 +1181,10 @@ export default function Product() {
                       <Text>Sản phẩm</Text>
                       <Text>Đơn vị tính</Text>
                       <Text>Số lượng</Text>
+
                     </div>
 
-                    <div className="max-h-[400px] overflow-y-auto pr-2">
+                    <div className="max-h-[300px] overflow-y-auto pr-1">
                       {orderForm && orderForm.product_details && orderForm.product_details.map((
                         orderFormProductDetail: IOrderFormProductDetail,
                         index: number
@@ -1233,6 +1234,7 @@ export default function Product() {
                             className="bg-gray-50 border-gray-200"
                           >
                           </NumberInput>
+
                         </div>
                       ))}
                     </div>

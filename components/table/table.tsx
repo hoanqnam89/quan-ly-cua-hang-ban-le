@@ -453,10 +453,10 @@ export default function Table<T extends { _id: string, index?: number }>({
   };
 
   return (
-    <div className={`h-full flex flex-col gap-4 p-1`}>
-      <div className={`flex gap-2 items-center`}>
+    <div className={`h-full flex flex-col gap-4 p-3`}>
+      <div className={`flex gap-10 items-center`}>
         <Text size={24} weight={600}>
-          Danh sách {name} ({countVisibleElements(isVisibles)})
+          Danh sách {name}
         </Text>
 
         <div className={`flex-1`}>
@@ -494,13 +494,13 @@ export default function Table<T extends { _id: string, index?: number }>({
       </div> : null}
 
       <div
-        className={`grid items-center justify-between gap-1`}
+        className={`grid items-center justify-between`}
         style={gridStyle}
       >
         {headerElements}
       </div>
 
-      <div className={`flex flex-col overflow-y-scroll no-scrollbar`}>
+      <div className={`flex flex-col   justify-between overflow-y-scroll no-scrollbar`}>
         {isGetDatasDone
           ? <LoadingIcon></LoadingIcon>
           : rowElements

@@ -66,13 +66,8 @@ export default function RootLayout({
     },
     {
       link: `${currentPath}/product-detail`,
-      label: `Chi tiết sản phẩm`,
+      label: `Chi tiết kho`,
       icon: boxesIcon,
-    },
-    {
-      link: `${currentPath}/order`,
-      label: `Đơn hàng`,
-      icon: scrollIcon,
     },
     {
       link: `${currentPath}/order-form`,
@@ -85,15 +80,26 @@ export default function RootLayout({
       icon: scrollIcon,
     },
     {
+      link: `${currentPath}/order`,
+      label: `Đơn hàng`,
+      icon: scrollIcon,
+    },
+    {
       link: `${currentPath}/personal-info`,
       label: `Thông tin cá nhân`,
       icon: circleUserRoundIcon,
     },
     {
       link: `${currentPath}/setting`,
+      label: `Báo cáo thống kê`,
+      icon: settingIcon,
+    },
+    {
+      link: `${currentPath}/setting`,
       label: `Cài đặt`,
       icon: settingIcon,
     },
+
   ];
 
   const pageStyle: CSSProperties = {

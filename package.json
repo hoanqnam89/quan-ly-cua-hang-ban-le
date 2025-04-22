@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@types/jspdf": "^2.0.0",
     "bcrypt": "^5.1.1",
     "cookie": "^1.0.2",

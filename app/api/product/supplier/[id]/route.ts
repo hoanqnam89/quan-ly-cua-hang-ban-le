@@ -16,7 +16,7 @@ export async function GET(
     _request: NextRequest,
     { params }: { params: { id: string } }
 ): Promise<NextResponse> {
-    const supplierId = params.id;
+    const supplierId = (await params).id;
     print(`${collectionName} API - GET ${collectionName} by Supplier ID: ${supplierId}`, ETerminal.FgGreen);
 
     try {
