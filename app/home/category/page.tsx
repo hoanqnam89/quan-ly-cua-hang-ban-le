@@ -10,9 +10,10 @@ import { boxIcon, infoIcon, pencilIcon, trashIcon, userIcon } from '@/public';
 import { ICategory } from '@/interfaces/category.interface';
 import { DEFAULT_CATEGORY } from '@/constants/category.constant';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
+import NumberInput from '@/components/number-input/number-input';
 
 // Hàm tạo mã loại sản phẩm  theo định dạng DV-(NgayThangNam)-0001
-const generateUnitId = (index: number): string => {
+const generateCategoryId = (index: number): string => {
   const today = new Date();
   const day = String(today.getDate()).padStart(2, '0');
   const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -23,7 +24,7 @@ const generateUnitId = (index: number): string => {
 };
 
 export default function CategoryPage() {
-  const [category, setCategory] = useState<ICategory>({ ...DEFAULT_CATEGORY, _id: generateUnitId(0) });
+  const [category, setCategory] = useState<ICategory>({ ...DEFAULT_CATEGORY, _id: generateCategoryId(0) });
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<ICategory | null>(null);
@@ -53,7 +54,7 @@ export default function CategoryPage() {
   const handleChangeCategory = (e: ChangeEvent<HTMLInputElement>): void => {
     setCategory({
       ...category,
-      [e.target.name]: e.target.name === 'equal' ? Number(e.target.value) : e.target.value,
+      [e.target.name]: e.target.name === "discount" ? Number(e.target.value) : e.target.value,
     });
   }
 
@@ -92,7 +93,7 @@ export default function CategoryPage() {
   const resetForm = () => {
     setCategory({
       ...DEFAULT_CATEGORY,
-      _id: generateUnitId(categories.length + 1)
+      _id: generateCategoryId(categories.length + 1)
     });
     setIsEditing(false);
   }
@@ -224,9 +225,9 @@ export default function CategoryPage() {
                 <div>
                   <label className="block mb-1 font-medium text-gray-700">Mã loại sản phẩm</label>
                   <TextInput
-                    name="_id"
-                    isDisable={true}
-                    value={category._id}
+                    name="code"
+                    // isDisable={true}
+                    value={category.code}
                     className="w-full bg-gray-100"
                   />
                 </div>
@@ -240,6 +241,19 @@ export default function CategoryPage() {
                   onInputChange={handleChangeCategory}
                   placeholder="Nhập loại sản phẩm"
                   className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className='block mb-1 font-medium text-gray-700'>Nhập hệ số (%) <span className="text-red-500">*</span></label>
+                <NumberInput
+                  min={0}
+                  max={100}
+                  name="discount"
+                  value={category.discount + ""}
+                  onInputChange={handleChangeCategory}
+                  placeholder='Nhập hệ số giảm giá'
+                  className='w-full'
                 />
               </div>
 
@@ -293,9 +307,9 @@ export default function CategoryPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th> */}
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên loại sản phẩm </th>
-                      {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Số lượng quy đổi</th> */}
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hệ số giảm giá</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
                     </tr>
@@ -303,13 +317,13 @@ export default function CategoryPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredCategories.map((c, index) => (
                       <tr key={index} className="hover:bg-gray-50 transition-colors">
-                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u._id}</td> */}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.code}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.name}</td>
-                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                            {u.equal}
+                            {c.discount}%
                           </span>
-                        </td> */}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {new Date(c.created_at).toLocaleDateString()}
                         </td>
@@ -368,19 +382,19 @@ export default function CategoryPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {/* <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
+              <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
                 <h4 className="font-medium text-gray-500 text-sm">Mã loại sản phẩm</h4>
-                <p className="text-lg font-semibold text-gray-800">{selectedCategory._id}</p>
-              </div> */}
+                <p className="text-lg font-semibold text-gray-800">{selectedCategory.code}</p>
+              </div>
               <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
                 <h4 className="font-medium text-gray-500 text-sm">Tên</h4>
                 <p className="text-lg font-semibold text-gray-800">{selectedCategory.name}</p>
               </div>
-              {/* <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
-                <h4 className="font-medium text-gray-500 text-sm">Ngày tạo</h4>
-                <p className="text-base text-gray-700">{new Date(selectedCategory.created_at).toLocaleString()}</p>
+               <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
+                <h4 className="font-medium text-gray-500 text-sm">Hệ số giảm giá</h4>
+                <p className="text-base text-gray-700">{selectedCategory.discount}</p>
               </div>
-              <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
+              {/* <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
                 <h4 className="font-medium text-gray-500 text-sm">Ngày cập nhật</h4>
                 <p className="text-base text-gray-700">{new Date(selectedCategory.updated_at).toLocaleString()}</p>
               </div> */}

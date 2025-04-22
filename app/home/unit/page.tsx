@@ -329,7 +329,7 @@ export default function UnitPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredUnits.map((u, index) => (
                       <tr key={index} className="hover:bg-gray-50 transition-colors">
-                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u._id}</td> */}
+                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u.code}</td> */}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{u.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
@@ -394,10 +394,10 @@ export default function UnitPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
+              {/* <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
                 <h4 className="font-medium text-gray-500 text-sm">Mã đơn vị tính</h4>
                 <p className="text-lg font-semibold text-gray-800">{selectedUnit._id}</p>
-              </div>
+              </div> */}
               <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
                 <h4 className="font-medium text-gray-500 text-sm">Tên đơn vị tính</h4>
                 <p className="text-lg font-semibold text-gray-800">{selectedUnit.name}</p>

@@ -58,7 +58,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       created_at: new Date(), 
       updated_at: new Date(), 
       name: unit.name, 
-      equal: unit.equal, 
+      equal: unit.equal,
     });
 
     const savedUnit: collectionType = await newUnit.save();
