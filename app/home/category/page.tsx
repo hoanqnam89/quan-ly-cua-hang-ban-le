@@ -221,17 +221,17 @@ export default function CategoryPage() {
             </div>
 
             <div className="space-y-4">
-              {isEditing && (
+              {/* {isEditing && (
                 <div>
                   <label className="block mb-1 font-medium text-gray-700">Mã loại sản phẩm</label>
                   <TextInput
                     name="code"
-                    // isDisable={true}
+                    isDisable={true}
                     value={category.code}
                     className="w-full bg-gray-100"
                   />
                 </div>
-              )}
+              )} */}
 
               <div>
                 <label className="block mb-1 font-medium text-gray-700">Tên loại sản phẩm  <span className="text-red-500">*</span></label>
@@ -307,7 +307,7 @@ export default function CategoryPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th>
+                      {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th> */}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên loại sản phẩm </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hệ số giảm giá</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
@@ -317,7 +317,7 @@ export default function CategoryPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredCategories.map((c, index) => (
                       <tr key={index} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.code}</td>
+                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.code}</td> */}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
@@ -382,10 +382,10 @@ export default function CategoryPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
+              {/* <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
                 <h4 className="font-medium text-gray-500 text-sm">Mã loại sản phẩm</h4>
                 <p className="text-lg font-semibold text-gray-800">{selectedCategory.code}</p>
-              </div>
+              </div> */}
               <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
                 <h4 className="font-medium text-gray-500 text-sm">Tên</h4>
                 <p className="text-lg font-semibold text-gray-800">{selectedCategory.name}</p>
