@@ -644,9 +644,6 @@ export default function Product() {
   const [selectedProductDetail, setSelectedProductDetail] = useState<{ id: string; name: string; isGroup?: boolean; productName?: string; childCount?: number } | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger cho việc refresh dữ liệu
   const [currentPage, setCurrentPage] = useState(1);
-  // const [itemsPerPage] = useState(10);
-  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
-  const [continuousIndex, setContinuousIndex] = useState<number>(1);
 
   const getProducts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
@@ -675,8 +672,6 @@ export default function Product() {
   ) => {
     // Tăng giá trị refreshTrigger để trigger useEffect refresh dữ liệu
     setRefreshTrigger(prev => prev + 1);
-
-    // Hiển thị thông báo
     createNotification({
       type: ENotificationType.SUCCESS,
       children: <div>Đã xóa sản phẩm hết hạn thành công</div>,
@@ -685,11 +680,8 @@ export default function Product() {
     });
   }, [createNotification]);
 
-  // Effect để xử lý việc cập nhật số thứ tự khi chuyển trang
   useEffect(() => {
-    // Chỉ refresh khi có sự thay đổi từ refreshTrigger
     if (refreshTrigger > 0) {
-      // Làm mới dữ liệu khi có thay đổi
       const refreshData = async () => {
         try {
           setIsLoading(true);
