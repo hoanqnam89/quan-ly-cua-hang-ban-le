@@ -194,8 +194,13 @@ export default function CategoryPage() {
             className="bg-primary text-white hover:bg-primary-dark transition-colors flex items-center font-medium gap-2"
             type={EButtonType.INFO}
           >
+<<<<<<< HEAD
             {/* <IconContainer iconLink={plusIcon} size={16} className="mr-2" /> */}
             Reset Form
+=======
+            <IconContainer iconLink={plusIcon} size={16} className="mr-2" />
+            Thêm mới
+>>>>>>> caa6da233591bfc789228f652a76d7367a27335f
           </Button>
         </div>
       </div>
