@@ -6,7 +6,7 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { DEFAULT_USER } from '@/constants/user.constant'
 import { ECollectionNames } from '@/enums'
 import { IAccount, IUser } from '@/interfaces'
-import { infoIcon, trashIcon } from '@/public'
+import { infoIcon, pencilIcon, trashIcon } from '@/public'
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip'
 import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
@@ -30,7 +30,7 @@ type collectionType = IUser;
 const collectionName: ECollectionNames = ECollectionNames.USER;
 
 export default function User() {
-  const { createNotification, notificationElements } = useNotificationsHook();
+  const { notificationElements } = useNotificationsHook();
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [user, setUser] = useState<IUser>(DEFAULT_USER);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
@@ -44,12 +44,14 @@ export default function User() {
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [accountOptions, setAccountOptions] = useState<ISelectOption[]>([]);
+  const [account, setAccount] = useState<IAccount[]>([]);
 
   const getAccounts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
       const newAccounts: IAccount[] = await fetchGetCollections<IAccount>(
         ECollectionNames.ACCOUNT,
       );
+      setAccount([...newAccounts])
 
       setUser({
         ...user,
@@ -119,18 +121,22 @@ export default function User() {
       key: `_id`,
       ref: useRef(null),
       title: `Mã`,
-      size: `6fr`,
+      size: `3fr`,
     },
     {
       key: `account_id`,
       ref: useRef(null),
       title: `Tài khoản`,
       size: `3fr`,
-      render: (collection: collectionType): ReactElement =>
-        createCollectionDetailLink(
-          ECollectionNames.ACCOUNT,
-          collection.account_id
-        )
+      // render: (collection: collectionType): ReactElement =>
+      //   createCollectionDetailLink(
+      //     ECollectionNames.ACCOUNT,
+      //     collection.account_id
+      //   )
+      render: (collection: collectionType): ReactElement => {
+            const foundAccount = account.find((element) => element._id === collection.account_id)
+            return <p>{foundAccount?.username}</p>
+          }
     },
     {
       key: `name`,
@@ -210,20 +216,20 @@ export default function User() {
       title: `Ngày tạo`,
       size: `4fr`,
       render: (collection: collectionType): ReactElement => {
-        const date: string = new Date(collection.created_at).toLocaleString();
+        const date: string = new Date(collection.created_at).toLocaleDateString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
-    {
-      key: `updated_at`,
-      ref: useRef(null),
-      title: `Ngày cập nhật`,
-      size: `4fr`,
-      render: (collection: collectionType): ReactElement => {
-        const date: string = new Date(collection.updated_at).toLocaleString();
-        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
-      }
-    },
+    // {
+    //   key: `updated_at`,
+    //   ref: useRef(null),
+    //   title: `Ngày cập nhật`,
+    //   size: `4fr`,
+    //   render: (collection: collectionType): ReactElement => {
+    //     const date: string = new Date(collection.updated_at).toLocaleString();
+    //     return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+    //   }
+    // },
     {
       title: `Xem thêm`,
       ref: useRef(null),
@@ -239,7 +245,7 @@ export default function User() {
       >
         <IconContainer
           tooltip={createMoreInfoTooltip(collectionName)}
-          iconLink={infoIcon}
+          iconLink={pencilIcon}
         >
         </IconContainer>
       </Button>

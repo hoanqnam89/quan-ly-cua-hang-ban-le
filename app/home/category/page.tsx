@@ -194,8 +194,8 @@ export default function CategoryPage() {
             className="bg-primary text-white hover:bg-primary-dark transition-colors flex items-center font-medium gap-2"
             type={EButtonType.INFO}
           >
-            <IconContainer iconLink={plusIcon} size={16} className="mr-2" />
-            Thêm mới
+            {/* <IconContainer iconLink={plusIcon} size={16} className="mr-2" /> */}
+            Reset Form
           </Button>
         </div>
       </div>
@@ -307,7 +307,6 @@ export default function CategoryPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mã</th> */}
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tên loại sản phẩm </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hệ số giảm giá</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày tạo</th>
@@ -317,7 +316,6 @@ export default function CategoryPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredCategories.map((c, index) => (
                       <tr key={index} className="hover:bg-gray-50 transition-colors">
-                        {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{c.code}</td> */}
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
@@ -382,10 +380,6 @@ export default function CategoryPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {/* <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
-                <h4 className="font-medium text-gray-500 text-sm">Mã loại sản phẩm</h4>
-                <p className="text-lg font-semibold text-gray-800">{selectedCategory.code}</p>
-              </div> */}
               <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
                 <h4 className="font-medium text-gray-500 text-sm">Tên</h4>
                 <p className="text-lg font-semibold text-gray-800">{selectedCategory.name}</p>
@@ -394,10 +388,6 @@ export default function CategoryPage() {
                 <h4 className="font-medium text-gray-500 text-sm">Hệ số giảm giá</h4>
                 <p className="text-base text-gray-700">{selectedCategory.discount}</p>
               </div>
-              {/* <div className="bg-gray-50 p-4 rounded-lg hover:shadow-sm transition-shadow">
-                <h4 className="font-medium text-gray-500 text-sm">Ngày cập nhật</h4>
-                <p className="text-base text-gray-700">{new Date(selectedCategory.updated_at).toLocaleString()}</p>
-              </div> */}
             </div>
 
             <div className="flex justify-end mt-6">

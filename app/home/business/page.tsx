@@ -114,7 +114,7 @@ export default function Product() {
           >
           </Image>
         </div>
-        : <Text isItalic={true}>Không có hình ảnh</Text>
+        : <Text isItalic={true}>none</Text>
     },
     {
       key: `address`,
@@ -148,16 +148,16 @@ export default function Product() {
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
-    {
-      key: `updated_at`,
-      ref: useRef(null),
-      title: `Ngày cập nhật`,
-      size: `4fr`,
-      render: (collection: collectionType): ReactElement => {
-        const date: string = new Date(collection.updated_at).toLocaleString();
-        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
-      }
-    },
+    // {
+    //   key: `updated_at`,
+    //   ref: useRef(null),
+    //   title: `Ngày cập nhật`,
+    //   size: `4fr`,
+    //   render: (collection: collectionType): ReactElement => {
+    //     const date: string = new Date(collection.updated_at).toLocaleString();
+    //     return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+    //   }
+    // },
     {
       title: `Xem chi tiết`,
       ref: useRef(null),

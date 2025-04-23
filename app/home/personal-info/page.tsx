@@ -1134,7 +1134,7 @@ export default function PersonalInfo(): ReactElement {
               ref={birthdayRef}
               type="date"
               className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              defaultValue={editableUser.birthday ? new Date(editableUser.birthday).toISOString().split('T')[0] : ''}
+              defaultValue={editableUser.birthday ? new Date(editableUser.birthday).toDateString().split('T')[0] : ''}
               onChange={(e) => {
                 console.log("Ngày sinh thay đổi:", e.target.value);
                 if (e.target.value) {

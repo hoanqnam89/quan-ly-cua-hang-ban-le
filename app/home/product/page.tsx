@@ -6,7 +6,7 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { ECollectionNames } from '@/enums'
 import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { infoIcon, trashIcon } from '@/public';
+import { infoIcon, pencilIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
@@ -182,7 +182,6 @@ const columns: Array<IColumnProps<collectionType>> = [
       const foundSupplier = supplier.find((element) => element._id === collection.supplier_id)
       return <p>{foundSupplier?.name}</p>
     }
-
   },
   {
     key: `name`,
@@ -260,7 +259,7 @@ const columns: Array<IColumnProps<collectionType>> = [
     title: `Ngày tạo`,
     size: `4fr`,
     render: (collection: collectionType): ReactElement => {
-      const date: string = new Date(collection.created_at).toDateString();
+      const date: string = new Date(collection.created_at).toLocaleDateString();
       return <Text isEllipsis={true} tooltip={date}>{date}</Text>
     }
   },
@@ -289,7 +288,7 @@ const columns: Array<IColumnProps<collectionType>> = [
     >
       <IconContainer
         tooltip={createMoreInfoTooltip(collectionName)}
-        iconLink={infoIcon}
+        iconLink={pencilIcon}
       >
       </IconContainer>
     </Button>
@@ -451,7 +450,7 @@ return (
             </TextInput>
           </InputSection>
 
-          <InputSection label={`Code`} gridColumns={gridColumns}>
+          {/* <InputSection label={`Code`} gridColumns={gridColumns}>
             <TextInput
               name={`code`}
               isDisable={isModalReadOnly}
@@ -459,7 +458,7 @@ return (
               onInputChange={handleChangeProduct}
             >
             </TextInput>
-          </InputSection>
+          </InputSection> */}
 
           <InputSection label={`Mô tả`} gridColumns={gridColumns}>
             <TextInput
@@ -471,7 +470,7 @@ return (
             </TextInput>
           </InputSection>
 
-          <InputSection label={`Mã sản phẩm`} gridColumns={gridColumns}>
+          {/* <InputSection label={`Mã sản phẩm`} gridColumns={gridColumns}>
             <TextInput
               name={`code`}
               isDisable={isModalReadOnly}
@@ -479,9 +478,9 @@ return (
               onInputChange={handleChangeProduct}
             >
             </TextInput>
-          </InputSection>
+          </InputSection> */}
 
-          <InputSection label={`Giá nhập (VNĐ)`} gridColumns={gridColumns}>
+          {/* <InputSection label={`Giá nhập (VNĐ)`} gridColumns={gridColumns}>
             <NumberInput
               name={`input_price`}
               isDisable={isModalReadOnly}
@@ -503,7 +502,7 @@ return (
               step={VND_UNIT}
             >
             </NumberInput>
-          </InputSection>
+          </InputSection> */}
 
           <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>
             <div>
