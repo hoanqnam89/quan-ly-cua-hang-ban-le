@@ -11,6 +11,8 @@ import CollectionForm from './collection-form/collection-form';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '../notify/notification/notification';
 import { translateCollectionName } from '@/utils/translate-collection-name';
+import CheckIcon from '@/public/icons/check.svg';
+import XCircleIcon from '@/public/icons/x-circle.svg';
 
 export interface ICollectionIdNotify {
   id: string
@@ -53,6 +55,57 @@ export interface IManagerPageProps<T extends { _id: string }> {
   handleFetchData?: () => Promise<T[]>
 }
 
+// Hàm trả về thông báo lỗi động theo collectionName
+function getErrorMessage(collectionName: ECollectionNames) {
+  switch (collectionName) {
+    case ECollectionNames.ORDER_FORM:
+      return 'Không thể tạo phiếu đặt hàng.';
+    case ECollectionNames.PRODUCT:
+      return 'Không thể tạo sản phẩm.';
+    case ECollectionNames.USER:
+      return 'Không thể tạo khách hàng.';
+    case ECollectionNames.WAREHOUSE_RECEIPT:
+      return 'Không thể tạo phiếu nhập kho.';
+    case ECollectionNames.BUSINESS:
+      return 'Không thể tạo cửa hàng.';
+    case ECollectionNames.UNIT:
+      return 'Không thể tạo đơn vị tính.';
+    case ECollectionNames.PRODUCT_DETAIL:
+      return 'Không thể tạo chi tiết kho.';
+    case ECollectionNames.ACCOUNT:
+      return 'Không thể tạo tài khoản.';
+    // Thêm các trường hợp khác nếu cần
+    default:
+      return 'Không thể thực hiện thao tác.';
+  }
+}
+
+// Hàm trả về thông báo thành công động theo collectionName
+function getSuccessMessage(collectionName: ECollectionNames) {
+  switch (collectionName) {
+    case ECollectionNames.ORDER_FORM:
+      return 'Tạo Phiếu đặt hàng thành công!';
+    case ECollectionNames.PRODUCT:
+      return 'Tạo sản phẩm thành công!';
+    case ECollectionNames.USER:
+      return 'Tạo khách hàng thành công!';
+    case ECollectionNames.WAREHOUSE_RECEIPT:
+      return 'Tạo phiếu nhập kho thành công!';
+    case ECollectionNames.BUSINESS:
+      return 'Tạo nhà cung cấp thành công!';
+    case ECollectionNames.UNIT:
+      return 'Tạo đơn vị tính thành công!';
+    case ECollectionNames.PRODUCT_DETAIL:
+      return 'Tạo chi tiết kho thành công!';
+    case ECollectionNames.ACCOUNT:
+      return 'Tạo tài khoản thành công!';
+
+    // Thêm các trường hợp khác nếu cần
+    default:
+      return 'Tạo thành công!';
+  }
+}
+
 export default function ManagerPage<T extends { _id: string }>({
   children,
   columns,
@@ -84,14 +137,9 @@ export default function ManagerPage<T extends { _id: string }>({
   const [collections, setCollections] = useState<T[]>([]);
   const [isUpdateCollection, setIsUpdateCollection] = useState<boolean>(false);
   const { createNotification, notificationElements } = useNotificationsHook();
-  const [allCollections, setAllCollections] = useState<T[]>([]);
-  const itemsPerPage = 10;
 
-  const [internalCurrentPage, setInternalCurrentPage] = useState<number>(1);
-
-
-  const currentPage = externalCurrentPage || internalCurrentPage;
-  const setCurrentPage = externalSetCurrentPage || setInternalCurrentPage;
+  const currentPage = externalCurrentPage || 1;
+  const setCurrentPage = externalSetCurrentPage || (page => page);
 
   const getCollections: () => Promise<void> = useCallback(
     async (): Promise<void> => {
@@ -103,39 +151,16 @@ export default function ManagerPage<T extends { _id: string }>({
           fetchedCollections = additionalProcessing(fetchedCollections);
         }
 
-        setAllCollections(fetchedCollections);
-
-        if (setAllItems) {
-          setAllItems(fetchedCollections);
-        }
-
-        if (displayedItems) {
-          setCollections(displayedItems);
-        } else {
-          const startIndex = (currentPage - 1) * itemsPerPage;
-          setCollections(fetchedCollections.slice(startIndex, startIndex + itemsPerPage));
-        }
+        setCollections(fetchedCollections);
+        if (setAllItems) setAllItems(fetchedCollections);
       } catch (error) {
         console.error("Error fetching collections:", error);
       } finally {
         setIsLoading(false);
       }
     },
-    // Loại bỏ additionalProcessing khỏi dependency array vì nó thay đổi mỗi khi render
-    [collectionName, setAllItems, displayedItems, currentPage, itemsPerPage],
+    [collectionName, setAllItems, additionalProcessing],
   );
-
-  // Update collections when page changes
-  useEffect(() => {
-    if (allCollections.length > 0 && !displayedItems) {
-      const startIndex = (currentPage - 1) * itemsPerPage;
-
-      // Áp dụng xử lý bổ sung mỗi khi hiển thị dữ liệu mới
-      const filteredCollections = allCollections;
-
-      setCollections(filteredCollections.slice(startIndex, startIndex + itemsPerPage));
-    }
-  }, [currentPage, allCollections, displayedItems, itemsPerPage]);
 
   useEffect(() => {
     if (!isAddCollectionModalOpen)
@@ -169,50 +194,36 @@ export default function ManagerPage<T extends { _id: string }>({
     const addCollectionApiResponse: Response =
       await addCollection<T>(collection, collectionName);
 
-    let notificationText: string = ``;
     let notificationType: ENotificationType = ENotificationType.ERROR;
+    let notificationContent: string = '';
 
-    switch (addCollectionApiResponse.status) {
-      case EStatusCode.OK:
-        notificationText = `Tạo ${translatedCollectionName} thành công!`;
-        notificationType = ENotificationType.SUCCESS;
-        break;
-      case EStatusCode.CREATED:
-        notificationText = `Tạo ${translatedCollectionName} thành công!`;
-        notificationType = ENotificationType.SUCCESS;
-        break;
-      case EStatusCode.UNPROCESSABLE_ENTITY:
-        notificationText = `Tạo ${translatedCollectionName} thất bại! Không thể đọc được ${translatedCollectionName} đầu vào.`;
-        break;
-      case EStatusCode.CONFLICT:
-        notificationText = `Tạo ${translatedCollectionName} thất bại! ${translatedCollectionName} đã tồn tại.`;
-        break;
-      case EStatusCode.METHOD_NOT_ALLOWED:
-        notificationText = `Tạo ${translatedCollectionName} thất bại! Phương thức không cho phép.`;
-        break;
-      case EStatusCode.INTERNAL_SERVER_ERROR:
-        notificationText = `Tạo ${translatedCollectionName} thất bại! Server bị lỗi.`;
-        break;
-      default:
-        notificationText = `Tạo ${translatedCollectionName} thất bại! Lỗi không xác định.`;
-    }
-
-    let errorText = 'Không thể tạo sản phẩm.';
-    try {
-      const errorData = await addCollectionApiResponse.json();
-      console.log('Chi tiết lỗi:', errorData);
-      if (errorData && errorData.message) {
-        errorText += ' ' + errorData.message;
-      }
-    } catch (e) {
-      console.log('Không thể đọc phản hồi lỗi');
+    if (addCollectionApiResponse.status === EStatusCode.OK || addCollectionApiResponse.status === EStatusCode.CREATED) {
+      notificationType = ENotificationType.SUCCESS;
+      notificationContent = getSuccessMessage(collectionName);
+    } else {
+      // Lấy nội dung lỗi từ API nếu có
+      let errorText = getErrorMessage(collectionName);
+      try {
+        const errorData = await addCollectionApiResponse.json();
+        if (errorData && errorData.message) {
+          errorText += ' ' + errorData.message;
+        }
+      } catch { }
+      notificationContent = errorText;
     }
 
     createNotification({
       id: 0,
-      children: <Text>{errorText}</Text>,
+      children: notificationContent,
       type: notificationType,
       isAutoClose: true,
+      title: notificationType === ENotificationType.SUCCESS
+        ? 'Thành công'
+        : notificationType === ENotificationType.ERROR
+          ? 'Lỗi'
+          : notificationType === ENotificationType.WARNING
+            ? 'Cảnh báo'
+            : 'Thông tin',
     });
 
     await getCollections();
@@ -256,9 +267,16 @@ export default function ManagerPage<T extends { _id: string }>({
 
     createNotification({
       id: 0,
-      children: <Text>{notificationText}</Text>,
+      children: notificationText,
       type: notificationType,
       isAutoClose: true,
+      title: notificationType === ENotificationType.SUCCESS
+        ? 'Thành công'
+        : notificationType === ENotificationType.ERROR
+          ? 'Lỗi'
+          : notificationType === ENotificationType.WARNING
+            ? 'Cảnh báo'
+            : 'Thông tin',
     });
 
     await getCollections();
@@ -269,9 +287,10 @@ export default function ManagerPage<T extends { _id: string }>({
     if (collections.length === 0) {
       createNotification({
         id: 0,
-        children: <Text>Không có {translatedCollectionName} để xóa!</Text>,
+        children: `Không có ${translatedCollectionName} để xóa!`,
         type: ENotificationType.ERROR,
         isAutoClose: true,
+        title: 'Lỗi',
       });
       return;
     }
@@ -305,9 +324,16 @@ export default function ManagerPage<T extends { _id: string }>({
 
     createNotification({
       id: 0,
-      children: <Text>{notificationText}</Text>,
+      children: notificationText,
       type: notificationType,
       isAutoClose: true,
+      title: notificationType === ENotificationType.SUCCESS
+        ? 'Thành công'
+        : notificationType === ENotificationType.ERROR
+          ? 'Lỗi'
+          : notificationType === ENotificationType.WARNING
+            ? 'Cảnh báo'
+            : 'Thông tin',
     });
 
     await getCollections();
@@ -367,9 +393,16 @@ export default function ManagerPage<T extends { _id: string }>({
 
       createNotification({
         id: 0,
-        children: <Text>{notificationText}</Text>,
+        children: notificationText,
         type: notificationType,
         isAutoClose: true,
+        title: notificationType === ENotificationType.SUCCESS
+          ? 'Thành công'
+          : notificationType === ENotificationType.ERROR
+            ? 'Lỗi'
+            : notificationType === ENotificationType.WARNING
+              ? 'Cảnh báo'
+              : 'Thông tin',
       });
 
       await getCollections();
@@ -416,7 +449,7 @@ export default function ManagerPage<T extends { _id: string }>({
           onClickDelete={handleDeleteCollection}
           currentPage={currentPage}
           setCurrentPage={setCurrentPage}
-          totalItems={totalItems || allCollections.length}
+          totalItems={totalItems ?? collections.length}
         />
 
         <CollectionForm<T>

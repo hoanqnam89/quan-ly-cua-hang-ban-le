@@ -25,12 +25,13 @@ import useNotificationsHook from '@/hooks/notifications-hook';
 import { ICategory } from '@/interfaces/category.interface';
 import { IProduct } from '@/interfaces/product.interface';
 import { DEFAULT_PROCDUCT } from '@/constants/product.constant';
+import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
 
 export default function Product() {
-  const { createNotification , notificationElements } = useNotificationsHook();
+  const { createNotification, notificationElements } = useNotificationsHook();
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [product, setProduct] = useState<collectionType>(DEFAULT_PROCDUCT);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
@@ -47,6 +48,8 @@ export default function Product() {
   const [categoryOptions, setCategoryOptions] = useState<ISelectOption[]>([]);
   const [supplier, setSupplier] = useState<IBusiness[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [products, setProducts] = useState<collectionType[]>([]);
 
   const getSuppliers: () => Promise<void> = useCallback(
     async (): Promise<void> => {
@@ -103,354 +106,400 @@ export default function Product() {
   useEffect((): void => {
     getSuppliers();
   }, []);
-useEffect((): void => {
-  getCategory();
-}, []);
+  useEffect((): void => {
+    getCategory();
+  }, []);
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        console.log('Đang fetch dữ liệu sản phẩm...');
+        const fetchedProducts = await fetchGetCollections<IProduct>(ECollectionNames.PRODUCT);
+        console.log('Dữ liệu sản phẩm:', fetchedProducts);
+        setProducts(fetchedProducts);
+      } catch (error) {
+        console.error('Lỗi khi lấy danh sách sản phẩm:', error);
+      }
+    };
+    fetchProducts();
+  }, []);
 
-const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
-  const { files } = e.target;
-  const validImageFiles: File[] = [];
-  if (!files)
-    return;
+  const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
+    const { files } = e.target;
+    const validImageFiles: File[] = [];
+    if (!files)
+      return;
 
-  for (let i = 0; i < files.length; i++) {
-    const file: File = files[i];
-    if (file) {
-      validImageFiles.push(file);
+    for (let i = 0; i < files.length; i++) {
+      const file: File = files[i];
+      if (file) {
+        validImageFiles.push(file);
+      }
     }
+
+    setImageFiles([...validImageFiles]);
   }
 
-  setImageFiles([...validImageFiles]);
-}
+  useEffect(() => {
+    const images: string[] = [];
+    const fileReaders: FileReader[] = [];
+    let isCancel = false;
 
-useEffect(() => {
-  const images: string[] = [];
-  const fileReaders: FileReader[] = [];
-  let isCancel = false;
+    if (imageFiles.length) {
+      imageFiles.forEach((file: File) => {
+        const fileReader: FileReader = new FileReader();
+        fileReaders.push(fileReader);
+        fileReader.onload = (e: ProgressEvent<FileReader>) => {
+          const result = e.target?.result;
+          if (result) {
+            images.push(result.toString());
+          }
 
-  if (imageFiles.length) {
-    imageFiles.forEach((file: File) => {
-      const fileReader: FileReader = new FileReader();
-      fileReaders.push(fileReader);
-      fileReader.onload = (e: ProgressEvent<FileReader>) => {
-        const result = e.target?.result;
-        if (result) {
-          images.push(result.toString());
+          if (images.length === imageFiles.length && !isCancel) {
+            setProduct({
+              ...product,
+              image_links: images,
+            });
+          }
         }
+        fileReader.readAsDataURL(file);
+      });
+    }
 
-        if (images.length === imageFiles.length && !isCancel) {
-          setProduct({
-            ...product,
-            image_links: images,
-          });
+    return () => {
+      isCancel = true;
+      fileReaders.forEach((fileReader: FileReader) => {
+        if (fileReader.readyState === 1) {
+          fileReader.abort();
         }
+      });
+    }
+  }, [imageFiles, product]);
+
+  const columns: Array<IColumnProps<collectionType>> = [
+    {
+      key: `index`,
+      ref: useRef(null),
+      title: `#`,
+      size: `1fr`,
+    },
+    {
+      key: `code`,
+      ref: useRef(null),
+      title: `Mã`,
+      size: `4fr`,
+    },
+    {
+      key: `code`,
+      ref: useRef(null),
+      title: `Nhà cung cấp`,
+      size: `4fr`,
+      render: (collection: collectionType): ReactElement => {
+        const foundSupplier = supplier.find((element) => element._id === collection.supplier_id)
+        return <p>{foundSupplier?.name}</p>
       }
-      fileReader.readAsDataURL(file);
+    },
+    {
+      key: `name`,
+      ref: useRef(null),
+      title: `Tên sản phẩm`,
+      size: `4fr`,
+    },
+    {
+      key: `name`,
+      ref: useRef(null),
+      title: `Loại sản phẩm`,
+      size: `4fr`,
+      render: (collection: collectionType): ReactElement => {
+        const foundCategories = categories.find((element) => {
+          return element._id === collection.category_id
+        })
+        console.log(foundCategories, categories);
+        return <p>{foundCategories?.name}</p>
+
+      }
+    },
+    {
+      key: `description`,
+      ref: useRef(null),
+      title: `Mô tả`,
+      size: `5fr`,
+    },
+    {
+      key: `input_price`,
+      ref: useRef(null),
+      title: `Giá nhập`,
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement =>
+        <Text>{formatCurrency(collection.input_price)}</Text>
+    },
+    {
+      key: `output_price`,
+      ref: useRef(null),
+      title: `Giá bán`,
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement =>
+        <Text>{formatCurrency(collection.output_price)}</Text>
+    },
+    {
+      key: `image_links`,
+      ref: useRef(null),
+      title: `Hình ảnh`,
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement =>
+        <div className="flex items-center justify-center min-h-[60px]">
+          {
+            collection.image_links.map((image: string, index: number) =>
+              image ? (
+                <div
+                  key={index}
+                  className={`relative ${styles[`image-container`]}`}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60px' }}
+                >
+                  <Image
+                    className="object-contain max-h-[56px] max-w-[56px]"
+                    src={image}
+                    alt={``}
+                    width={56}
+                    height={56}
+                    quality={10}
+                  />
+                </div>
+              ) : null
+            )
+          }
+        </div>
+    },
+    {
+      key: `created_at`,
+      ref: useRef(null),
+      title: `Ngày tạo`,
+      size: `4fr`,
+      render: (collection: collectionType): ReactElement => {
+        const date: string = new Date(collection.created_at).toLocaleDateString();
+        return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+      }
+    },
+    // {
+    //   key: `updated_at`,
+    //   ref: useRef(null),
+    //   title: `Ngày cập nhật`,
+    //   size: `4fr`,
+    //   render: (collection: collectionType): ReactElement => {
+    //     const date: string = new Date(collection.updated_at).toLocaleString();
+    //     return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+    //   }
+    // },
+    {
+      title: `Thao tác`,
+      ref: useRef(null),
+      size: `4fr`,
+      render: (collection: collectionType): ReactElement => (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, minHeight: 48 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', borderRadius: 8, padding: 6, transition: 'background 0.2s', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#e0e7ef')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#f3f4f6')}
+          >
+            <Button
+              title={createMoreInfoTooltip(collectionName)}
+              onClick={(): void => {
+                setIsClickShowMore({
+                  id: collection._id,
+                  isClicked: !isClickShowMore.isClicked,
+                });
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                padding: 0,
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <IconContainer
+                tooltip={createMoreInfoTooltip(collectionName)}
+                iconLink={pencilIcon}
+                style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              />
+            </Button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', borderRadius: 8, padding: 6, transition: 'background 0.2s', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#fde8e8')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#f3f4f6')}
+          >
+            <Button
+              title={createDeleteTooltip(collectionName)}
+              onClick={(): void => {
+                setIsClickDelete({
+                  id: collection._id,
+                  isClicked: !isClickShowMore.isClicked,
+                });
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                padding: 0,
+                margin: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              <IconContainer
+                tooltip={createDeleteTooltip(collectionName)}
+                iconLink={trashIcon}
+                style={{ width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              />
+            </Button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', borderRadius: 8, padding: 6, transition: 'background 0.2s', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#e0e7ef')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#f3f4f6')}
+          >
+            {createCollectionDetailLink(collectionName, collection._id)}
+          </div>
+        </div>
+      )
+    },
+  ];
+
+  const handleChangeBusinessId = (e: ChangeEvent<HTMLSelectElement>): void => {
+    setProduct({
+      ...product,
+      supplier_id: e.target.value,
+    });
+  }
+  const handleChangeCategoryId = (e: ChangeEvent<HTMLSelectElement>): void => {
+    setProduct({
+      ...product,
+      category_id: e.target.value,
     });
   }
 
-  return () => {
-    isCancel = true;
-    fileReaders.forEach((fileReader: FileReader) => {
-      if (fileReader.readyState === 1) {
-        fileReader.abort();
-      }
+  const handleDeleteImage = (index: number): void => {
+    const newImages: string[] = product.image_links.filter(
+      (_image: string, imageIndex: number) => imageIndex !== index
+    );
+    const newImageFiles: File[] = imageFiles.filter(
+      (_imageFile: File, imageFileIndex: number) => imageFileIndex !== index
+    );
+    setProduct({
+      ...product,
+      image_links: newImages,
     });
+    setImageFiles([...newImageFiles]);
   }
-}, [imageFiles, product]);
 
-const columns: Array<IColumnProps<collectionType>> = [
-  {
-    key: `index`,
-    ref: useRef(null),
-    title: `#`,
-    size: `1fr`,
-  },
-  {
-    key: `code`,
-    ref: useRef(null),
-    title: `Mã`,
-    size: `4fr`,
-  },
-  {
-    key: `code`,
-    ref: useRef(null),
-    title: `Nhà cung cấp`,
-    size: `4fr`,
-    render: (collection: collectionType): ReactElement => {
-      const foundSupplier = supplier.find((element) => element._id === collection.supplier_id)
-      return <p>{foundSupplier?.name}</p>
-    }
-  },
-  {
-    key: `name`,
-    ref: useRef(null),
-    title: `Tên sản phẩm`,
-    size: `4fr`,
-  },
-  {
-    key: `name`,
-    ref: useRef(null),
-    title: `Loại sản phẩm`,
-    size: `4fr`,
-    render: (collection: collectionType): ReactElement => {
-      const foundCategories = categories.find((element) => {
-        return element._id === collection.category_id
-      })
-      console.log(foundCategories, categories);
-      return <p>{foundCategories?.name}</p>
+  const gridColumns: string = `200px 1fr`;
 
-    }
-  },
-  {
-    key: `description`,
-    ref: useRef(null),
-    title: `Mô tả`,
-    size: `5fr`,
-  },
-  {
-    key: `input_price`,
-    ref: useRef(null),
-    title: `Giá nhập`,
-    size: `3fr`,
-    render: (collection: collectionType): ReactElement =>
-      <Text>{formatCurrency(collection.input_price)}</Text>
-  },
-  {
-    key: `output_price`,
-    ref: useRef(null),
-    title: `Giá bán`,
-    size: `3fr`,
-    render: (collection: collectionType): ReactElement =>
-      <Text>{formatCurrency(collection.output_price)}</Text>
-  },
-  {
-    key: `image_links`,
-    ref: useRef(null),
-    title: `Hình ảnh`,
-    size: `3fr`,
-    render: (collection: collectionType): ReactElement =>
-      <div className={`flex flex-wrap gap-2`}>
-        {
-          collection.image_links.map((image: string, index: number) =>
-            image ? ( // Kiểm tra xem image có phải là chuỗi rỗng không
-              <div
-                key={index}
-                className={`relative ${styles[`image-container`]}`}
-              >
-                <Image
-                  className={`w-full max-w-full max-h-full`}
-                  src={image}
-                  alt={``}
-                  width={0}
-                  height={0}
-                  quality={10}
-                />
-              </div>
-            ) : null // Nếu image là chuỗi rỗng, trả về null
-          )
-        }
-      </div>
-  },
-  {
-    key: `created_at`,
-    ref: useRef(null),
-    title: `Ngày tạo`,
-    size: `4fr`,
-    render: (collection: collectionType): ReactElement => {
-      const date: string = new Date(collection.created_at).toLocaleDateString();
-      return <Text isEllipsis={true} tooltip={date}>{date}</Text>
-    }
-  },
-  // {
-  //   key: `updated_at`,
-  //   ref: useRef(null),
-  //   title: `Ngày cập nhật`,
-  //   size: `4fr`,
-  //   render: (collection: collectionType): ReactElement => {
-  //     const date: string = new Date(collection.updated_at).toLocaleString();
-  //     return <Text isEllipsis={true} tooltip={date}>{date}</Text>
+  const handleOpenModal = (prev: boolean): boolean => {
+    // if (businessOptions.length === 0) {
+    //   createNotification({
+    //     id: 0,
+    //     children: <Text>Thêm nhà cung cấp vào trước khi thêm sản phẩm!</Text>,
+    //     type: ENotificationType.ERROR,
+    //     isAutoClose: true, 
+    //   });
+    //   return prev;
+    // }
+
+    return !prev;
+  }
+
+  // Trong hàm xử lý submit form
+  // const handleSubmit = async (e: React.FormEvent) => {
+  //   e.preventDefault();
+
+  //   if (!product.supplier_id) {
+  //     createNotification({
+  //       id: Date.now(),
+  //       children: <Text>Vui lòng chọn nhà cung cấp!</Text>,
+  //       type: ENotificationType.ERROR,
+  //       isAutoClose: true,
+  //     });
+  //     return;
   //   }
-  // },
-  {
-    title: `Chỉnh sửa `,
-    ref: useRef(null),
-    size: `2fr`,
-    render: (collection: collectionType): ReactElement => <Button
-      title={createMoreInfoTooltip(collectionName)}
-      onClick={(): void => {
-        setIsClickShowMore({
-          id: collection._id,
-          isClicked: !isClickShowMore.isClicked,
-        });
-      }}
+
+  //   // Gửi dữ liệu lên server
+  //   // ...
+  // };
+
+  function handleChangeProduct(e: ChangeEvent<HTMLInputElement>): void {
+    const { name, value } = e.target;
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      [name]: name === 'input_price' || name === 'output_price' ? parseFloat(value) || 0 : value,
+    }));
+  }
+
+  const productsList = Array.isArray(products) ? products : [product];
+
+  return (
+    <ManagerPage<collectionType>
+      columns={columns}
+      collectionName={collectionName}
+      defaultCollection={DEFAULT_PROCDUCT}
+      collection={product}
+      setCollection={setProduct}
+      isModalReadonly={isModalReadOnly}
+      setIsModalReadonly={setIsModalReadOnly}
+      isClickShowMore={isClickShowMore}
+      isClickDelete={isClickDelete}
+      isLoaded={isLoading}
+      handleOpenModal={handleOpenModal}
+      displayedItems={products}
+      currentPage={currentPage}
+      setCurrentPage={setCurrentPage}
+      totalItems={products.length}
     >
-      <IconContainer
-        tooltip={createMoreInfoTooltip(collectionName)}
-        iconLink={pencilIcon}
-      >
-      </IconContainer>
-    </Button>
-  },
-  // {
-  //   title: `Xem chi tiết`,
-  //   ref: useRef(null),
-  //   size: `2fr`,
-  //   render: (collection: collectionType): ReactElement =>
-  //     createCollectionDetailLink(
-  //       collectionName,
-  //       collection._id
-  //     )
-  // },
-  {
-    title: `Xóa`,
-    ref: useRef(null),
-    size: `2fr`,
-    render: (collection: collectionType): ReactElement => <Button
-      title={createDeleteTooltip(collectionName)}
-      onClick={(): void => {
-        setIsClickDelete({
-          id: collection._id,
-          isClicked: !isClickShowMore.isClicked,
-        });
-      }}
-    >
-      <IconContainer
-        tooltip={createDeleteTooltip(collectionName)}
-        iconLink={trashIcon}
-      >
-      </IconContainer>
-    </Button>
-  },
-];
+      <>
+        <Tabs>
+          <TabItem label={`${translateCollectionName(collectionName)}`}>
+            <InputSection label={`Nhà cung cấp`}>
+              <SelectDropdown
+                name={`business_id`}
+                isLoading={isLoading}
+                isDisable={isModalReadOnly}
+                options={supplierOptions}
+                defaultOptionIndex={getSelectedOptionIndex(
+                  supplierOptions, product.supplier_id
+                )}
+                onInputChange={handleChangeBusinessId}
+              >
+              </SelectDropdown>
+            </InputSection>
 
-const handleChangeBusinessId = (e: ChangeEvent<HTMLSelectElement>): void => {
-  setProduct({
-    ...product,
-    supplier_id: e.target.value,
-  });
-}
-const handleChangeCategoryId = (e: ChangeEvent<HTMLSelectElement>): void => {
-  setProduct({
-    ...product,
-    category_id: e.target.value,
-  });
-}
+            <InputSection label={`Loại sản phẩm`}>
+              <SelectDropdown
+                name={`category_id`}
+                isLoading={isLoading}
+                isDisable={isModalReadOnly}
+                options={categoryOptions}
+                defaultOptionIndex={getSelectedOptionIndex(
+                  categoryOptions, product.category_id
+                )}
+                onInputChange={handleChangeCategoryId}
+              >
+              </SelectDropdown>
+            </InputSection>
 
-const handleDeleteImage = (index: number): void => {
-  const newImages: string[] = product.image_links.filter(
-    (_image: string, imageIndex: number) => imageIndex !== index
-  );
-  const newImageFiles: File[] = imageFiles.filter(
-    (_imageFile: File, imageFileIndex: number) => imageFileIndex !== index
-  );
-  setProduct({
-    ...product,
-    image_links: newImages,
-  });
-  setImageFiles([...newImageFiles]);
-}
+            <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>
+              <TextInput
+                name={`name`}
+                isDisable={isModalReadOnly}
+                value={product.name}
+                onInputChange={handleChangeProduct}
+              >
+              </TextInput>
+            </InputSection>
 
-const gridColumns: string = `200px 1fr`;
-
-const handleOpenModal = (prev: boolean): boolean => {
-  // if (businessOptions.length === 0) {
-  //   createNotification({
-  //     id: 0,
-  //     children: <Text>Thêm nhà cung cấp vào trước khi thêm sản phẩm!</Text>,
-  //     type: ENotificationType.ERROR,
-  //     isAutoClose: true, 
-  //   });
-  //   return prev;
-  // }
-
-  return !prev;
-}
-
-// Trong hàm xử lý submit form
-// const handleSubmit = async (e: React.FormEvent) => {
-//   e.preventDefault();
-
-//   if (!product.supplier_id) {
-//     createNotification({
-//       id: Date.now(),
-//       children: <Text>Vui lòng chọn nhà cung cấp!</Text>,
-//       type: ENotificationType.ERROR,
-//       isAutoClose: true,
-//     });
-//     return;
-//   }
-
-//   // Gửi dữ liệu lên server
-//   // ...
-// };
-
-function handleChangeProduct(e: ChangeEvent<HTMLInputElement>): void {
-  const { name, value } = e.target;
-  setProduct((prevProduct) => ({
-    ...prevProduct,
-    [name]: name === 'input_price' || name === 'output_price' ? parseFloat(value) || 0 : value,
-  }));
-}
-
-
-return (
-  <ManagerPage<collectionType>
-    columns={columns}
-    collectionName={collectionName}
-    defaultCollection={DEFAULT_PROCDUCT}
-    collection={product}
-    setCollection={setProduct}
-    isModalReadonly={isModalReadOnly}
-    setIsModalReadonly={setIsModalReadOnly}
-    isClickShowMore={isClickShowMore}
-    isClickDelete={isClickDelete}
-    isLoaded={isLoading}
-    handleOpenModal={handleOpenModal}
-  >
-    <>
-      <Tabs>
-        <TabItem label={`${translateCollectionName(collectionName)}`}>
-          <InputSection label={`Nhà cung cấp`}>
-            <SelectDropdown
-              name={`business_id`}
-              isLoading={isLoading}
-              isDisable={isModalReadOnly}
-              options={supplierOptions}
-              defaultOptionIndex={getSelectedOptionIndex(
-                supplierOptions, product.supplier_id
-              )}
-              onInputChange={handleChangeBusinessId}
-            >
-            </SelectDropdown>
-          </InputSection>
-
-          <InputSection label={`Loại sản phẩm`}>
-            <SelectDropdown
-              name={`category_id`}
-              isLoading={isLoading}
-              isDisable={isModalReadOnly}
-              options={categoryOptions}
-              defaultOptionIndex={getSelectedOptionIndex(
-                categoryOptions, product.category_id
-              )}
-              onInputChange={handleChangeCategoryId}
-            >
-            </SelectDropdown>
-          </InputSection>
-
-          <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>
-            <TextInput
-              name={`name`}
-              isDisable={isModalReadOnly}
-              value={product.name}
-              onInputChange={handleChangeProduct}
-            >
-            </TextInput>
-          </InputSection>
-
-          {/* <InputSection label={`Code`} gridColumns={gridColumns}>
+            {/* <InputSection label={`Code`} gridColumns={gridColumns}>
             <TextInput
               name={`code`}
               isDisable={isModalReadOnly}
@@ -460,17 +509,17 @@ return (
             </TextInput>
           </InputSection> */}
 
-          <InputSection label={`Mô tả`} gridColumns={gridColumns}>
-            <TextInput
-              name={`description`}
-              isDisable={isModalReadOnly}
-              value={product.description}
-              onInputChange={handleChangeProduct}
-            >
-            </TextInput>
-          </InputSection>
+            <InputSection label={`Mô tả`} gridColumns={gridColumns}>
+              <TextInput
+                name={`description`}
+                isDisable={isModalReadOnly}
+                value={product.description}
+                onInputChange={handleChangeProduct}
+              >
+              </TextInput>
+            </InputSection>
 
-          {/* <InputSection label={`Mã sản phẩm`} gridColumns={gridColumns}>
+            {/* <InputSection label={`Mã sản phẩm`} gridColumns={gridColumns}>
             <TextInput
               name={`code`}
               isDisable={isModalReadOnly}
@@ -480,7 +529,7 @@ return (
             </TextInput>
           </InputSection> */}
 
-          {/* <InputSection label={`Giá nhập (VNĐ)`} gridColumns={gridColumns}>
+            {/* <InputSection label={`Giá nhập (VNĐ)`} gridColumns={gridColumns}>
             <NumberInput
               name={`input_price`}
               isDisable={isModalReadOnly}
@@ -504,56 +553,56 @@ return (
             </NumberInput>
           </InputSection> */}
 
-          <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>
-            <div>
-              {!isModalReadOnly ? <input
-                type={`file`}
-                accept={`image/*`}
-                multiple={true}
-                onChange={handleChangeImage}
-                disabled={isModalReadOnly}
-              >
-              </input> : null}
+            <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>
+              <div>
+                {!isModalReadOnly ? <input
+                  type={`file`}
+                  accept={`image/*`}
+                  multiple={true}
+                  onChange={handleChangeImage}
+                  disabled={isModalReadOnly}
+                >
+                </input> : null}
 
-              <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
-                {
-                  product.image_links.map((image: string, index: number) =>
-                    <div
-                      key={index}
-                      className={`relative ${styles[`image-container`]}`}
-                    >
-                      <Image
-                        className={`w-full max-w-full max-h-full`}
-                        src={image}
-                        alt={``}
-                        width={0}
-                        height={0}
-                        quality={10}
+                <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
+                  {
+                    product.image_links.map((image: string, index: number) =>
+                      <div
+                        key={index}
+                        className={`relative ${styles[`image-container`]}`}
                       >
-                      </Image>
-
-                      {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
-                        <Button
-                          className={`absolute top-0 right-0`}
-                          onClick={() => handleDeleteImage(index)}
+                        <Image
+                          className={`w-full max-w-full max-h-full`}
+                          src={image}
+                          alt={``}
+                          width={0}
+                          height={0}
+                          quality={10}
                         >
-                          <IconContainer iconLink={trashIcon}>
-                          </IconContainer>
-                        </Button>
-                      </div> : null}
-                    </div>
-                  )
-                }
-              </div>
-            </div>
-          </InputSection>
-        </TabItem>
-      </Tabs>
+                        </Image>
 
-      {notificationElements}
-    </>
-  </ManagerPage>
-);
+                        {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
+                          <Button
+                            className={`absolute top-0 right-0`}
+                            onClick={() => handleDeleteImage(index)}
+                          >
+                            <IconContainer iconLink={trashIcon}>
+                            </IconContainer>
+                          </Button>
+                        </div> : null}
+                      </div>
+                    )
+                  }
+                </div>
+              </div>
+            </InputSection>
+          </TabItem>
+        </Tabs>
+
+        {notificationElements}
+      </>
+    </ManagerPage>
+  );
 }
 
 // function loadBusinessNames() {

@@ -1,19 +1,28 @@
 import React, { CSSProperties, Dispatch, ReactElement, SetStateAction } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { CNavbarItem } from '../../layout';
 import { IconContainer, Text } from '@/components';
+import styles from './style.module.css';
+import { chevronRightIcon, chevronLeftIcon } from '@/public';
 
 interface INavbarItemProps {
   setIsLoading?: Dispatch<SetStateAction<boolean>>
   navbarItem: CNavbarItem,
+  isExpand?: boolean,
+  setIsExpand?: Dispatch<SetStateAction<boolean>>
 }
 
 export default function NavbarItem({
   setIsLoading,
   navbarItem,
+  isExpand = true,
+  setIsExpand,
 }: Readonly<INavbarItemProps>): ReactElement {
+  const pathname = usePathname();
   const navbarItemStyle: CSSProperties = {
-    gridTemplateColumns: `24px auto`,
+    gridTemplateColumns: isExpand ? `24px auto 24px` : `24px`,
+    alignItems: 'center',
   }
 
   const handleRedirect = (): void => {
@@ -29,39 +38,103 @@ export default function NavbarItem({
     justifyContent: 'center'
   }
 
+  // Chuẩn hóa đường dẫn để so sánh
+  function normalizePath(path: string | undefined) {
+    if (!path) return '';
+    return path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
+  }
+
+  const isActive = navbarItem.link && normalizePath(pathname) === normalizePath(navbarItem.link);
+
+  const renderMenuItem = () => (
+    <>
+      <div style={iconStyle}>
+        <IconContainer iconLink={navbarItem.icon} size={24} color="#222" />
+      </div>
+      {isExpand && (
+        <Text weight={600} isEllipsis={true}>{navbarItem.label}</Text>
+      )}
+      {isExpand && navbarItem.children && (
+        <div className={styles.chevronIcon}>
+          <IconContainer
+            iconLink={chevronRightIcon}
+            size={20}
+            color="#888"
+            style={{
+              transform: navbarItem.isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s',
+            }}
+          />
+        </div>
+      )}
+    </>
+  );
+
+  const handleGroupClick = () => {
+    if (navbarItem.onClick) navbarItem.onClick();
+    if (!isExpand && setIsExpand) setIsExpand(true);
+  }
+
+  if (navbarItem.children) {
+    return (
+      <div className="flex flex-col">
+        <div
+          className={`
+            p-2 grid gap-4 rounded-2xl transition-all select-none cursor-pointer
+            ${navbarItem.isExpanded ? styles.expanded : ''} ${styles.navItem}
+          `}
+          style={navbarItemStyle}
+          title={navbarItem.label}
+          onClick={handleGroupClick}
+        >
+          {renderMenuItem()}
+        </div>
+        <div
+          className={
+            `${styles.collapseWrapper} ${navbarItem.isExpanded && isExpand ? styles.open : ''}`
+          }
+        >
+          <div className={`ml-4 flex flex-col gap-2 ${styles.childrenContainer}`}>
+            {navbarItem.isExpanded && isExpand && navbarItem.children.map((child, index) => (
+              <NavbarItem
+                key={index}
+                navbarItem={child}
+                setIsLoading={setIsLoading}
+                isExpand={isExpand}
+                setIsExpand={setIsExpand}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (navbarItem.link)
     return (
       <Link
         href={navbarItem.link}
         onClick={handleRedirect}
         className={`
-          p-2 grid gap-6 rounded-2xl transition-all select-none
+          p-2 grid gap-4 rounded-2xl transition-all select-none ${styles.navItem} ${isActive ? styles.active : ''}
         `}
         style={navbarItemStyle}
         title={navbarItem.label}
       >
-        <div style={iconStyle}>
-          <IconContainer iconLink={navbarItem.icon} size={24} color="#ffffff" />
-        </div>
-
-        <Text weight={600} isEllipsis={true}>{navbarItem.label}</Text>
+        {renderMenuItem()}
       </Link>
     );
 
   return (
     <div
       className={`
-        p-2 grid gap-6 rounded-2xl transition-all select-none cursor-pointer
+        p-2 grid gap-4 rounded-2xl transition-all select-none cursor-pointer ${styles.navItem}
       `}
       style={navbarItemStyle}
       title={navbarItem.label}
       onClick={navbarItem.onClick}
     >
-      <div style={iconStyle}>
-        <IconContainer iconLink={navbarItem.icon} size={24} color="#ffffff" />
-      </div>
-
-      <Text weight={600} isEllipsis={true}>{navbarItem.label}</Text>
+      {renderMenuItem()}
     </div>
   );
 }

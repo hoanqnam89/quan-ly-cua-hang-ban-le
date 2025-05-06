@@ -13,7 +13,7 @@ export interface IOrderFormProductDetail {
 
 export interface IOrderForm {
   _id: string
-  business_id: string
+  supplier_id: string
   created_at: Date
   updated_at: Date
   status: OrderFormStatus

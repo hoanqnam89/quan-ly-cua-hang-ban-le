@@ -17,6 +17,7 @@ import { isIdsValid } from "@/utils/is-ids-valid";
 import { print } from "@/utils/print";
 import { isValidObjectId } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
+import { ProductModel } from "@/models/Product";
 
 type collectionType = IWarehouseReceipt;
 const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;
@@ -26,128 +27,110 @@ const path: string = `${ROOT}/${collectionName.toLowerCase()}`;
 export const POST = async (req: NextRequest): Promise<NextResponse> => {
   print(`${collectionName} API - POST ${collectionName}`, ETerminal.FgYellow);
 
-  // const cookieStore: ReadonlyRequestCookies = await cookies();
-  // const isUserAdmin = await isAdmin(
-  //   cookieStore, 
-  //   ERoleAction.CREATE, 
-  //   collectionName
-  // );
-
-  // if ( !isUserAdmin )
-  //   return NextResponse.json(
-  //     createErrorMessage(
-  //       `Failed to create ${collectionName}.`,
-  //       `You dont have privilage to do this action.`,
-  //       path, 
-  //       `Please check if the account had privilage to do this action.`, 
-  //     ),
-  //     { status: EStatusCode.UNAUTHORIZED }
-  //   );
-
   const warehouseReceipt: collectionType = await req.json();
 
   try {
-    connectToDatabase();
+    await connectToDatabase();
 
-    if (!isValidObjectId(warehouseReceipt.supplier_id))
+    // Validate supplier_id
+    if (!isValidObjectId(warehouseReceipt.supplier_id)) {
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `The ID '${warehouseReceipt.supplier_id}' is not valid.`,
+          `The supplier ID '${warehouseReceipt.supplier_id}' is not valid.`,
           path,
-          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`,
+          `Please check if the business ID is correct.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
+    }
 
-    const foundSupplier: IBusiness | null =
-      await BusinessModel.findById(warehouseReceipt.supplier_id);
-
-    if (!foundSupplier)
+    // Check if supplier exists
+    const foundSupplier = await BusinessModel.findById(warehouseReceipt.supplier_id);
+    if (!foundSupplier) {
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `The ${ECollectionNames.BUSINESS} with the ID '${warehouseReceipt.supplier_receipt_id}' does not exist in our records.`,
+          `The business with ID '${warehouseReceipt.supplier_id}' does not exist.`,
           path,
-          `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`
+          `Please check if the business ID is correct.`
         ),
         { status: EStatusCode.NOT_FOUND }
       );
+    }
 
-    if (!isValidObjectId(warehouseReceipt.supplier_receipt_id))
+    // Validate supplier_receipt_id
+    if (!isValidObjectId(warehouseReceipt.supplier_receipt_id)) {
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `The ID '${warehouseReceipt.supplier_receipt_id}' is not valid.`,
+          `The order form ID '${warehouseReceipt.supplier_receipt_id}' is not valid.`,
           path,
-          `Please check if the ${ECollectionNames.SUPPLIER_RECEIPT} ID is correct.`,
+          `Please check if the order form ID is correct.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
+    }
 
-    const foundSupplierReceipt: IOrderForm | null =
-      await OrderFormModel.findById(warehouseReceipt.supplier_receipt_id);
-
-    if (!foundSupplierReceipt)
+    // Check if order form exists
+    const foundOrderForm = await OrderFormModel.findById(warehouseReceipt.supplier_receipt_id);
+    if (!foundOrderForm) {
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `The ${ECollectionNames.ORDER_FORM} with the ID '${warehouseReceipt.supplier_receipt_id}' does not exist in our records.`,
+          `The order form with ID '${warehouseReceipt.supplier_receipt_id}' does not exist.`,
           path,
-          `Please check if the ${ECollectionNames.ORDER_FORM} ID is correct.`
+          `Please check if the order form ID is correct.`
         ),
         { status: EStatusCode.NOT_FOUND }
       );
+    }
 
-    const otherWarehouseReceipts = await collectionModel.find({
-      supplier_receipt_id: warehouseReceipt.supplier_receipt_id,
+    // Check if order form is already used
+    const existingReceipt = await collectionModel.findOne({
+      supplier_receipt_id: warehouseReceipt.supplier_receipt_id
     });
-
-    if (otherWarehouseReceipts.length > 0)
+    if (existingReceipt) {
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `The ${ECollectionNames.SUPPLIER_RECEIPT} with the ID '${warehouseReceipt.supplier_receipt_id}' is belonging to another warehouse receipt in out record.`,
+          `This order form is already used in another warehouse receipt.`,
           path,
-          `Please check if the ${ECollectionNames.SUPPLIER_RECEIPT} ID is correct.`
+          `Please use a different order form.`
         ),
         { status: EStatusCode.CONFLICT }
       );
+    }
 
-    const warehouseReceiptProductDetailIds: string[] =
-      warehouseReceipt.product_details.map(
-        (warehouseReceiptProductDetail: IReceiptProduct) =>
-          warehouseReceiptProductDetail._id
-      );
-
-    if (!isIdsValid(warehouseReceiptProductDetailIds))
+    // Validate product details
+    const productDetailIds = warehouseReceipt.product_details.map(detail => detail._id);
+    if (!isIdsValid(productDetailIds)) {
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `Some of the ID in warehouse receipt's product details is not valid.`,
+          `Some product IDs are not valid.`,
           path,
-          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`,
+          `Please check the product details.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
+    }
 
-    const isProductDetailIdsExist: boolean =
-      await isIdsExist<IProductDetail>(
-        warehouseReceiptProductDetailIds,
-        ProductDetailModel
-      );
-
-    if (!isProductDetailIdsExist)
+    // Check if all products exist
+    const productsExist = await isIdsExist<IProductDetail>(productDetailIds, ProductDetailModel);
+    if (!productsExist) {
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `Some of the ${ECollectionNames.PRODUCT_DETAIL} in warehouse receipt's product details does not exist in our records.`,
+          `Some products do not exist in our records.`,
           path,
-          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`,
+          `Please check the product details.`,
         ),
         { status: EStatusCode.NOT_FOUND }
       );
+    }
 
+    // Create new warehouse receipt
     const newWarehouseReceipt = new collectionModel({
       created_at: new Date(),
       updated_at: new Date(),
@@ -156,51 +139,65 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       product_details: warehouseReceipt.product_details,
     });
 
-    const savedWarehouseReceipt: collectionType = await
-      newWarehouseReceipt.save();
-
-    if (!savedWarehouseReceipt)
+    // Save warehouse receipt
+    const savedWarehouseReceipt = await newWarehouseReceipt.save();
+    if (!savedWarehouseReceipt) {
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          ``,
+          `Could not save the warehouse receipt.`,
           path,
-          `Please contact for more information.`,
+          `Please try again later.`,
         ),
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
+    }
 
-    warehouseReceipt.product_details.forEach(async (
-      productDetail: IOrderFormProductDetail
-    ): Promise<void> => {
+    // Update product details inventory
+    for (const productDetail of warehouseReceipt.product_details) {
       const unit = await UnitModel.findById(productDetail.unit_id);
       const foundProductDetail = await ProductDetailModel.findById(productDetail._id);
 
-      // Tính số lượng nhập thêm
-      const additionalQuantity = productDetail.quantity * unit.equal;
+      if (unit && foundProductDetail) {
+        // Calculate new quantities
+        const additionalQuantity = productDetail.quantity * (unit.equal || 1);
+        const totalQuantity = (foundProductDetail.input_quantity || 0) + additionalQuantity;
+        const currentOutputQuantity = foundProductDetail.output_quantity || 0;
+        const newInventory = totalQuantity - currentOutputQuantity;
 
-      // Tính tổng số lượng sau khi nhập
-      const totalQuantity = foundProductDetail.input_quantity + additionalQuantity;
+        // Update product detail
+        await ProductDetailModel.findByIdAndUpdate(
+          productDetail._id,
+          {
+            $set: {
+              input_quantity: totalQuantity,
+              inventory: newInventory,
+              updated_at: new Date(),
+            }
+          }
+        );
 
-      // Số lượng đã bán vẫn giữ nguyên
-      const currentOutputQuantity = foundProductDetail.output_quantity;
+        // Cập nhật giá nhập và giá bán cho sản phẩm nếu có
+        if (productDetail.input_price) {
+          const productDetailDoc = await ProductDetailModel.findById(productDetail._id);
+          if (productDetailDoc && productDetailDoc.product_id) {
+            // Tính giá bán mới = giá nhập + 30% giá nhập
+            const newOutputPrice = productDetail.input_price + (productDetail.input_price * 0.3);
 
-      // Tính số lượng tồn kho mới
-      const newInventory = totalQuantity - currentOutputQuantity;
-
-      await ProductDetailModel.findOneAndUpdate(
-        { _id: productDetail._id },
-        {
-          $set: {
-            input_quantity: totalQuantity,
-            inventory: newInventory,
-            updated_at: new Date(),
+            // Cập nhật giá nhập và giá bán cho sản phẩm
+            await ProductModel.findByIdAndUpdate(productDetailDoc.product_id, {
+              $set: {
+                input_price: productDetail.input_price,
+                output_price: newOutputPrice,
+                updated_at: new Date()
+              }
+            });
           }
         }
-      );
-    });
+      }
+    }
 
-    // Cập nhật trạng thái phiếu đặt hàng thành "Hoàn thành"
+    // Update order form status
     await OrderFormModel.findByIdAndUpdate(
       warehouseReceipt.supplier_receipt_id,
       {
@@ -211,24 +208,20 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       }
     );
 
-    return NextResponse.json(
-      savedWarehouseReceipt,
-      { status: EStatusCode.CREATED }
-    );
-  } catch (error: unknown) {
-    console.error(error);
-
+    return NextResponse.json(savedWarehouseReceipt, { status: EStatusCode.CREATED });
+  } catch (error) {
+    console.error("Error creating warehouse receipt:", error);
     return NextResponse.json(
       createErrorMessage(
         `Failed to create ${collectionName}.`,
-        error as string,
+        error instanceof Error ? error.message : "Unknown error",
         path,
-        `Please contact for more information.`,
+        `Please try again later.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
   }
-}
+};
 
 export const GET = async (): Promise<NextResponse> =>
   await getCollectionsApi<collectionType>(

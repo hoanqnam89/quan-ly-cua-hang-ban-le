@@ -1,0 +1,62 @@
+.childrenContainer {
+    animation: slideDown 0.2s ease-out;
+    overflow: hidden;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    background: #f8fafd;
+    padding: 6px 0;
+}
+
+.expanded {
+    background-color: #e6f0fa;
+    transition: background 0.2s;
+}
+
+.navItem {
+    transition: background 0.2s, box-shadow 0.2s;
+}
+
+.navItem:hover {
+    background: #e6f0fa;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.chevronIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+}
+
+.collapseWrapper {
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+    overflow: hidden;
+}
+
+.collapseWrapper.open {
+    max-height: 500px;
+    opacity: 1;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.active {
+    background: linear-gradient(90deg, #e0eaff 80%, #d6eaff 100%);
+    color: #1976d2 !important;
+    font-weight: 700;
+    border-left: 4px solid #1976d2;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+}

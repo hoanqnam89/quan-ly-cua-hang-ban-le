@@ -37,6 +37,8 @@ export default function Product() {
     id: ``,
     isClicked: false
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [businesses, setBusinesses] = useState<IBusiness[]>([]);
 
   // Optimize image handling with useMemo to prevent unnecessary re-renders
   const handleChangeImage = useCallback((e: ChangeEvent<HTMLInputElement>) => {
@@ -276,6 +278,10 @@ export default function Product() {
       value: array[1],
     }));
 
+  // Giả sử bạn có danh sách doanh nghiệp là businessesList hoặc businesses, nếu không hãy thay bằng biến đúng
+  // Nếu không có mảng, hãy tạo 1 mảng chứa business hiện tại
+  const businessesList = [business];
+
   return (
     <ManagerPage<collectionType>
       columns={columns}
@@ -287,6 +293,10 @@ export default function Product() {
       setIsModalReadonly={setIsModalReadOnly}
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
+      currentPage={currentPage}
+      setCurrentPage={setCurrentPage}
+      totalItems={businesses.length}
+      displayedItems={businesses}
     >
       <Tabs>
         <TabItem label={`${translateCollectionName(collectionName)}`}>

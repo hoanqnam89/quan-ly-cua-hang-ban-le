@@ -17,7 +17,7 @@ export enum ENotificationType {
 
 const notificationIcons = {
   [ENotificationType.INFO]: '/icons/info-circle.svg',
-  [ENotificationType.SUCCESS]: '/icons/check-circle.svg',
+  [ENotificationType.SUCCESS]: null,
   [ENotificationType.ERROR]: '/icons/x-circle.svg',
   [ENotificationType.WARNING]: '/icons/exclamation-circle.svg',
 };
@@ -83,13 +83,19 @@ export default function CustomNotification({
     <div className={`${styles.container} ${isClosing ? styles.shrink : ``}`}>
       <div className={`${styles.notification} ${styles[type]} ${isClosing ? styles[`slide-out`] : styles[`slide-in`]} overflow-hidden relative flex gap-2 items-center p-3 rounded-lg`}>
         <div className={styles.iconWrapper}>
-          <img
-            src={notificationIcons[type]}
-            alt={type}
-            className={styles.typeIcon}
-            width={20}
-            height={20}
-          />
+          {type === ENotificationType.SUCCESS ? (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" width={24} height={24} style={{ color: '#389e0d' }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+            </svg>
+          ) : (
+            <img
+              src={notificationIcons[type]}
+              alt={type}
+              className={styles.typeIcon}
+              width={24}
+              height={24}
+            />
+          )}
         </div>
         <div className={styles.contentWrapper}>
           {title || notificationTitles[type] ? (

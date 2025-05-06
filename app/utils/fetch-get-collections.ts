@@ -3,7 +3,7 @@ import { ROOT } from '@/constants/root.constant';
 
 export const fetchGetCollections = async <T>(collectionName: ECollectionNames): Promise<T[]> => {
     try {
-        const response = await fetch(`${ROOT}/api/${collectionName}`, {
+        const response = await fetch(`${ROOT}/${collectionName}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',

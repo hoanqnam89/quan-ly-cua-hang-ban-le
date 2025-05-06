@@ -31,6 +31,9 @@ const addCollection = async <T>(
 ): Promise<Response> =>
   await fetch(`${ROOT}/${nameToHyphenAndLowercase(collectionName)}`, {
     method: `POST`,
+    headers: {
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify(collection),
   });
 

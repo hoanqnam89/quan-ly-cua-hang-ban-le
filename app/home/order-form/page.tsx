@@ -6,6 +6,8 @@ import { IColumnProps } from '@/components/table/interfaces/column-props.interfa
 import { ECollectionNames } from '@/enums'
 import React, { ChangeEvent, Dispatch, ReactElement, SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { infoIcon, plusIcon, trashIcon } from '@/public';
+import printIcon from '@/public/icons/print.svg';
+
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
@@ -24,6 +26,10 @@ import InputSection from '../components/input-section/input-section';
 import { IUnit } from '@/interfaces/unit.interface';
 import { fetchBusinessNames, fetchProductsBySupplier } from '@/utils/fetch-helpers';
 import { IExtendedSelectOption } from '@/interfaces/extended-select-option.interface';
+import { addCollection } from '@/services/api-service';
+import { EStatusCode } from '@/enums';
+
+
 
 type collectionType = IOrderForm;
 const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
@@ -61,6 +67,11 @@ export default function Product() {
   const [allProducts, setAllProducts] = useState<IProduct[]>([]);
   const [dateFilter, setDateFilter] = useState<string>('0');
   const [filteredOrderCount, setFilteredOrderCount] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [allOrders, setAllOrders] = useState<collectionType[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const itemsPerPage = 10;
 
   // Danh sách các bộ lọc ngày
   const dateFilters: IDateFilter[] = [
@@ -113,7 +124,7 @@ export default function Product() {
         if (businessList.length > 0) {
           setOrderForm((prevOrderForm) => ({
             ...prevOrderForm,
-            business_id: businessList[0].value,
+            supplier_id: businessList[0].value,
           }));
         }
 
@@ -164,23 +175,23 @@ export default function Product() {
     }
   }, [createNotification]);
 
-  // Thêm useEffect mới để lấy sản phẩm khi business_id thay đổi
+  // Thêm useEffect mới để lấy sản phẩm khi supplier_id thay đổi
   useEffect(() => {
-    const currentBusinessId = orderForm.business_id;
-    if (currentBusinessId) {
-      getProductsForBusiness(currentBusinessId);
+    const currentSupplierId = orderForm.supplier_id;
+    if (currentSupplierId) {
+      getProductsForBusiness(currentSupplierId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderForm.business_id]); // Chỉ phụ thuộc vào business_id, không phụ thuộc vào getProductsForBusiness
+  }, [orderForm.supplier_id]); // Chỉ phụ thuộc vào supplier_id, không phụ thuộc vào getProductsForBusiness
 
   // Cập nhật hàm handleChangeBusinessId
   const handleChangeBusinessId = useCallback((e: ChangeEvent<HTMLSelectElement>): void => {
     const newBusinessId = e.target.value;
 
-    // Cập nhật business_id và xóa danh sách sản phẩm
+    // Cập nhật supplier_id và xóa danh sách sản phẩm
     setOrderForm(prevOrderForm => ({
       ...prevOrderForm,
-      business_id: newBusinessId,
+      supplier_id: newBusinessId,
       product_details: [], // Xóa tất cả sản phẩm hiện tại khi thay đổi nhà cung cấp
     }));
 
@@ -275,73 +286,60 @@ export default function Product() {
       }
     },
     {
+      title: `Thao tác`,
       ref: useRef(null),
-      title: `In`,
-      size: `2fr`,
+      size: `4fr`,
       render: (collection: collectionType): ReactElement => (
-        <Button
-          type={EButtonType.INFO}
-          onClick={(): void => {
-            window.location.href = `/home/order-form/${collection._id}`;
-          }}
-          className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-all flex items-center justify-center gap-2 min-w-[120px] shadow-sm"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex items-center justify-center gap-4">
+          {/* Nút xem thêm */}
+          <Button
+            title={createMoreInfoTooltip(collectionName)}
+            onClick={(): void => {
+              setIsClickShowMore({
+                id: collection._id,
+                isClicked: !isClickShowMore.isClicked,
+              });
+            }}
+            className="hover:bg-blue-50 p-2 rounded-full text-blue-500 hover:text-blue-600 transition-all"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+            <IconContainer
+              tooltip={createMoreInfoTooltip(collectionName)}
+              iconLink={infoIcon}
+              className="w-5 h-5"
             />
-          </svg>
-          <span className="text-sm font-medium">In phiếu đặt hàng</span>
-        </Button>
+          </Button>
+
+          {/* Nút xóa */}
+          <Button
+            title={createDeleteTooltip(collectionName)}
+            onClick={(): void => {
+              setIsClickDelete({
+                id: collection._id,
+                isClicked: !isClickDelete.isClicked,
+              });
+            }}
+            className="hover:bg-red-50 p-2 rounded-full text-red-500 hover:text-red-600 transition-all"
+          >
+            <IconContainer
+              tooltip={createDeleteTooltip(collectionName)}
+              iconLink={trashIcon}
+              className="w-5 h-5"
+            />
+          </Button>
+          {/* Nút in phiếu đặt hàng */}
+          <Button
+            title="In phiếu đặt hàng"
+            onClick={(): void => {
+              window.location.href = `/home/order-form/${collection._id}`;
+            }}
+            className="hover:bg-gray-100 p-2 rounded-full text-black hover:text-gray-700 transition-all shadow-sm hover:shadow-md"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-black">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
+            </svg>
+          </Button>
+        </div>
       )
-    },
-    {
-      title: `Xem thêm`,
-      ref: useRef(null),
-      size: `2fr`,
-      render: (collection: collectionType): ReactElement => <Button
-        title={createMoreInfoTooltip(collectionName)}
-        onClick={(): void => {
-          setIsClickShowMore({
-            id: collection._id,
-            isClicked: !isClickShowMore.isClicked,
-          });
-        }}
-      >
-        <IconContainer
-          tooltip={createMoreInfoTooltip(collectionName)}
-          iconLink={infoIcon}
-        >
-        </IconContainer>
-      </Button>
-    },
-    {
-      title: `Xóa`,
-      ref: useRef(null),
-      size: `2fr`,
-      render: (collection: collectionType): ReactElement => <Button
-        title={createDeleteTooltip(collectionName)}
-        onClick={(): void => {
-          setIsClickDelete({
-            id: collection._id,
-            isClicked: !isClickDelete.isClicked,
-          });
-        }}
-      >
-        <IconContainer
-          tooltip={createDeleteTooltip(collectionName)}
-          iconLink={trashIcon}
-        >
-        </IconContainer>
-      </Button>
     },
   ];
 
@@ -530,7 +528,7 @@ export default function Product() {
     // Đặt lại form về trạng thái mặc định
     setOrderForm({
       ...DEFAULT_ORDER_FORM,
-      business_id: initialBusinessId,
+      supplier_id: initialBusinessId,
       status: OrderFormStatus.PENDING,
       created_at: new Date(),
       updated_at: new Date(),
@@ -589,24 +587,10 @@ export default function Product() {
 
   // Hàm xử lý dữ liệu để hiển thị trong bảng
   const processOrdersData = useCallback((orders: collectionType[]): collectionType[] => {
+    // Chỉ lọc, không slice
     const filteredOrders = filterOrdersByDate(orders);
-    setFilteredOrderCount(filteredOrders.length);
     return filteredOrders;
   }, [filterOrdersByDate]);
-
-  // Lấy thông tin đơn vị tính mặc định cho sản phẩm dựa trên id
-  // const getProductDefaultUnit = (productDetailId: string): string => {
-  //   // Lấy thông tin sản phẩm từ productDetailId
-  //   const productDetail = productDetailOptions.find(option => option.value === productDetailId);
-  //   if (!productDetail) return unitOptions.length > 0 ? unitOptions[0].value : '';
-
-  //   // Tìm sản phẩm trong allProducts
-  //   const product = allProducts.find(p => p._id === (productDetail as any).productId);
-  //   if (!product) return unitOptions.length > 0 ? unitOptions[0].value : '';
-
-  //   // Trả về đơn vị mặc định hoặc đơn vị đầu tiên trong danh sách
-  //   return unitOptions.length > 0 ? unitOptions[0].value : '';
-  // };
 
   // Cập nhật filteredProductDetailOptions khi không có sản phẩm
   useEffect(() => {
@@ -618,9 +602,9 @@ export default function Product() {
   // Dùng useMemo để tối ưu hóa các option
   // const memoizedFilteredOptions = useMemo(() =>
   //   productDetailOptions.filter(
-  //     option => option.business_id === orderForm.business_id
+  //     option => option.supplier_id === orderForm.supplier_id
   //   ),
-  //   [productDetailOptions, orderForm.business_id]
+  //   [productDetailOptions, orderForm.supplier_id]
   // );
 
   // Dùng useMemo cho dateFilter options
@@ -661,9 +645,136 @@ export default function Product() {
     );
   }, [dateFilterOptions, dateFilter, filteredOrderCount, handleChangeDateFilter]);
 
+  // 1. Fetch 1 lần khi mount
+  const fetchOrders = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const orders = await fetchGetCollections<collectionType>(collectionName);
+      setAllOrders(orders);
+    } catch (e) {
+      // handle error
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  // 3. Lọc và phân trang trên client
+  const filteredOrders = useMemo(() => {
+    if (!allOrders.length) return [];
+    // Lọc theo ngày
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return allOrders.filter(order => {
+      const orderDate = new Date(order.created_at);
+      switch (dateFilter) {
+        case '0': return true;
+        case '1': return orderDate >= today;
+        case '7':
+          const sevenDaysAgo = new Date(today);
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+          return orderDate >= sevenDaysAgo;
+        case '30':
+          const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+          return orderDate >= firstDayOfMonth;
+        case '60':
+          const firstDayOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+          const lastDayOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+          return orderDate >= firstDayOfLastMonth && orderDate <= lastDayOfLastMonth;
+        default: return true;
+      }
+    });
+  }, [allOrders, dateFilter]);
+
+  const pagedOrders = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredOrders.slice(start, start + itemsPerPage);
+  }, [filteredOrders, currentPage, itemsPerPage]);
+
+  // Reset trang về 1 khi filter thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [dateFilter]);
+
+  // Cập nhật số lượng phiếu đã lọc
+  useEffect(() => {
+    setFilteredOrderCount(filteredOrders.length);
+  }, [filteredOrders]);
+
+  const handleSaveClick = useCallback(async () => {
+    if (isSaving) return;
+
+    if (!orderForm.supplier_id) {
+      createNotification({
+        id: 0,
+        children: <Text>Vui lòng chọn nhà cung cấp</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+      });
+      return;
+    }
+
+    if (!orderForm.product_details || orderForm.product_details.length === 0) {
+      createNotification({
+        id: 0,
+        children: <Text>Vui lòng thêm sản phẩm vào phiếu đặt hàng</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+      });
+      return;
+    }
+
+    const invalidQuantity = orderForm.product_details.some(detail => !detail.quantity || detail.quantity <= 0);
+    if (invalidQuantity) {
+      createNotification({
+        id: 0,
+        children: <Text>Vui lòng nhập số lượng hợp lệ cho tất cả sản phẩm</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      const response = await addCollection(orderForm, collectionName);
+
+      if (response.status === EStatusCode.OK || response.status === EStatusCode.CREATED) {
+        // Cập nhật lại danh sách phiếu đặt hàng
+        const updatedOrders = await fetchGetCollections<collectionType>(collectionName);
+        setAllOrders(updatedOrders);
+
+        // Reset form
+        setOrderForm(DEFAULT_ORDER_FORM);
+
+        createNotification({
+          id: 0,
+          children: <Text>Lưu phiếu đặt hàng thành công</Text>,
+          type: ENotificationType.SUCCESS,
+          isAutoClose: true,
+        });
+      } else {
+        throw new Error('Failed to save order form');
+      }
+    } catch (error) {
+      console.error('Error saving order form:', error);
+      createNotification({
+        id: 0,
+        children: <Text>Có lỗi xảy ra khi lưu phiếu đặt hàng</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [orderForm, isSaving, createNotification]);
+
   return (
     <>
-      <ManagerPage<collectionType>
+      <ManagerPage
         columns={columns}
         collectionName={collectionName}
         defaultCollection={DEFAULT_ORDER_FORM}
@@ -673,181 +784,182 @@ export default function Product() {
         setIsModalReadonly={setIsModalReadOnly}
         isClickShowMore={isClickShowMore}
         isClickDelete={isClickDelete}
-        isLoaded={
-          isProductLoading ||
-          isBusinessLoading ||
-          isUnitLoading
-        }
+        isLoaded={isLoading || isProductLoading || isBusinessLoading || isUnitLoading}
         handleOpenModal={handleOpenModal}
         onExitModalForm={onExitModalForm}
         dateFilter={dateFilter}
         renderFilters={renderDateFilters}
-        additionalProcessing={processOrdersData}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        totalItems={filteredOrders.length}
       >
-        <>
-          <Tabs>
-            <TabItem label={`Phiếu đặt hàng`}>
-              <InputSection label={`Nhà cung cấp`} className="mb-6">
-                <SelectDropdown
-                  className="bg-white border-blue-200 hover:border-blue-400"
-                  isLoading={isBusinessLoading}
-                  isDisable={isModalReadOnly}
-                  options={businessOptions}
-                  defaultOptionIndex={getSelectedOptionIndex(
-                    businessOptions,
-                    (orderForm.business_id
-                      ? orderForm.business_id
-                      : 0
-                    ) as unknown as string
-                  )}
-                  onInputChange={handleChangeBusinessId}
-                >
-                </SelectDropdown>
-              </InputSection>
-
-              <div className={styles['product-form-container']}>
-                <div className={`grid items-center ${styles[`good-receipt-product-table-with-price`]} bg-gradient-to-r from-blue-600 to-blue-500 py-4 px-4 rounded-lg font-medium mb-4 shadow-md text-white`}>
-                  <Text className="font-bold">#</Text>
-                  <Text className="font-bold">Sản phẩm</Text>
-                  <Text className="font-bold">Giá nhập (đ)</Text>
-                  <Text className="font-bold">Đơn vị tính</Text>
-                  <Text className="font-bold">Số lượng</Text>
-                  <Text className="font-bold">Thao tác</Text>
-                </div>
-
-                {filteredProductDetailOptions.length === 0 && orderForm.business_id && !isProductLoading && (
-                  <div className="text-center py-10 bg-yellow-50 rounded-lg border border-dashed border-yellow-300 mb-4 shadow-inner">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="bg-yellow-100 p-3 rounded-full">
-                        <IconContainer iconLink={infoIcon} className="w-10 h-10 text-amber-500"></IconContainer>
-                      </div>
-                      <div>
-                        <Text className="text-lg font-medium text-amber-700">Nhà cung cấp này chưa có sản phẩm nào</Text>
-                        <Text className="text-sm text-amber-600 mt-2">Vui lòng chọn nhà cung cấp khác hoặc thêm sản phẩm cho nhà cung cấp này trước</Text>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {orderForm.product_details.length === 0 && filteredProductDetailOptions.length > 0 && (
-                  <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300 mb-4 shadow-inner">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="bg-blue-50 p-3 rounded-full">
-                        <IconContainer iconLink={plusIcon} className="w-10 h-10 text-blue-500"></IconContainer>
-                      </div>
-                      <div>
-                        <Text className="text-lg font-medium text-gray-700">Chưa có sản phẩm nào trong phiếu đặt hàng</Text>
-                        <Text className="text-sm text-gray-500 mt-2">Bấm nút &apos;Thêm sản phẩm&apos; phía dưới để thêm sản phẩm vào phiếu đặt hàng</Text>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Danh sách sản phẩm */}
-                {orderForm.product_details.map((
-                  orderFormProductDetail: IOrderFormProductDetail,
-                  index: number
-                ): ReactElement => {
-                  return <div
-                    key={index}
-                    className={`grid items-center ${styles[`good-receipt-product-table-with-price`]} ${index % 2 === 0 ? 'bg-white' : 'bg-blue-50'} py-4 border border-gray-200 rounded-lg mb-3 shadow-sm hover:shadow transition-all`}
+        {filteredOrders.length === 0
+          ? <Text>Không có dữ liệu</Text>
+          : <>
+            <Tabs>
+              <TabItem label={`Phiếu đặt hàng`}>
+                <InputSection label={`Nhà cung cấp`} className="mb-6">
+                  <SelectDropdown
+                    className="bg-white border-blue-200 hover:border-blue-400"
+                    isLoading={isBusinessLoading}
+                    isDisable={isModalReadOnly}
+                    options={businessOptions}
+                    defaultOptionIndex={getSelectedOptionIndex(
+                      businessOptions,
+                      (orderForm.supplier_id
+                        ? orderForm.supplier_id
+                        : 0
+                      ) as unknown as string
+                    )}
+                    onInputChange={handleChangeBusinessId}
                   >
-                    {/* Nội dung sản phẩm */}
-                    <Text className="font-medium ml-3 text-gray-700">{index + 1}</Text>
+                  </SelectDropdown>
+                </InputSection>
 
-                    <SelectDropdown
-                      className="bg-white border-blue-200 hover:border-blue-400"
-                      isLoading={isProductLoading}
-                      isDisable={isModalReadOnly}
-                      options={filteredProductDetailOptions}
-                      defaultOptionIndex={getSelectedOptionIndex(
-                        filteredProductDetailOptions,
-                        (orderFormProductDetail._id
-                          ? orderFormProductDetail._id
-                          : 0
-                        ) as unknown as string
-                      )}
-                      onInputChange={(e): void =>
-                        handleChangeOrderFormProductId(e, index)
-                      }
-                    >
-                    </SelectDropdown>
-
-                    {/* Trường nhập giá nhập */}
-                    <NumberInput
-                      min={0}
-                      name={`input_price`}
-                      isDisable={isModalReadOnly}
-                      value={orderFormProductDetail.input_price ? orderFormProductDetail.input_price + `` : "0"}
-                      onInputChange={(e): void =>
-                        handleChangeOrderFormProductInputPrice(e, index)
-                      }
-                    >
-                    </NumberInput>
-
-                    <SelectDropdown
-                      className="bg-white border-blue-200 hover:border-blue-400"
-                      isLoading={isUnitLoading}
-                      isDisable={isModalReadOnly}
-                      options={unitOptions}
-                      defaultOptionIndex={getSelectedOptionIndex(
-                        unitOptions,
-                        (orderFormProductDetail.unit_id
-                          ? orderFormProductDetail.unit_id
-                          : 0
-                        ) as unknown as string
-                      )}
-                      onInputChange={(e): void =>
-                        handleChangeOrderFormProductUnitId(e, index)
-                      }
-                    >
-                    </SelectDropdown>
-
-                    <NumberInput
-                      min={1}
-                      max={100}
-                      name={`quantity`}
-                      isDisable={isModalReadOnly}
-                      value={orderFormProductDetail.quantity + ``}
-                      onInputChange={(e): void =>
-                        handleChangeOrderFormProductQuantity(e, index)
-                      }
-                    >
-                    </NumberInput>
-
-                    <div className="flex justify-center">
-                      <Button
-                        isDisable={isModalReadOnly}
-                        onClick={(): void => handleDeleteOrderFormProduct(index)}
-                        className="hover:bg-red-50 p-2 rounded-full text-red-500 hover:text-red-600 transition-all"
-                        title="Xóa sản phẩm này"
-                      >
-                        <IconContainer iconLink={trashIcon} className="w-5 h-5"></IconContainer>
-                      </Button>
-                    </div>
+                <div className={styles['product-form-container']}>
+                  <div className={`grid items-center ${styles[`good-receipt-product-table-with-price`]} bg-gradient-to-r from-blue-600 to-blue-500 py-4 px-4 rounded-lg font-medium mb-4 shadow-md text-white`}>
+                    <Text className="font-bold">#</Text>
+                    <Text className="font-bold">Sản phẩm</Text>
+                    <Text className="font-bold">Giá nhập (đ)</Text>
+                    <Text className="font-bold">Đơn vị tính</Text>
+                    <Text className="font-bold">Số lượng</Text>
+                    <Text className="font-bold">Thao tác</Text>
                   </div>
-                })}
 
-                {/* Nút thêm sản phẩm */}
-                <Button
-                  isDisable={isModalReadOnly || isProductLoading || isBusinessLoading || filteredProductDetailOptions.length === 0}
-                  onClick={handleAddOrderFormProduct}
-                  className={`flex items-center justify-center gap-2 mt-6 w-full py-4 rounded-lg shadow-md ${styles['sticky-add-button']} ${filteredProductDetailOptions.length === 0 || isModalReadOnly ?
-                    'bg-gray-200 opacity-50 cursor-not-allowed text-gray-500' :
-                    'bg-green-600 hover:bg-green-700 text-white hover:shadow-lg transition-all'
-                    }`}
-                  type={EButtonType.SUCCESS}
-                >
-                  <IconContainer iconLink={plusIcon} className="w-5 h-5"></IconContainer>
-                  <Text className="font-medium">Thêm sản phẩm</Text>
-                </Button>
-              </div>
-            </TabItem>
+                  {filteredProductDetailOptions.length === 0 && orderForm.supplier_id && !isProductLoading && (
+                    <div className="text-center py-10 bg-yellow-50 rounded-lg border border-dashed border-yellow-300 mb-4 shadow-inner">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="bg-yellow-100 p-3 rounded-full">
+                          <IconContainer iconLink={infoIcon} className="w-10 h-10 text-amber-500"></IconContainer>
+                        </div>
+                        <div>
+                          <Text className="text-lg font-medium text-amber-700">Nhà cung cấp này chưa có sản phẩm nào</Text>
+                          <Text className="text-sm text-amber-600 mt-2">Vui lòng chọn nhà cung cấp khác hoặc thêm sản phẩm cho nhà cung cấp này trước</Text>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-          </Tabs>
+                  {orderForm.product_details.length === 0 && filteredProductDetailOptions.length > 0 && (
+                    <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300 mb-4 shadow-inner">
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="bg-blue-50 p-3 rounded-full">
+                          <IconContainer iconLink={plusIcon} className="w-10 h-10 text-blue-500"></IconContainer>
+                        </div>
+                        <div>
+                          <Text className="text-lg font-medium text-gray-700">Chưa có sản phẩm nào trong phiếu đặt hàng</Text>
+                          <Text className="text-sm text-gray-500 mt-2">Bấm nút &apos;Thêm sản phẩm&apos; phía dưới để thêm sản phẩm vào phiếu đặt hàng</Text>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-          {notificationElements}
-        </>
+                  {/* Danh sách sản phẩm */}
+                  {orderForm.product_details.map((
+                    orderFormProductDetail: IOrderFormProductDetail,
+                    index: number
+                  ): ReactElement => {
+                    return <div
+                      key={index}
+                      className={`grid items-center ${styles[`good-receipt-product-table-with-price`]} ${index % 2 === 0 ? 'bg-white' : 'bg-blue-50'} py-4 border border-gray-200 rounded-lg mb-3 shadow-sm hover:shadow transition-all`}
+                    >
+                      {/* Nội dung sản phẩm */}
+                      <Text className="font-medium ml-3 text-gray-700">{index + 1}</Text>
+
+                      <SelectDropdown
+                        className="bg-white border-blue-200 hover:border-blue-400"
+                        isLoading={isProductLoading}
+                        isDisable={isModalReadOnly}
+                        options={filteredProductDetailOptions}
+                        defaultOptionIndex={getSelectedOptionIndex(
+                          filteredProductDetailOptions,
+                          (orderFormProductDetail._id
+                            ? orderFormProductDetail._id
+                            : 0
+                          ) as unknown as string
+                        )}
+                        onInputChange={(e): void =>
+                          handleChangeOrderFormProductId(e, index)
+                        }
+                      >
+                      </SelectDropdown>
+
+                      {/* Trường nhập giá nhập */}
+                      <NumberInput
+                        min={0}
+                        name={`input_price`}
+                        isDisable={isModalReadOnly}
+                        value={orderFormProductDetail.input_price ? orderFormProductDetail.input_price + `` : "0"}
+                        onInputChange={(e): void =>
+                          handleChangeOrderFormProductInputPrice(e, index)
+                        }
+                      >
+                      </NumberInput>
+
+                      <SelectDropdown
+                        className="bg-white border-blue-200 hover:border-blue-400"
+                        isLoading={isUnitLoading}
+                        isDisable={isModalReadOnly}
+                        options={unitOptions}
+                        defaultOptionIndex={getSelectedOptionIndex(
+                          unitOptions,
+                          (orderFormProductDetail.unit_id
+                            ? orderFormProductDetail.unit_id
+                            : 0
+                          ) as unknown as string
+                        )}
+                        onInputChange={(e): void =>
+                          handleChangeOrderFormProductUnitId(e, index)
+                        }
+                      >
+                      </SelectDropdown>
+
+                      <NumberInput
+                        min={1}
+                        max={100}
+                        name={`quantity`}
+                        isDisable={isModalReadOnly}
+                        value={orderFormProductDetail.quantity + ``}
+                        onInputChange={(e): void =>
+                          handleChangeOrderFormProductQuantity(e, index)
+                        }
+                      >
+                      </NumberInput>
+
+                      <div className="flex justify-center">
+                        <Button
+                          isDisable={isModalReadOnly}
+                          onClick={(): void => handleDeleteOrderFormProduct(index)}
+                          className="hover:bg-red-50 p-2 rounded-full text-red-500 hover:text-red-600 transition-all"
+                          title="Xóa sản phẩm này"
+                        >
+                          <IconContainer iconLink={trashIcon} className="w-5 h-5"></IconContainer>
+                        </Button>
+                      </div>
+                    </div>
+                  })}
+
+                  {/* Nút thêm sản phẩm */}
+                  <Button
+                    isDisable={isModalReadOnly || isProductLoading || isBusinessLoading || filteredProductDetailOptions.length === 0}
+                    onClick={handleAddOrderFormProduct}
+                    className={`flex items-center justify-center gap-2 mt-6 w-full py-4 rounded-lg shadow-md ${styles['sticky-add-button']} ${filteredProductDetailOptions.length === 0 || isModalReadOnly ?
+                      'bg-gray-200 opacity-50 cursor-not-allowed text-gray-500' :
+                      'bg-green-600 hover:bg-green-700 text-white hover:shadow-lg transition-all'
+                      }`}
+                    type={EButtonType.SUCCESS}
+                  >
+                    <IconContainer iconLink={plusIcon} className="w-5 h-5"></IconContainer>
+                    <Text className="font-medium">Thêm sản phẩm</Text>
+                  </Button>
+                </div>
+              </TabItem>
+
+            </Tabs>
+
+            {notificationElements}
+          </>
+        }
       </ManagerPage>
     </>
   );
