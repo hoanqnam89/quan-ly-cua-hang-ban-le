@@ -21,6 +21,7 @@ import { enumToKeyValueArray } from '@/utils/enum-to-array';
 import { EBusinessType } from '@/enums/business-type.enum';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
+import { fetchGetCollections } from '@/utils/fetch-get-collections';
 
 type collectionType = IBusiness;
 const collectionName: ECollectionNames = ECollectionNames.BUSINESS;
@@ -39,6 +40,14 @@ export default function Product() {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [businesses, setBusinesses] = useState<IBusiness[]>([]);
+
+  useEffect(() => {
+    const fetchBusinesses = async () => {
+      const data = await fetchGetCollections<IBusiness>(ECollectionNames.BUSINESS);
+      setBusinesses(data);
+    };
+    fetchBusinesses();
+  }, []);
 
   // Optimize image handling with useMemo to prevent unnecessary re-renders
   const handleChangeImage = useCallback((e: ChangeEvent<HTMLInputElement>) => {
@@ -75,17 +84,22 @@ export default function Product() {
 
   const columns: Array<IColumnProps<collectionType>> = [
     {
-      key: `index`,
+      key: 'index',
       ref: useRef(null),
-      title: `#`,
-      size: `1fr`,
+      title: 'STT',
+      size: '0.5fr',
+      render: (item) => (
+        <div className={styles.centered}>
+          {businesses.findIndex(b => b._id === item._id) + 1}
+        </div>
+      ),
     },
-    {
-      key: `_id`,
-      ref: useRef(null),
-      title: `Mã`,
-      size: `6fr`,
-    },
+    // {
+    //   key: `_id`,
+    //   ref: useRef(null),
+    //   title: `Mã`,
+    //   size: `6fr`,
+    // },
     {
       key: `name`,
       ref: useRef(null),
@@ -96,25 +110,25 @@ export default function Product() {
       key: `email`,
       ref: useRef(null),
       title: `Email`,
-      size: `3fr`,
+      size: `2fr`,
     },
     {
       key: `logo`,
       ref: useRef(null),
       title: `Hình ảnh`,
-      size: `3fr`,
+      size: `1fr`,
       render: (collection: collectionType): ReactElement => collection.logo
-        ? <div className={`relative ${styles[`image-container`]}`}>
+        ? <div className={styles['image-container']}>
           <Image
-            className={`w-full max-w-full max-h-full`}
+            className=""
             src={collection.logo}
-            alt={``}
-            width={100}
-            height={100}
+            alt=""
+            width={70}
+            height={70}
             quality={10}
             loading="lazy"
-          >
-          </Image>
+            style={{ borderRadius: 8, objectFit: 'cover' }}
+          />
         </div>
         : <Text isItalic={true}>none</Text>
     },
@@ -122,7 +136,7 @@ export default function Product() {
       key: `address`,
       ref: useRef(null),
       title: `Địa chỉ`,
-      size: `5fr`,
+      size: `2.5fr`,
       render: (collection: collectionType): ReactElement => {
         const address: string = `${collection.address.number} ${collection.address.street}, ${collection.address.ward}, ${collection.address.district}, ${collection.address.city}, ${collection.address.country}`;
         return <Text isEllipsis={true} tooltip={address}>{address}</Text>
@@ -132,84 +146,68 @@ export default function Product() {
       key: `type`,
       ref: useRef(null),
       title: `Loại`,
-      size: `3fr`,
+      size: `1fr`,
       render: (collection: collectionType): ReactElement => {
         const type: string = collection.type === EBusinessType.MANUFACTURER
           ? `Nhà sản xuất`
           : `Nhà cung cấp`;
-        return <Text isEllipsis={true} tooltip={type}>{type}</Text>
+        return <div className={styles.centered}><Text isEllipsis={true} tooltip={type}>{type}</Text></div>
       }
     },
     {
       key: `created_at`,
       ref: useRef(null),
       title: `Ngày tạo`,
-      size: `4fr`,
+      size: `1.5fr`,
       render: (collection: collectionType): ReactElement => {
-        const date: string = new Date(collection.created_at).toLocaleString();
+        const date: string = new Date(collection.created_at).toLocaleDateString('vi-VN');
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
-    // {
-    //   key: `updated_at`,
-    //   ref: useRef(null),
-    //   title: `Ngày cập nhật`,
-    //   size: `4fr`,
-    //   render: (collection: collectionType): ReactElement => {
-    //     const date: string = new Date(collection.updated_at).toLocaleString();
-    //     return <Text isEllipsis={true} tooltip={date}>{date}</Text>
-    //   }
-    // },
     {
-      title: `Xem chi tiết`,
+      title: `Thao tác`,
       ref: useRef(null),
-      size: `2fr`,
-      render: (collection: collectionType): ReactElement => <Button
-        title={createMoreInfoTooltip(collectionName)}
-        onClick={(): void => {
-          setIsClickShowMore({
-            id: collection._id,
-            isClicked: !isClickShowMore.isClicked,
-          });
-        }}
-      >
-        <IconContainer
-          tooltip={createMoreInfoTooltip(collectionName)}
-          iconLink={infoIcon}
-        >
-        </IconContainer>
-      </Button>
-    },
-    {
-      title: `Xem chi tiết`,
-      isVisible: false,
-      ref: useRef(null),
-      size: `2fr`,
-      render: (collection: collectionType): ReactElement =>
-        createCollectionDetailLink(
-          collectionName,
-          collection._id
-        )
-    },
-    {
-      title: `Xóa`,
-      ref: useRef(null),
-      size: `2fr`,
-      render: (collection: collectionType): ReactElement => <Button
-        title={createDeleteTooltip(collectionName)}
-        onClick={(): void => {
-          setIsClickDelete({
-            id: collection._id,
-            isClicked: !isClickShowMore.isClicked,
-          });
-        }}
-      >
-        <IconContainer
-          tooltip={createDeleteTooltip(collectionName)}
-          iconLink={trashIcon}
-        >
-        </IconContainer>
-      </Button>
+      size: `1fr`,
+      render: (collection: collectionType): ReactElement => (
+        <div className={styles['action-group']}>
+          <Button
+            className={styles['action-btn']}
+            title={createMoreInfoTooltip(collectionName)}
+            onClick={(): void => {
+              setIsClickShowMore({
+                id: collection._id,
+                isClicked: !isClickShowMore.isClicked,
+              });
+            }}
+          >
+            <IconContainer
+              tooltip={createMoreInfoTooltip(collectionName)}
+              iconLink={infoIcon}
+            />
+          </Button>
+          <span className={styles['action-btn']} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {createCollectionDetailLink(
+              collectionName,
+              collection._id
+            )}
+          </span>
+          <Button
+            className={styles['action-btn']}
+            title={createDeleteTooltip(collectionName)}
+            onClick={(): void => {
+              setIsClickDelete({
+                id: collection._id,
+                isClicked: !isClickShowMore.isClicked,
+              });
+            }}
+          >
+            <IconContainer
+              tooltip={createDeleteTooltip(collectionName)}
+              iconLink={trashIcon}
+            />
+          </Button>
+        </div>
+      )
     },
   ];
 
@@ -415,10 +413,10 @@ export default function Product() {
 
         </TabItem>
 
-        <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
+        {/* <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
           <TimestampTabItem<collectionType> collection={business}>
           </TimestampTabItem>
-        </TabItem>
+        </TabItem> */}
 
       </Tabs>
     </ManagerPage>
