@@ -190,58 +190,6 @@ export default function Product() {
       size: `4fr`,
     },
     {
-      key: `code`,
-      ref: useRef(null),
-      title: `Nhà cung cấp`,
-      size: `4fr`,
-      render: (collection: collectionType): ReactElement => {
-        const foundSupplier = supplier.find((element) => element._id === collection.supplier_id)
-        return <p>{foundSupplier?.name}</p>
-      }
-    },
-    {
-      key: `name`,
-      ref: useRef(null),
-      title: `Tên sản phẩm`,
-      size: `4fr`,
-    },
-    {
-      key: `name`,
-      ref: useRef(null),
-      title: `Loại sản phẩm`,
-      size: `4fr`,
-      render: (collection: collectionType): ReactElement => {
-        const foundCategories = categories.find((element) => {
-          return element._id === collection.category_id
-        })
-        console.log(foundCategories, categories);
-        return <p>{foundCategories?.name}</p>
-
-      }
-    },
-    {
-      key: `description`,
-      ref: useRef(null),
-      title: `Mô tả`,
-      size: `5fr`,
-    },
-    {
-      key: `input_price`,
-      ref: useRef(null),
-      title: `Giá nhập`,
-      size: `3fr`,
-      render: (collection: collectionType): ReactElement =>
-        <Text>{formatCurrency(collection.input_price)}</Text>
-    },
-    {
-      key: `output_price`,
-      ref: useRef(null),
-      title: `Giá bán`,
-      size: `3fr`,
-      render: (collection: collectionType): ReactElement =>
-        <Text>{formatCurrency(collection.output_price)}</Text>
-    },
-    {
       key: `image_links`,
       ref: useRef(null),
       title: `Hình ảnh`,
@@ -270,6 +218,58 @@ export default function Product() {
           }
         </div>
     },
+    {
+      key: `code`,
+      ref: useRef(null),
+      title: `Nhà cung cấp`,
+      size: `4fr`,
+      render: (collection: collectionType): ReactElement => {
+        const foundSupplier = supplier.find((element) => element._id === collection.supplier_id)
+        return <p>{foundSupplier?.name}</p>
+      }
+    },
+    {
+      key: `name`,
+      ref: useRef(null),
+      title: `Tên sản phẩm`,
+      size: `4fr`,
+    },
+    {
+      key: `name`,
+      ref: useRef(null),
+      title: `Loại sản phẩm`,
+      size: `4fr`,
+      render: (collection: collectionType): ReactElement => {
+        const foundCategories = categories.find((element) => {
+          return element._id === collection.category_id
+        })
+        return <p>{foundCategories?.name}</p>
+
+      }
+    },
+    {
+      key: `description`,
+      ref: useRef(null),
+      title: `Mô tả`,
+      size: `5fr`,
+    },
+    {
+      key: `input_price`,
+      ref: useRef(null),
+      title: `Giá nhập`,
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement =>
+        <Text>{formatCurrency(collection.input_price)}</Text>
+    },
+    {
+      key: `output_price`,
+      ref: useRef(null),
+      title: `Giá bán`,
+      size: `3fr`,
+      render: (collection: collectionType): ReactElement =>
+        <Text>{formatCurrency(collection.output_price)}</Text>
+    },
+    
     {
       key: `created_at`,
       ref: useRef(null),

@@ -123,7 +123,6 @@ export default function CategoryPage() {
       const response = await getCollectionById(id, ECollectionNames.CATEGORY);
       if (response.ok) {
         const categoryData = await response.json();
-        console.log(categoryData);
 
         setSelectedCategory(categoryData);
         setShowDetailModal(true);

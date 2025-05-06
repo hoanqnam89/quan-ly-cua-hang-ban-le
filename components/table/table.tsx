@@ -206,7 +206,7 @@ export default function Table<T extends { _id: string, index?: number }>({
 
     const regex: RegExp = new RegExp(`${searchKeyword}`, `i`,);
 
-    const newDatas: boolean[] = tableDatas.map((data: T): boolean => {
+    const newDatas: boolean[] = datas.map((data: T): boolean => {
 
       let isVisible: boolean = false;
       const dataString: string = JSON.stringify(data);
@@ -300,7 +300,7 @@ export default function Table<T extends { _id: string, index?: number }>({
     const start = ((currentPage || 1) - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     return sortedDatas.slice(start, end);
-  }, [sortedDatas, currentPage, itemsPerPage, totalItems]);
+  }, [sortedDatas, currentPage, itemsPerPage]);
 
   const renderTable = () => (
     <div className="overflow-x-auto">
@@ -349,7 +349,7 @@ export default function Table<T extends { _id: string, index?: number }>({
               <td colSpan={columns.length} className="text-center py-4">Không có dữ liệu</td>
             </tr>
           ) : (
-            paginatedDatas.map((row, rowIndex) => (
+            paginatedDatas.map((row, rowIndex) => isVisibles[rowIndex]? (
               <tr key={row._id} className="hover:bg-blue-50 transition">
                 {columns.map((column, colIdx) => {
                   let cellContent: React.ReactNode = null;
@@ -374,7 +374,7 @@ export default function Table<T extends { _id: string, index?: number }>({
                   );
                 })}
               </tr>
-            ))
+            ):<></>)
           )}
         </tbody>
       </table>
