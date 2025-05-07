@@ -203,6 +203,7 @@ export default function Table<T extends { _id: string, index?: number }>({
 
   const handleSearch = (searchKeyword: string): void => {
     setSearchValue(searchKeyword);
+    console.log('order-form', datas)
 
     const regex: RegExp = new RegExp(`${searchKeyword}`, `i`,);
 
@@ -374,7 +375,7 @@ export default function Table<T extends { _id: string, index?: number }>({
                   );
                 })}
               </tr>
-            ):<></>)
+            ):<Fragment key={rowIndex}></Fragment>)
           )}
         </tbody>
       </table>

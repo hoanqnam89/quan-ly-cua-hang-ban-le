@@ -357,6 +357,19 @@ export default function Product() {
 
         setProductStockInfo(stockInfo);
         setProductDetails(details.filter((detail: IProductDetail) => detail.input_quantity > 0));
+        const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
+          ECollectionNames.PRODUCT,
+        );
+
+        const newDetails = details.filter((detail: IProductDetail) => detail.input_quantity > 0); 
+        const newDetails2 = newDetails.map((detail) => {
+          const newDetail = {...detail};
+          const foundDetail = newProducts.find((product) => product._id === newDetail.product_id)
+          newDetail.product = foundDetail?.name 
+      
+          return newDetail;          
+        })
+         setProductDetails(newDetails2)
       } catch (error) {
         console.error('Error fetching products:', error);
       }
