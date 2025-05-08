@@ -51,14 +51,9 @@ export default function RootLayout({
       onClick: () => toggleGroup('warehouse'),
       children: [
         {
-          link: `${currentPath}/product`,
-          label: `Sản phẩm`,
-          icon: boxIcon,
-        },
-        {
-          link: `${currentPath}/product-detail`,
-          label: `Chi tiết kho`,
-          icon: boxesIcon,
+          link: `${currentPath}/business`,
+          label: `Doanh nghiệp`,
+          icon: factoryIcon,
         },
         {
           link: `${currentPath}/unit`,
@@ -71,10 +66,16 @@ export default function RootLayout({
           icon: toyBrickIcon,
         },
         {
-          link: `${currentPath}/business`,
-          label: `Doanh nghiệp`,
-          icon: factoryIcon,
+          link: `${currentPath}/product`,
+          label: `Sản phẩm`,
+          icon: boxIcon,
         },
+        {
+          link: `${currentPath}/product-detail`,
+          label: `Chi tiết kho`,
+          icon: boxesIcon,
+        },
+
       ]
     },
     {
@@ -121,17 +122,17 @@ export default function RootLayout({
           label: `Thông tin cá nhân`,
           icon: circleUserRoundIcon,
         },
-        {
-          link: `${currentPath}/setting`,
-          label: `Báo cáo thống kê`,
-          icon: settingIcon,
-        },
-        {
-          link: `${currentPath}/setting`,
-          label: `Cài đặt`,
-          icon: settingIcon,
-        },
       ]
+    },
+    {
+      link: `${currentPath}/`,
+      label: `Báo cáo thống kê`,
+      icon: settingIcon,
+    },
+    {
+      link: `${currentPath}/setting`,
+      label: `Cài đặt`,
+      icon: settingIcon,
     },
   ];
 

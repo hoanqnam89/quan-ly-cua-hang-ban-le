@@ -1,24 +1,22 @@
 'use client';
 
-import { Button, IconContainer, NumberInput, SelectDropdown, Text, TextInput } from '@/components'
+import { Button, IconContainer, SelectDropdown, Text, TextInput } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
 import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
-import { infoIcon, pencilIcon, trashIcon } from '@/public';
+import { pencilIcon, trashIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
 import Image from 'next/image';
 import styles from './style.module.css';
-import { MAX_PRICE } from '@/constants/max-price.constant';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
 import { IBusiness } from '@/interfaces/business.interface';
 import { EBusinessType } from '@/enums/business-type.enum';
-import { VND_UNIT } from '@/constants/vnd-unit.constant';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { formatCurrency } from '@/utils/format-currency';
 import useNotificationsHook from '@/hooks/notifications-hook';
@@ -142,20 +140,20 @@ export default function Product() {
         );
         console.log('Đang fetch dữ liệu sản phẩm...');
         const fetchedProducts = await fetchGetCollections<IProduct>(ECollectionNames.PRODUCT);
-        console.log('Dữ liệu sản phẩm:', fetchedProducts);  
+        console.log('Dữ liệu sản phẩm:', fetchedProducts);
         setProducts(fetchedProducts);
-        console.log('acbc',fetchedProducts)
+        console.log('acbc', fetchedProducts)
         const newProducts = fetchedProducts.map((product) => {
-          const newProduct = {...product};
+          const newProduct = { ...product };
           const foundCategory = newCategories.find((category) => category._id === product.category_id)
-          newProduct.category = foundCategory?.name 
-      
+          newProduct.category = foundCategory?.name
+
           const foundSupplier = newSuppliers.find((supplier2) => supplier2._id === product.supplier_id)
           newProduct.supplier = foundSupplier?.name
-          return newProduct;          
+          return newProduct;
         })
-        console.log('abc2', newProducts) 
-         setProducts(newProducts)
+        console.log('abc2', newProducts)
+        setProducts(newProducts)
       } catch (error) {
         console.error('Lỗi khi lấy danh sách sản phẩm:', error);
       }
@@ -462,9 +460,6 @@ export default function Product() {
     }));
   }
 
-  const productsList = Array.isArray(products) ? products : [product];
-  
-  
 
   return (
     <ManagerPage<collectionType>

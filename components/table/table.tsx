@@ -1,12 +1,10 @@
-import React, { ChangeEvent, CSSProperties, Fragment, MouseEvent, ReactElement, useCallback, useEffect, useState } from 'react';
+import React, { ChangeEvent, Fragment, MouseEvent, ReactElement, useCallback, useEffect, useState } from 'react';
 import { Button, Text, IconContainer, LoadingIcon, TextInput } from '@/components';
 import { IColumnProps } from './interfaces/column-props.interface';
-import { arrowDownWideNarrowIcon, arrowUpNarrowWideIcon, columns4Icon, emptyIcon, listCollapseIcon, listRestartIcon, plusIcon, trashIcon } from '@/public';
-import { ESortStatus } from '@/enums/sort-status.enum';
-import { enumToArray } from '@/utils/enum-to-array';
-import { countVisibleElements } from '@/utils/count-visible-elements';
+import { arrowDownWideNarrowIcon, arrowUpNarrowWideIcon, columns4Icon, listCollapseIcon, listRestartIcon, plusIcon, trashIcon } from '@/public';
+
 import Checkboxes, { ICheckbox } from '../checkboxes/checkboxes';
-import styles from './style.module.css';
+
 
 interface IHeaderButtons {
   className: string
@@ -49,9 +47,6 @@ export default function Table<T extends { _id: string, index?: number }>({
 }: Readonly<ITableProps<T>>): ReactElement {
   const [isShowToggleColumns, setIsShowToggleColumns] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>(``);
-  const [isClicks, setIsClicks] = useState<ESortStatus[]>(
-    new Array(columns.length).fill(ESortStatus.UNSORT)
-  );
   const [isVisibles, setIsVisibles] = useState<boolean[]>(
     new Array(datas.length).fill(true)
   );
@@ -65,19 +60,11 @@ export default function Table<T extends { _id: string, index?: number }>({
         true : false,
     }))
   ]);
-  const [tableDatas, setTableDatas] = useState<T[]>([
-    ...datas.map((data: T, index: number): T => ({
-      ...data, index
-    }))
-  ]);
   const [isAllColumnVisible, setIsAllColumnVisible] = useState<boolean>(false);
   const [columnWidths, setColumnWidths] = useState<number[]>(columns.map(() => 150));
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' | null }>({ key: '', direction: null });
   const [isResizing, setIsResizing] = useState<{ colIdx: number, startX: number, startWidth: number } | null>(null);
 
-  const gridStyle: CSSProperties = {
-    gridTemplateColumns: gridColumns.join(` `),
-  }
 
   useEffect((): void => {
     setIsVisibles(new Array(datas.length).fill(true));
@@ -88,34 +75,11 @@ export default function Table<T extends { _id: string, index?: number }>({
     )]);
   }, [datas, columns, visibleColumns]);
 
-  const handleMouseDown = (index: number): void => {
-    setActiveIndex(index);
-  }
-
-  const handleResetColumn = (
-    e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>, index: number,
-  ): void => {
-    if (e.detail === 2)
-      setGridColumns([...columns.map(
-        (column: IColumnProps<T>, columnIndex: number): string => {
-          if (columnIndex === index)
-            return column.size;
-
-          return gridColumns[columnIndex];
-        }
-      )]);
-  }
-
   const handleResetColumns = (): void => {
     setGridColumns([...columns.map((column: IColumnProps<T>): string =>
       column.size
     )]);
   }
-
-  const isAllTableColumnInvisible = (): boolean => visibleColumns.every(
-    (visibleColumn: ICheckbox): boolean =>
-      !visibleColumn.isChecked
-  );
 
   const handleShowAllTableColumns = (): void => {
     setVisibleColumns([
@@ -167,39 +131,7 @@ export default function Table<T extends { _id: string, index?: number }>({
     }
   }, [activeIndex, handleMouseMove, handleMouseUp, removeListeners])
 
-  const sortHeader = (index: number, key?: keyof T): void => {
-    setTableDatas([...tableDatas.sort((a: T, b: T): number => {
-      const newIsClicks: ESortStatus[] = [...isClicks];
-      newIsClicks[index] =
-        (newIsClicks[index] + 1) % (enumToArray(ESortStatus).length / 2);
 
-      setIsClicks(newIsClicks);
-
-      if (!key || newIsClicks[index] === ESortStatus.UNSORT)
-        return 0;
-
-      if (a[key] < b[key])
-        return newIsClicks[index] === ESortStatus.ASCENDING ? -1 : 1;
-
-      if (a[key] > b[key])
-        return newIsClicks[index] === ESortStatus.ASCENDING ? 1 : -1;
-
-      return 0;
-    })]);
-
-    handleSearch(searchValue);
-  }
-
-  const getIconBaseOnSortStatus = (sortStatus: ESortStatus): string => {
-    switch (sortStatus) {
-      case ESortStatus.ASCENDING:
-        return arrowUpNarrowWideIcon;
-      case ESortStatus.DESCENDING:
-        return arrowDownWideNarrowIcon;
-      default:
-        return emptyIcon;
-    }
-  }
 
   const handleSearch = (searchKeyword: string): void => {
     setSearchValue(searchKeyword);
@@ -220,47 +152,6 @@ export default function Table<T extends { _id: string, index?: number }>({
 
     setIsVisibles([...newDatas]);
   }
-
-  const headerElements: ReactElement[] = columns.map(
-    (column: IColumnProps<T>, columnIndex: number): ReactElement => {
-      return visibleColumns[columnIndex].isChecked ?
-        <div
-          ref={column.ref}
-          key={`header-${column.title}`}
-          className={`h-full flex items-center gap-0 select-none relative justify-center text-center`}
-        >
-          <Text
-            isEllipsis={true}
-            weight={600}
-            onClick={(): void => sortHeader(columnIndex, column.key)}
-            tooltip={`Click to sort ${column.title}`}
-            className={`${column.key && `cursor-pointer`} py-2 pl-1 pr-4 w-full text-center`}
-          >
-            {column.title}
-          </Text>
-
-          {column.key &&
-            <IconContainer iconLink={
-              getIconBaseOnSortStatus(isClicks[columnIndex])
-            }>
-            </IconContainer>
-          }
-
-          <div
-            onMouseDown={(): void => handleMouseDown(columnIndex)}
-            className={`${activeIndex === columnIndex && styles.active
-              } ${styles[`resize-handle`]} h-full block ml-auto cursor-col-resize border-white`}
-            title={`Click and drag to resize '${column.title}' column\nDouble click to reset this '${column.title}' column size`}
-            onClick={
-              (e: MouseEvent<HTMLDivElement, globalThis.MouseEvent>): void =>
-                handleResetColumn(e, columnIndex)
-            }
-          >
-          </div>
-        </div> :
-        <Fragment key={`${column.title}`}></Fragment>
-    }
-  );
 
   const sortedDatas = React.useMemo(() => {
     if (!sortConfig.key || !sortConfig.direction) return [...datas];

@@ -66,9 +66,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
 
-    // Vô hiệu hóa cache khi tạo business mới
-    cachedBusinesses = null;
-
     return NextResponse.json(savedBusiness, { status: EStatusCode.CREATED });
   } catch (error: unknown) {
     console.error(error);
