@@ -12,6 +12,10 @@
   gap: 0.75rem;
 }
 
+.good-receipt-product-table-without-price {
+  grid-template-columns: 50px 1fr 1fr 100px 80px;
+}
+
 /* Container chứa danh sách sản phẩm và nút thêm */
 .product-form-container {
   position: relative;

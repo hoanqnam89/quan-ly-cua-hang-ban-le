@@ -1,12 +1,11 @@
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { IBusiness } from "@/interfaces/business.interface";
-import { IOrderForm, IOrderFormProductDetail } from "@/interfaces/order-form.interface";
-import { IProductDetail } from "@/interfaces/product-detail.interface";
+import { IOrderForm, IOrderFormProductDetail, OrderFormStatus } from "@/interfaces/order-form.interface";
+import { IProduct } from "@/interfaces/product.interface";
 import { IUnit } from "@/interfaces/unit.interface";
 import { BusinessModel } from "@/models/Business";
 import { OrderFormModel } from "@/models/OrderForm";
-import { ProductDetailModel } from "@/models/ProductDetail";
 import { ProductModel } from "@/models/Product";
 import { UnitModel } from "@/models/Unit";
 import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
@@ -44,16 +43,34 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   //     { status: EStatusCode.UNAUTHORIZED }
   //   );
 
-  const orderForm: collectionType = await req.json();
-
   try {
+    const orderForm: collectionType = await req.json();
+
+    // Log để debug dữ liệu nhận được
+    console.log("Received order form data:", JSON.stringify({
+      supplier_id: orderForm.supplier_id,
+      product_details_count: orderForm.product_details?.length || 0,
+    }));
+
+    if (!orderForm.product_details || orderForm.product_details.length === 0) {
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `Order form must have at least one product.`,
+          path,
+          `Please add products to the order form.`,
+        ),
+        { status: EStatusCode.BAD_REQUEST }
+      );
+    }
+
     connectToDatabase();
 
     if (!isValidObjectId(orderForm.supplier_id))
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `Some of the ID in order form's products is not valid.`,
+          `The supplier ID is not valid.`,
           path,
           `Please check if the ${ECollectionNames.BUSINESS} ID is correct.`,
         ),
@@ -74,35 +91,72 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.NOT_FOUND }
       );
 
-    const orderFormProductDetailIds: string[] =
+    // Kiểm tra nếu có sản phẩm nào với giá nhập hoặc số lượng không hợp lệ
+    const productsWithIssues = orderForm.product_details.filter(
+      product => !product.input_price || product.input_price <= 0 || !product.quantity || product.quantity <= 0
+    );
+
+    if (productsWithIssues.length > 0) {
+      // Tìm các sản phẩm có giá = 0 để thông báo cụ thể
+      const productsWithZeroPrice = productsWithIssues.filter(product => product.input_price === 0);
+
+      if (productsWithZeroPrice.length > 0) {
+        // Lấy ID sản phẩm đầu tiên có giá = 0 để thông báo
+        const productId = productsWithZeroPrice[0]._id;
+
+        return NextResponse.json(
+          createErrorMessage(
+            `Failed to create ${collectionName}.`,
+            `Sản phẩm có giá nhập bằng 0.`,
+            path,
+            `Vui lòng nhập giá cho tất cả sản phẩm trong phiếu đặt hàng.`,
+          ),
+          { status: EStatusCode.BAD_REQUEST }
+        );
+      }
+
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to create ${collectionName}.`,
+          `Some products have invalid input price or quantity.`,
+          path,
+          `Please ensure all products have input price and quantity greater than 0.`,
+        ),
+        { status: EStatusCode.BAD_REQUEST }
+      );
+    }
+
+    const orderFormProductIds: string[] =
       orderForm.product_details.map(
         (orderFormProductDetail: IOrderFormProductDetail): string =>
           orderFormProductDetail._id
       );
 
-    if (!isIdsValid(orderFormProductDetailIds))
+    if (!isIdsValid(orderFormProductIds))
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `Some of the ${ECollectionNames.PRODUCT_DETAIL} in order form's product details is not valid.`,
+          `Some of the ${ECollectionNames.PRODUCT} in order form's product details is not valid.`,
           path,
-          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`,
+          `Please check if the ${ECollectionNames.PRODUCT} ID is correct.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
-    const isProductDetailIdsExist: boolean = await isIdsExist<IProductDetail>(
-      orderFormProductDetailIds,
-      ProductDetailModel
+    console.log("Validating product IDs:", orderFormProductIds);
+
+    const isProductIdsExist: boolean = await isIdsExist<IProduct>(
+      orderFormProductIds,
+      ProductModel
     );
 
-    if (!isProductDetailIdsExist)
+    if (!isProductIdsExist)
       return NextResponse.json(
         createErrorMessage(
           `Failed to create ${collectionName}.`,
-          `Some of the ${ECollectionNames.PRODUCT_DETAIL} in order form's product details does not exist in our records.`,
+          `Some of the ${ECollectionNames.PRODUCT} in order form's product details does not exist in our records.`,
           path,
-          `Please check if the ${ECollectionNames.PRODUCT_DETAIL} ID is correct.`,
+          `Please check if the ${ECollectionNames.PRODUCT} ID is correct.`,
         ),
         { status: EStatusCode.NOT_FOUND }
       );
@@ -124,6 +178,8 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
 
+    console.log("Validating unit IDs:", orderFormProductDetailUnitIds);
+
     const isProductDetailUnitIdsExist: boolean = await isIdsExist<IUnit>(
       orderFormProductDetailUnitIds,
       UnitModel
@@ -140,34 +196,17 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.NOT_FOUND }
       );
 
-    // Cập nhật giá bán cho sản phẩm dựa trên giá nhập mới nhập vào
-    for (const productDetail of orderForm.product_details) {
-      if (productDetail.input_price) {
-        // Tìm sản phẩm từ chi tiết sản phẩm
-        const productDetailDoc = await ProductDetailModel.findById(productDetail._id);
-        if (productDetailDoc && productDetailDoc.product_id) {
-          // Tính giá bán mới = giá nhập + 30% giá nhập
-          const newOutputPrice = productDetail.input_price + (productDetail.input_price * 0.3);
-
-          // Cập nhật giá nhập và giá bán cho sản phẩm
-          await ProductModel.findByIdAndUpdate(productDetailDoc.product_id, {
-            $set: {
-              input_price: productDetail.input_price,
-              output_price: newOutputPrice,
-              updated_at: new Date()
-            }
-          });
-        }
-      }
-    }
+    console.log("Creating new order form...");
 
     const newOrderForm = new collectionModel({
       created_at: new Date(),
       updated_at: new Date(),
       supplier_id: orderForm.supplier_id,
-      status: "Chưa hoàn thành", // Thêm trạng thái mặc định
+      status: OrderFormStatus.PENDING,
       product_details: orderForm.product_details,
     });
+
+    console.log("Saving order form to database...");
 
     const savedOrderForm: collectionType = await newOrderForm.save();
 
@@ -182,16 +221,18 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
 
+    console.log("Order form saved successfully with ID:", savedOrderForm._id);
+
     return NextResponse.json(savedOrderForm, { status: EStatusCode.CREATED });
   } catch (error: unknown) {
-    console.error(error);
+    console.error(`Error creating ${collectionName}:`, error);
 
     return NextResponse.json(
       createErrorMessage(
         `Failed to create ${collectionName}.`,
-        error as string,
+        error instanceof Error ? error.message : String(error),
         path,
-        `Please contact for more information.`,
+        `Please contact administrator for more information.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );

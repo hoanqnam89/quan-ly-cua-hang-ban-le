@@ -26,6 +26,7 @@ import { ICategory } from '@/interfaces/category.interface';
 import { IProduct } from '@/interfaces/product.interface';
 import { DEFAULT_PROCDUCT } from '@/constants/product.constant';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
+import { IUnit } from '@/interfaces/unit.interface';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -50,6 +51,7 @@ export default function Product() {
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [products, setProducts] = useState<collectionType[]>([]);
+  const [units, setUnits] = useState<IUnit[]>([]);
 
   const getSuppliers: () => Promise<void> = useCallback(
     async (): Promise<void> => {
@@ -103,11 +105,25 @@ export default function Product() {
     [product],
   );
 
+  const getUnits: () => Promise<void> = useCallback(
+    async (): Promise<void> => {
+      const newUnits: IUnit[] = await fetchGetCollections<IUnit>(
+        ECollectionNames.UNIT,
+      );
+      setUnits([...newUnits]);
+      setIsLoading(false);
+    },
+    [],
+  );
+
   useEffect((): void => {
     getSuppliers();
   }, []);
   useEffect((): void => {
     getCategory();
+  }, []);
+  useEffect((): void => {
+    getUnits();
   }, []);
 
   useEffect(() => {
@@ -269,7 +285,7 @@ export default function Product() {
       render: (collection: collectionType): ReactElement =>
         <Text>{formatCurrency(collection.output_price)}</Text>
     },
-    
+
     {
       key: `created_at`,
       ref: useRef(null),
@@ -376,9 +392,10 @@ export default function Product() {
     });
   }
   const handleChangeCategoryId = (e: ChangeEvent<HTMLSelectElement>): void => {
+    const categoryId = e.target.value;
     setProduct({
       ...product,
-      category_id: e.target.value,
+      category_id: categoryId,
     });
   }
 
@@ -412,29 +429,11 @@ export default function Product() {
     return !prev;
   }
 
-  // Trong hàm xử lý submit form
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-
-  //   if (!product.supplier_id) {
-  //     createNotification({
-  //       id: Date.now(),
-  //       children: <Text>Vui lòng chọn nhà cung cấp!</Text>,
-  //       type: ENotificationType.ERROR,
-  //       isAutoClose: true,
-  //     });
-  //     return;
-  //   }
-
-  //   // Gửi dữ liệu lên server
-  //   // ...
-  // };
-
   function handleChangeProduct(e: ChangeEvent<HTMLInputElement>): void {
     const { name, value } = e.target;
-    setProduct((prevProduct) => ({
+    setProduct(prevProduct => ({
       ...prevProduct,
-      [name]: name === 'input_price' || name === 'output_price' ? parseFloat(value) || 0 : value,
+      [name]: value,
     }));
   }
 
@@ -527,30 +526,6 @@ export default function Product() {
               onInputChange={handleChangeProduct}
             >
             </TextInput>
-          </InputSection> */}
-
-            {/* <InputSection label={`Giá nhập (VNĐ)`} gridColumns={gridColumns}>
-            <NumberInput
-              name={`input_price`}
-              isDisable={isModalReadOnly}
-              value={product.input_price + ``}
-              onInputChange={handleChangeProduct}
-              max={MAX_PRICE}
-              step={VND_UNIT}
-            >
-            </NumberInput>
-          </InputSection>
-
-          <InputSection label={`Giá bán (VNĐ)`} gridColumns={gridColumns}>
-            <NumberInput
-              name={`output_price`}
-              isDisable={isModalReadOnly}
-              value={product.output_price + ``}
-              onInputChange={handleChangeProduct}
-              max={MAX_PRICE}
-              step={VND_UNIT}
-            >
-            </NumberInput>
           </InputSection> */}
 
             <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>

@@ -43,30 +43,11 @@ export const fetchProductsBySupplier = async (supplierId: string): Promise<IExte
 
         const products: IProduct[] = await productsResponse.json();
 
-        // Lấy chi tiết sản phẩm
-        const productDetails: IProductDetail[] = await fetchGetCollections<IProductDetail>(
-            ECollectionNames.PRODUCT_DETAIL
-        );
-
-        // Lọc chi tiết sản phẩm theo sản phẩm đã lấy được
-        const filteredProductDetails = productDetails.filter(detail =>
-            products.some(product => product._id === detail.product_id)
-        );
-
-        // Map thành options cho dropdown
-        return filteredProductDetails.map((productDetail): IExtendedSelectOption => {
-            const product = products.find(p => p._id === productDetail.product_id);
-
-            if (!product) {
-                return {
-                    label: `Không rõ`,
-                    value: productDetail._id,
-                };
-            }
-
+        // Map thành options cho dropdown trực tiếp từ products
+        return products.map((product): IExtendedSelectOption => {
             return {
-                label: `${product.name} - Giá nhập: ${formatCurrency(product.input_price)}`,
-                value: productDetail._id,
+                label: `${product.name}`,
+                value: product._id,
                 business_id: product.supplier_id,
                 input_price: product.input_price
             };

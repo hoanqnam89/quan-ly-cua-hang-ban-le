@@ -24,6 +24,19 @@ const WarehouseReceiptSchema = new Schema({
         type: Number,
         required: [true, `Product quantity is required!`],
       },
+      date_of_manufacture: {
+        type: String,
+        required: [true, `Ngày sản xuất là bắt buộc!`]
+      },
+      expiry_date: {
+        type: String,
+        required: [true, `Hạn sử dụng là bắt buộc!`]
+      },
+      batch_number: { type: String },
+      input_price: {
+        type: Number,
+        required: [true, `Giá nhập là bắt buộc!`]
+      }
     }
   ],
 });

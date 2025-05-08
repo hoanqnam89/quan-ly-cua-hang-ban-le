@@ -11,7 +11,7 @@ import printIcon from '@/public/icons/print.svg';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
-import { IWarehouseReceipt } from '@/interfaces/warehouse-receipt.interface';
+import { IWarehouseReceipt, IWarehouseProductDetail } from '@/app/interfaces/warehouse-receipt.interface';
 import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { translateCollectionName } from '@/utils/translate-collection-name';
@@ -64,6 +64,19 @@ const formatReceiptCode = (id: string, date: Date): string => {
   const sequence = id.substring(id.length - 4).padStart(4, '0');
 
   return `NK-${dateStr}-${sequence}`;
+};
+
+// Hàm định dạng số thành chuỗi tiền tệ VND với dấu chấm phân cách
+const formatCurrency = (value: number | string): string => {
+  const numericValue = typeof value === 'string' ? Number(value.replace(/\./g, '')) : value;
+  if (isNaN(numericValue)) return '';
+  return numericValue.toLocaleString('vi-VN');
+};
+
+// Hàm xử lý chuỗi tiền tệ VND thành số
+const parseCurrency = (value: string): number => {
+  const numericValue = value.replace(/\./g, '');
+  return Number(numericValue);
 };
 
 const formatShortDate = (date: Date | null | undefined, separator: string = '/'): string => {
@@ -156,6 +169,27 @@ function WarehouseReceipt() {
     });
   }, []);
 
+  // Hàm xử lý thay đổi giá nhập với định dạng tiền tệ
+  const handleChangeWarehouseReceiptProductPrice = useCallback((e: ChangeEvent<HTMLInputElement>, index: number): void => {
+    const inputValue = e.target.value;
+    // Chỉ cho phép nhập số
+    const numericValue = parseCurrency(inputValue);
+
+    if (isNaN(numericValue)) return;
+
+    setWarehouseReceipt(prev => {
+      const newProductDetails = [...prev.product_details];
+      newProductDetails[index] = {
+        ...newProductDetails[index],
+        input_price: numericValue
+      } as IWarehouseProductDetail;
+      return {
+        ...prev,
+        product_details: newProductDetails
+      };
+    });
+  }, []);
+
   // React Query hooks
   const { data: products = [], isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products'],
@@ -207,11 +241,18 @@ function WarehouseReceipt() {
       if (!currentOrderFormExists || !orderForm._id) {
         const firstOrderForm = orderForms[0];
         setOrderForm(firstOrderForm);
+
+        // Quan trọng: Chỉ chuyển các trường cần thiết, giữ nguyên ID của sản phẩm
         setWarehouseReceipt(prev => ({
           ...prev,
           supplier_id: firstOrderForm.supplier_id,
           supplier_receipt_id: firstOrderForm._id,
-          product_details: [...firstOrderForm.product_details]
+          product_details: firstOrderForm.product_details.map(detail => ({
+            ...detail, // Giữ nguyên _id từ phiếu đặt hàng
+            date_of_manufacture: '',
+            expiry_date: '',
+            note: ''
+          } as IWarehouseProductDetail))
         }));
       }
     } else if (orderFormOptions.length > 0) {
@@ -227,11 +268,15 @@ function WarehouseReceipt() {
     isLoadingProductDetails || isLoadingOrderForms || isLoadingWarehouseReceipts;
 
   // Prepare dropdown options
-  const productOptions = React.useMemo(() =>
-    productDetails.map(detail => ({
-      label: products.find(p => p._id === detail.product_id)?.name || '',
-      value: detail._id
-    })), [productDetails, products]);
+  const productOptions = React.useMemo(() => {
+    // Tạo options từ products thay vì productDetails
+    if (products.length === 0) return [];
+
+    return products.map(product => ({
+      label: product.name || '',
+      value: product._id
+    }));
+  }, [products]);
 
   const supplierOptions = React.useMemo(() =>
     businesses
@@ -275,8 +320,55 @@ function WarehouseReceipt() {
       return;
     }
 
+    // Kiểm tra số lượng hợp lệ
     const invalidQuantity = warehouseReceipt.product_details.some(detail => !detail.quantity || detail.quantity <= 0);
     if (invalidQuantity) {
+      createNotification({
+        children: 'Số lượng sản phẩm không được để trống hoặc nhỏ hơn 1',
+        type: ENotificationType.WARNING,
+        isAutoClose: true
+      });
+      return;
+    }
+
+    // Kiểm tra giá nhập
+    const invalidPrice = warehouseReceipt.product_details.some(detail => !detail.input_price || detail.input_price <= 0);
+    if (invalidPrice) {
+      createNotification({
+        children: 'Giá nhập không được để trống hoặc nhỏ hơn 1',
+        type: ENotificationType.WARNING,
+        isAutoClose: true
+      });
+      return;
+    }
+
+    // Kiểm tra ngày sản xuất và hạn sử dụng
+    const missingDates = warehouseReceipt.product_details.some(detail => !detail.date_of_manufacture || !detail.expiry_date);
+    if (missingDates) {
+      createNotification({
+        children: 'Ngày sản xuất và hạn sử dụng không được để trống',
+        type: ENotificationType.WARNING,
+        isAutoClose: true
+      });
+      return;
+    }
+
+    // Kiểm tra nếu có sản phẩm nào có HSD <= NSX thì không cho lưu
+    const invalidDates = warehouseReceipt.product_details.some(detail => {
+      if (!detail.date_of_manufacture || !detail.expiry_date) return false;
+
+      const mfgDate = new Date(detail.date_of_manufacture);
+      const expDate = new Date(detail.expiry_date);
+
+      return mfgDate >= expDate;
+    });
+
+    if (invalidDates) {
+      createNotification({
+        children: 'Ngày hết hạn phải lớn hơn ngày sản xuất',
+        type: ENotificationType.WARNING,
+        isAutoClose: true
+      });
       return;
     }
 
@@ -393,183 +485,311 @@ function WarehouseReceipt() {
 
   const renderContent = useCallback((): ReactElement => {
     return (
-      <>
-        <Tabs>
-          <TabItem label={`${translateCollectionName(collectionName)}`}>
-            <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
-              <div className="mb-6">
-                <div className="grid grid-cols-2 gap-6">
-                  <InputSection label={`Chọn phiếu đặt hàng`} gridColumns="200px 1fr">
-                    <SelectDropdown
-                      isLoading={isLoading}
-                      isDisable={isModalReadOnly}
-                      options={orderFormOptions}
-                      defaultOptionIndex={getSelectedOptionIndex(orderFormOptions, orderForm._id)}
-                      onInputChange={(e): void => {
-                        const selectedForm = orderForms.find(form => form._id === e.target.value);
-                        if (selectedForm) {
-                          setOrderForm(selectedForm);
-                          setWarehouseReceipt(prev => ({
-                            ...prev,
-                            supplier_id: selectedForm.supplier_id,
-                            supplier_receipt_id: selectedForm._id,
-                            product_details: [...selectedForm.product_details]
-                          }));
-                        }
-                      }}
-                      className="border-blue-200 hover:border-blue-400 focus:border-blue-500"
-                    />
-                  </InputSection>
+      <Tabs>
+        <TabItem label={translateCollectionName(collectionName)}>
+          <div className="bg-white rounded-3xl border border-gray-200 shadow-2xl p-10 mb-10">
+            <div className="mb-6">
+              <div className="grid grid-cols-2 gap-10">
+                <InputSection label="Chọn phiếu đặt hàng" gridColumns="180px 1fr">
+                  <SelectDropdown
+                    isLoading={isLoading}
+                    isDisable={isModalReadOnly}
+                    options={orderFormOptions}
+                    defaultOptionIndex={getSelectedOptionIndex(orderFormOptions, orderForm._id)}
+                    onInputChange={(e): void => {
+                      const selectedForm = orderForms.find(form => form._id === e.target.value);
+                      if (selectedForm) {
+                        setOrderForm(selectedForm);
 
-                  <InputSection label={`Nhà cung cấp`} gridColumns="200px 1fr">
-                    <Text className="bg-gray-50 border border-gray-200 rounded px-3 py-2 min-h-[40px] flex items-center">
-                      {businesses.find(b => b._id === orderForm.supplier_id)?.name || 'Không có lựa chọn'}
-                    </Text>
-                  </InputSection>
-                </div>
+                        // Cập nhật warehouseReceipt với dữ liệu từ phiếu đặt hàng mới
+                        // Đảm bảo giữ đúng ID sản phẩm và thông tin khác
+                        setWarehouseReceipt(prev => ({
+                          ...prev,
+                          supplier_id: selectedForm.supplier_id,
+                          supplier_receipt_id: selectedForm._id,
+                          product_details: selectedForm.product_details.map(detail => ({
+                            ...detail, // Giữ nguyên thông tin sản phẩm từ phiếu đặt hàng
+                            date_of_manufacture: '',
+                            expiry_date: '',
+                            note: ''
+                          } as IWarehouseProductDetail))
+                        }));
+                      }
+                    }}
+                    className="border-blue-300 hover:border-blue-500 focus:border-blue-600 text-md px-4 py-3 rounded-xl shadow-sm"
+                  />
+                </InputSection>
 
+                <InputSection label="Nhà cung cấp" gridColumns="180px 1fr">
+                  <Text className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 min-h-[46px] flex items-center text-md font-semibold">
+                    {businesses.find(b => b._id === orderForm.supplier_id)?.name || 'Không có lựa chọn'}
+                  </Text>
+                </InputSection>
+              </div>
+
+              <div className="mt-6">
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-4">
-                      <h3 className="font-semibold text-lg">Thông tin phiếu đặt hàng</h3>
+                  <div>
+                    <div className="bg-blue-100 rounded-t-lg py-2 text-center">
+                      <div className="inline-flex items-center justify-center text-blue-700 font-bold">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                          <path d="M9 14l2 2 4-4"></path>
+                        </svg>
+                        PHIẾU ĐẶT HÀNG
+                      </div>
                     </div>
-                    <div className="p-4">
-                      <div className={`grid items-center ${styles[`order-form-product-table`]} bg-gray-50 p-3 rounded-md mb-2 font-medium`}>
-                        <Text>#</Text>
-                        <Text>Sản phẩm</Text>
-                        <Text>Đơn vị tính</Text>
-                        <Text>Số lượng</Text>
-                      </div>
-
-                      <div className="max-h-[300px] overflow-y-auto pr-1">
-                        {orderForm && orderForm.product_details && orderForm.product_details.map((
-                          orderFormProductDetail: IOrderFormProductDetail,
-                          index: number
-                        ): ReactElement => (
-                          <div
-                            key={index}
-                            className={`grid items-center ${styles[`order-form-product-table`]} border-b border-gray-100 py-2`}
-                          >
-                            <Text className="font-medium text-gray-700">{index + 1}</Text>
-
-                            <SelectDropdown
-                              isLoading={isLoading}
-                              isDisable={true}
-                              options={productOptions}
-                              defaultOptionIndex={getSelectedOptionIndex(
-                                productOptions,
-                                orderFormProductDetail._id
-                              )}
-                              className="bg-gray-50 border-gray-200"
-                            />
-
-                            <SelectDropdown
-                              isLoading={isLoading}
-                              isDisable={true}
-                              options={unitOptions}
-                              defaultOptionIndex={getSelectedOptionIndex(
-                                unitOptions,
-                                orderFormProductDetail.unit_id
-                              )}
-                              className="bg-gray-50 border-gray-200"
-                            />
-
-                            <NumberInput
-                              min={1}
-                              max={100}
-                              name={`quantity`}
-                              isDisable={true}
-                              value={orderFormProductDetail.quantity + ``}
-                              className="bg-gray-50 border-gray-200"
-                            />
-                          </div>
-                        ))}
-                      </div>
+                    <div className="grid grid-cols-5 bg-blue-500 p-2 font-bold text-center text-white" style={{ gridTemplateColumns: "30px 1fr 1fr 1fr 1fr" }}>
+                      <div className="flex justify-center items-center">#</div>
+                      <div className="flex justify-center items-center">Tên sản phẩm</div>
+                      <div className="flex justify-center items-center">Đơn vị tính</div>
+                      <div className="flex justify-center items-center">Số lượng</div>
+                      <div className="flex justify-center items-center">Giá</div>
                     </div>
                   </div>
-
-                  <div className="border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-                    <div className="bg-gradient-to-r from-green-600 to-green-500 text-white p-4">
-                      <h3 className="font-semibold text-lg">Nhập kho từ phiếu đặt hàng</h3>
+                  <div>
+                    <div className="bg-green-100 rounded-t-lg py-2 text-center">
+                      <div className="inline-flex items-center justify-center text-green-700 font-bold">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                          <path d="M20 3H4a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1Z"></path>
+                          <path d="M12 7v10"></path>
+                          <path d="M7 12h10"></path>
+                        </svg>
+                        PHIẾU NHẬP KHO
+                      </div>
                     </div>
-                    <div className="p-4">
-                      <div className={`grid items-center ${styles[`warehouse-receipt-product-table`]} bg-gray-50 p-3 rounded-md mb-2 font-medium`}>
-                        <Text>#</Text>
-                        <Text>Sản phẩm</Text>
-                        <Text>Đơn vị tính</Text>
-                        <Text>Số lượng</Text>
-                        <Text>Ghi chú</Text>
-                      </div>
-
-                      <div className="max-h-[400px] overflow-y-auto pr-2">
-                        {warehouseReceipt && warehouseReceipt.product_details && warehouseReceipt.product_details.map((
-                          warehouseProductDetail: IOrderFormProductDetail,
-                          index: number
-                        ): ReactElement => (
-                          <div
-                            key={index}
-                            className={`grid items-center ${styles[`warehouse-receipt-product-table`]} border-b border-gray-100 py-2`}
-                          >
-                            <Text className="font-medium text-gray-700">{index + 1}</Text>
-
-                            <SelectDropdown
-                              isLoading={isLoading}
-                              isDisable={true}
-                              options={productOptions}
-                              defaultOptionIndex={getSelectedOptionIndex(
-                                productOptions,
-                                warehouseProductDetail._id
-                              )}
-                              className="bg-gray-50 border-gray-200"
-                            />
-
-                            <SelectDropdown
-                              isLoading={isLoading}
-                              isDisable={true}
-                              options={unitOptions}
-                              defaultOptionIndex={getSelectedOptionIndex(
-                                unitOptions,
-                                warehouseProductDetail.unit_id
-                              )}
-                              className="bg-gray-50 border-gray-200"
-                            />
-
-                            <NumberInput
-                              min={1}
-                              max={100}
-                              name={`quantity`}
-                              isDisable={isModalReadOnly}
-                              value={warehouseProductDetail.quantity + ``}
-                              onInputChange={(e): void =>
-                                handleChangeWarehouseReceiptProductQuantity(e, index)
-                              }
-                              className="border-green-200 hover:border-green-400 focus:border-green-500"
-                            />
-
-                            <Textarea
-                              name={`note`}
-                              isDisable={isModalReadOnly}
-                              value={warehouseProductDetail.note ?? ``}
-                              onInputChange={(e: ChangeEvent<HTMLTextAreaElement>): void =>
-                                handleChangeWarehouseReceiptProductNote(e, index)
-                              }
-                              className="border-green-200 hover:border-green-400 focus:border-green-500 min-h-[40px] text-sm"
-                            />
-                          </div>
-                        ))}
-                      </div>
+                    <div className="grid grid-cols-7 bg-green-500 p-2 font-bold text-center text-white">
+                      <div className="flex justify-center items-center">Tên sản phẩm</div>
+                      <div className="flex justify-center items-center">Đơn vị tính</div>
+                      <div className="flex justify-center items-center">Số lượng</div>
+                      <div className="flex justify-center items-center">NSX</div>
+                      <div className="flex justify-center items-center">HSD</div>
+                      <div className="flex justify-center items-center">Giá</div>
+                      <div className="flex justify-center items-center">Ghi chú</div>
                     </div>
                   </div>
                 </div>
+
+                {orderForm && orderForm.product_details && orderForm.product_details.map((orderFormProductDetail: IOrderFormProductDetail, index: number) => {
+                  const warehouseProductDetail = warehouseReceipt.product_details[index];
+
+                  // Tìm sản phẩm dựa vào ID trực tiếp từ products
+                  const product = products.find(p => p._id === orderFormProductDetail._id);
+                  const productName = product?.name || '';
+
+                  return (
+                    <div key={index} className="grid grid-cols-2 gap-6 border-b border-gray-100 py-3 hover:bg-gray-50 transition-all items-center relative">
+                      <div className="grid grid-cols-5 items-center gap-1" style={{ gridTemplateColumns: "30px 1fr 1fr 1fr 1fr" }}>
+                        <div className="text-center font-bold text-gray-700">{index + 1}</div>
+                        <div className="flex justify-center items-center">
+                          {/* Hiển thị tên sản phẩm từ products */}
+                          <SelectDropdown
+                            isLoading={isLoading}
+                            isDisable={true}
+                            options={productOptions}
+                            defaultOptionIndex={getSelectedOptionIndex(productOptions, orderFormProductDetail._id)}
+                            className="bg-gray-50 border border-gray-200 rounded-lg w-full"
+                          />
+                        </div>
+                        <div className="flex justify-center items-center">
+                          <SelectDropdown
+                            isLoading={isLoading}
+                            isDisable={true}
+                            options={unitOptions}
+                            defaultOptionIndex={getSelectedOptionIndex(unitOptions, orderFormProductDetail.unit_id)}
+                            className="bg-gray-50 border border-gray-200 rounded-lg w-full"
+                          />
+                        </div>
+                        <div className="flex justify-center items-center">
+                          <NumberInput
+                            min={1}
+                            max={100}
+                            name={`quantity`}
+                            isDisable={true}
+                            value={orderFormProductDetail.quantity + ``}
+                            className="bg-gray-200 border border-gray-200 rounded-lg text-center font-bold w-full"
+                          />
+                        </div>
+                        <div className="text-center text-blue-700 font-bold">{orderFormProductDetail.input_price ? orderFormProductDetail.input_price.toLocaleString('vi-VN') : ''}</div>
+                      </div>
+
+                      {/* Mũi tên thể hiện luồng dữ liệu */}
+                      <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center justify-center z-10">
+                        <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center border-2 border-blue-300">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-700">
+                            <path d="M5 12h14"></path>
+                            <path d="m12 5 7 7-7 7"></path>
+                          </svg>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-7 items-center gap-1">
+                        <div className="flex justify-center items-center">
+                          <SelectDropdown
+                            isLoading={isLoading}
+                            isDisable={true}
+                            options={productOptions}
+                            defaultOptionIndex={getSelectedOptionIndex(productOptions, warehouseProductDetail?._id)}
+                            className="bg-gray-50 border border-gray-200 rounded-lg w-full"
+                          />
+                        </div>
+                        <div className="flex justify-center items-center">
+                          <SelectDropdown
+                            isLoading={isLoading}
+                            isDisable={true}
+                            options={unitOptions}
+                            defaultOptionIndex={getSelectedOptionIndex(unitOptions, warehouseProductDetail?.unit_id)}
+                            className="bg-gray-50 border border-gray-200 rounded-lg w-full"
+                          />
+                        </div>
+                        <div className="flex justify-center items-center relative">
+                          <NumberInput
+                            min={1}
+                            max={100}
+                            name={`quantity`}
+                            isDisable={isModalReadOnly}
+                            value={warehouseProductDetail?.quantity + ''}
+                            onInputChange={(e): void => handleChangeWarehouseReceiptProductQuantity(e, index)}
+                            className="border-green-300 hover:border-green-500 focus:border-green-600 rounded-lg text-center font-bold w-full"
+                          />
+                          {(!warehouseProductDetail?.quantity || warehouseProductDetail?.quantity <= 0) && (
+                            <div className="absolute -top-2 -right-1">
+                              <span className="bg-red-500 text-white text-xs font-medium rounded-full w-4 h-4 flex items-center justify-center" title="Bắt buộc">!</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex justify-center items-center relative">
+                          <input
+                            type="date"
+                            name={`date_of_manufacture`}
+                            disabled={isModalReadOnly}
+                            value={warehouseProductDetail?.date_of_manufacture || ''}
+                            onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+                              setWarehouseReceipt(prev => {
+                                const newProductDetails = [...prev.product_details];
+                                newProductDetails[index] = {
+                                  ...newProductDetails[index],
+                                  date_of_manufacture: e.target.value
+                                } as IWarehouseProductDetail;
+                                return {
+                                  ...prev,
+                                  product_details: newProductDetails
+                                };
+                              });
+                            }}
+                            className="border border-gray-200 rounded-lg py-1 text-center focus:border-green-400 w-full"
+                            style={{ minWidth: '110px' }}
+                            placeholder="dd/mm/yyyy"
+                          />
+                          {!warehouseProductDetail?.date_of_manufacture && (
+                            <div className="absolute -top-2 -right-1">
+                              <span className="bg-red-500 text-white text-xs font-medium rounded-full w-4 h-4 flex items-center justify-center" title="Bắt buộc">!</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex justify-center items-center relative">
+                          <input
+                            type="date"
+                            name={`expiry_date`}
+                            disabled={isModalReadOnly}
+                            value={warehouseProductDetail?.expiry_date || ''}
+                            onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+                              setWarehouseReceipt(prev => {
+                                const newProductDetails = [...prev.product_details];
+                                newProductDetails[index] = {
+                                  ...newProductDetails[index],
+                                  expiry_date: e.target.value
+                                } as IWarehouseProductDetail;
+                                return {
+                                  ...prev,
+                                  product_details: newProductDetails
+                                };
+                              });
+                            }}
+                            className="border border-gray-200 rounded-lg py-1 text-center focus:border-green-400 w-full"
+                            style={{ minWidth: '110px' }}
+                            placeholder="dd/mm/yyyy"
+                          />
+                          {!warehouseProductDetail?.expiry_date && (
+                            <div className="absolute -top-2 -right-1">
+                              <span className="bg-red-500 text-white text-xs font-medium rounded-full w-4 h-4 flex items-center justify-center" title="Bắt buộc">!</span>
+                            </div>
+                          )}
+                          {warehouseProductDetail?.date_of_manufacture && warehouseProductDetail?.expiry_date &&
+                            new Date(warehouseProductDetail.date_of_manufacture) >= new Date(warehouseProductDetail.expiry_date) && (
+                              <div className="absolute -bottom-10 left-0 right-0">
+                                <span className="bg-red-100 text-red-700 text-xs font-medium py-1 px-2 rounded-lg w-full block text-center">
+                                  HSD phải lớn hơn NSX
+                                </span>
+                              </div>
+                            )}
+                        </div>
+                        <div className="flex justify-center items-center relative">
+                          <input
+                            type="text"
+                            name={`input_price`}
+                            disabled={isModalReadOnly}
+                            value={warehouseProductDetail?.input_price ? formatCurrency(warehouseProductDetail.input_price) : ''}
+                            onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+                              const numericValue = parseCurrency(e.target.value);
+                              if (isNaN(numericValue) && e.target.value !== '') return;
+
+                              setWarehouseReceipt(prev => {
+                                const newProductDetails = [...prev.product_details];
+                                newProductDetails[index] = {
+                                  ...newProductDetails[index],
+                                  input_price: numericValue
+                                } as IWarehouseProductDetail;
+                                return {
+                                  ...prev,
+                                  product_details: newProductDetails
+                                };
+                              });
+                            }}
+                            className="border border-gray-200 rounded-lg py-1 text-center focus:border-green-400 font-bold w-full"
+                            placeholder="Nhập giá..."
+                          />
+                          {(!warehouseProductDetail?.input_price || warehouseProductDetail?.input_price <= 0) && (
+                            <div className="absolute -top-2 -right-1">
+                              <span className="bg-red-500 text-white text-xs font-medium rounded-full w-4 h-4 flex items-center justify-center" title="Bắt buộc">!</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex justify-center items-center">
+                          <input
+                            type="text"
+                            name="note"
+                            disabled={isModalReadOnly}
+                            value={warehouseProductDetail?.note || ''}
+                            onChange={(e: ChangeEvent<HTMLInputElement>): void => {
+                              setWarehouseReceipt(prev => {
+                                const newProductDetails = [...prev.product_details];
+                                newProductDetails[index] = {
+                                  ...newProductDetails[index],
+                                  note: e.target.value
+                                } as IWarehouseProductDetail;
+                                return {
+                                  ...prev,
+                                  product_details: newProductDetails
+                                };
+                              });
+                            }}
+                            className="border border-gray-200 rounded-lg py-1 w-full text-center"
+                            placeholder="Ghi chú..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
-          </TabItem>
-        </Tabs>
-
-        {notificationElements}
-      </>
+          </div>
+        </TabItem>
+      </Tabs>
     );
-  }, [isLoading, isModalReadOnly, notificationElements, orderForm, warehouseReceipt, productOptions, unitOptions, orderFormOptions, supplierOptions, isClickShowMore, isClickDelete]);
+  }, [isLoading, isModalReadOnly, notificationElements, orderForm, warehouseReceipt, productOptions, unitOptions, orderFormOptions, supplierOptions, isClickShowMore, isClickDelete, isSaving, handleSaveClick]);
 
   const columns: Array<IColumnProps<collectionType>> = [
     {

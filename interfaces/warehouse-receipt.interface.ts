@@ -7,6 +7,13 @@ export interface IReceiptProduct {
     note?: string;
 }
 
+export interface IWarehouseProductDetail extends IOrderFormProductDetail {
+    date_of_manufacture?: string;
+    expiry_date?: string;
+    batch_number?: string;
+    input_price: number;
+}
+
 export interface IWarehouseReceipt {
     _id: string;
     supplier_id: string;
@@ -14,5 +21,5 @@ export interface IWarehouseReceipt {
     created_at: Date;
     updated_at: Date;
 
-    product_details: IOrderFormProductDetail[];
+    product_details: IWarehouseProductDetail[];
 } 

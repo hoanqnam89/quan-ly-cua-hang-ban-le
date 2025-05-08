@@ -70,6 +70,8 @@ export default function Home(): ReactElement {
 
   const [statsCards, setStatsCards] = useState<IStatCardData[]>([]);
   const isInitialized = useRef(false);
+  const [productDetails, setProductDetails] = useState<IProductDetail[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
 
   // Hàm lấy số lượng từ collection
   const fetchCollectionCount = async (
@@ -190,6 +192,8 @@ export default function Home(): ReactElement {
         console.log('Số lượng tồn kho:', stockQuantity);
         console.log('Tổng kho theo ngày:', byDate);
 
+        setProductDetails(productDetails);
+
         return {
           total: totalStockQuantity,
           byDate: byDate,
@@ -245,15 +249,6 @@ export default function Home(): ReactElement {
 
       setTotalInventory(totalInventoryCount);
 
-      console.log('Kết quả API đã lấy được:', {
-        products: productCount,
-        productDetails: productDetailCount,
-        employees: employeeCount,
-        orders: orderCount,
-        totalInventory: totalInventoryCount,
-        actualRevenue: revenueData.total
-      });
-
       if (startDate && endDate) {
         setDateRange({
           startDate,
@@ -302,11 +297,11 @@ export default function Home(): ReactElement {
         // Đặt tổng doanh thu từ dữ liệu thực tế trong khoảng thời gian
         setTotalRevenue(totalRevenue);
       } else {
-        const coefficients = generateRandomCoefficients(dateArray.length);
-        dateArray.forEach((date, index) => {
+        // Nếu không có dữ liệu doanh thu, set tất cả giá trị về 0
+        dateArray.forEach((date) => {
           newRevenueData.push({
             date: `${date.getDate()}/${date.getMonth() + 1}`,
-            value: Math.round(calculatedRevenue * coefficients[index])
+            value: 0
           });
         });
       }
@@ -349,17 +344,32 @@ export default function Home(): ReactElement {
 
       setProductInventoryData(newInventoryData);
 
+      // Tính tổng số lượng tồn kho thực tế
+      const totalStockQuantity = productDetails.reduce((sum, detail) => {
+        const input = detail.input_quantity || 0;
+        const output = detail.output_quantity || 0;
+        return sum + (input - output);
+      }, 0);
+
+      // Tính số lượng sản phẩm hết hạn
+      const today = new Date();
+      const expiredProductCount = productDetails.filter(detail => {
+        if (!detail.expiry_date) return false;
+        const expiry = new Date(detail.expiry_date);
+        return expiry < today;
+      }).length;
+
       setStatsCards([
         {
-          title: 'Tổng sản phẩm',
-          value: productCount,
+          title: 'Sản phẩm hết hạn',
+          value: expiredProductCount,
           icon: 'product',
           iconColor: 'text-pink-600',
           iconBgColor: 'bg-pink-100'
         },
         {
-          title: 'Tổng nhân viên',
-          value: employeeCount,
+          title: 'Tổng tồn kho',
+          value: totalStockQuantity,
           icon: 'employee',
           iconColor: 'text-indigo-600',
           iconBgColor: 'bg-indigo-100'
@@ -372,13 +382,20 @@ export default function Home(): ReactElement {
           iconBgColor: 'bg-blue-100'
         },
         {
-          title: 'Chi tiết sản phẩm',
+          title: 'Chi tiết kho',
           value: productDetailCount,
           icon: 'product-detail',
           iconColor: 'text-amber-600',
           iconBgColor: 'bg-amber-100'
         }
       ]);
+
+      const [productList, productDetailList] = await Promise.all([
+        fetch('/api/product').then(res => res.json()),
+        fetch('/api/product-detail').then(res => res.json())
+      ]);
+      setProducts(productList);
+      setProductDetails(productDetailList);
     } catch (error) {
       console.error('Lỗi khi lấy dữ liệu:', error);
 
@@ -662,7 +679,6 @@ export default function Home(): ReactElement {
     // Hàm này sẽ được gọi khi Google Charts API được load xong
     const initGoogleCharts = () => {
       if (typeof window !== 'undefined' && window.google && window.google.charts) {
-        // Load các gói biểu đồ
         window.google.charts.load('current', { 'packages': ['corechart'] });
         window.google.charts.setOnLoadCallback(drawCharts);
       }
@@ -670,99 +686,140 @@ export default function Home(): ReactElement {
 
     // Vẽ các biểu đồ
     const drawCharts = () => {
-      // Biểu đồ phân bổ doanh thu theo danh mục
+      // Biểu đồ phân bổ doanh thu theo danh mục (Top 5 sản phẩm bán chạy nhất)
       if (document.getElementById('revenue-pie-chart')) {
-        // Tính toán phân bổ doanh thu dựa trên số lượng sản phẩm và chi tiết sản phẩm
-        const productPercent = Math.min(40, totalProducts / (totalProducts + totalProductDetails) * 100);
-        const productDetailPercent = Math.min(40, totalProductDetails / (totalProducts + totalProductDetails) * 100);
-        const orderPercent = Math.min(30, totalOrders / (totalProducts + totalProductDetails) * 100);
-        const otherPercent = 100 - productPercent - productDetailPercent - orderPercent;
-
-        const revenueData = window.google.visualization.arrayToDataTable([
-          ['Danh mục', 'Doanh thu'],
-          ['Sản phẩm', Math.round(totalRevenue * productPercent / 100)],
-          ['Chi tiết sản phẩm', Math.round(totalRevenue * productDetailPercent / 100)],
-          ['Đơn hàng', Math.round(totalRevenue * orderPercent / 100)],
-          ['Khác', Math.round(totalRevenue * otherPercent / 100)]
-        ]);
-
-        const revenueOptions = {
-          title: 'Doanh thu theo danh mục',
-          colors: ['#60a5fa', '#34d399', '#f97316', '#a855f7'],
-          chartArea: { width: '100%', height: '80%' },
-          legend: { position: 'bottom' },
-          pieHole: 0.4,
+        // Tính tổng số lượng bán ra cho từng sản phẩm
+        const productSales: { [productName: string]: number } = {};
+        productDetails.forEach(detail => {
+          // Tìm tên sản phẩm từ danh sách products
+          const product = products.find(p => p._id === detail.product_id);
+          const name = product?.name || 'Không tên';
+          const sold = detail.output_quantity || 0;
+          productSales[name] = (productSales[name] || 0) + sold;
+        });
+        // Sắp xếp theo số lượng bán ra giảm dần
+        const sorted = Object.entries(productSales).sort((a, b) => b[1] - a[1]);
+        // Lấy 5 sản phẩm bán chạy nhất
+        const top5 = sorted.slice(0, 5);
+        // Gộp các sản phẩm còn lại vào 'Khác'
+        const otherTotal = sorted.slice(5).reduce((sum, [, qty]) => sum + qty, 0);
+        // Chuẩn bị dữ liệu cho Pie Chart
+        const pieData: (string | number)[][] = [
+          ['Sản phẩm', 'Số lượng bán']
+        ];
+        top5.forEach(([name, qty]) => pieData.push([String(name), Number(qty)]));
+        if (otherTotal > 0) pieData.push(['Khác', Number(otherTotal)]);
+        if (pieData.length === 1) pieData.push(['Không có dữ liệu', 1]);
+        const data = window.google.visualization.arrayToDataTable(pieData);
+        const options = {
+          title: '',
+          colors: ['#60a5fa', '#34d399', '#f97316', '#a855f7', '#f43f5e', '#a3a3a3'],
+          chartArea: { width: '90%', height: '80%' },
+          legend: {
+            position: 'bottom',
+            alignment: 'center',
+            maxLines: 3,
+            textStyle: {
+              fontSize: 18,
+              fontName: 'Montserrat, Arial, sans-serif',
+              color: '#374151',
+              bold: true,
+            }
+          },
+          pieHole: 0.5,
+          backgroundColor: 'transparent',
+          pieSliceText: 'percentage',
+          pieSliceTextStyle: {
+            fontSize: 28,
+            color: '#fff',
+            bold: true,
+            fontName: 'Montserrat, Arial, sans-serif'
+          },
+          tooltip: {
+            showColorCode: true,
+            text: 'both',
+            textStyle: {
+              fontSize: 18,
+              fontName: 'Montserrat, Arial, sans-serif'
+            }
+          },
+          slices: {
+            0: { offset: 0.10 },
+            1: { offset: 0.06 },
+            2: { offset: 0.04 },
+            3: { offset: 0.02 },
+            4: { offset: 0.01 },
+          },
+          fontName: 'Montserrat, Arial, sans-serif',
+          borderRadius: 32,
+          enableInteractivity: true,
+          pieStartAngle: 30,
         };
-
-        const revenueChart = new window.google.visualization.PieChart(document.getElementById('revenue-pie-chart'));
-        revenueChart.draw(revenueData, revenueOptions);
+        const chartDiv = document.getElementById('revenue-pie-chart');
+        if (chartDiv) {
+          chartDiv.style.boxShadow = '0 12px 40px 0 rgba(96,165,250,0.18)';
+          chartDiv.style.borderRadius = '32px';
+          chartDiv.style.background = 'linear-gradient(135deg, #f0f7ff 0%, #e0e7ff 100%)';
+          chartDiv.style.padding = '32px 0';
+          chartDiv.style.display = 'flex';
+          chartDiv.style.alignItems = 'center';
+          chartDiv.style.justifyContent = 'center';
+        }
+        const chart = new window.google.visualization.PieChart(chartDiv);
+        chart.draw(data, options);
       }
 
-      // Biểu đồ phân bổ sản phẩm trong kho
-      drawInventoryChart();
-    };
-
-    // Vẽ biểu đồ tổng kho
-    const drawInventoryChart = async () => {
-      if (document.getElementById('inventory-pie-chart')) {
-        // Tính toán tổng kho hiện tại từ chi tiết sản phẩm
-        const productDetails = productInventoryData;
-
-        // Phân loại tổng kho theo danh mục
-        let totalInventory = 0;
-        let onSaleQuantity = 0;
-        let stockQuantity = 0;
-
-        try {
-          // Gọi API để lấy dữ liệu chi tiết sản phẩm mới nhất
-          const response = await fetch('/api/product-detail');
-          if (response.ok) {
-            const productDetailData = await response.json();
-
-            // Tính số lượng trên quầy và số lượng tồn kho
-            productDetailData.forEach((detail: IProductDetail) => {
-              const inputQuantity = detail.input_quantity || 0;
-              const outputQuantity = detail.output_quantity || 0;
-              const remaining = inputQuantity - outputQuantity;
-
-              totalInventory += inputQuantity;
-              onSaleQuantity += outputQuantity;
-              stockQuantity += remaining;
-            });
-          }
-        } catch (error) {
-          console.error('Lỗi khi lấy dữ liệu chi tiết sản phẩm:', error);
-
-          if (productDetails && productDetails.length > 0) {
-            // Sử dụng dữ liệu tổng kho từ ngày cuối cùng trong khoảng thời gian
-            totalInventory = productDetails[productDetails.length - 1].value;
-
-            // Ước tính phân loại nếu không có dữ liệu chi tiết
-            onSaleQuantity = Math.round(totalInventory * 0.7); // 70% tổng kho đang bán
-            stockQuantity = Math.round(totalInventory * 0.3); // 30% tổng kho trong kho
-          } else {
-            totalInventory = totalProducts + totalProductDetails;
-            onSaleQuantity = Math.round(totalInventory * 0.7);
-            stockQuantity = Math.round(totalInventory * 0.3);
-          }
-        }
-
-        const inventoryData = window.google.visualization.arrayToDataTable([
-          ['Loại tổng kho', 'Số lượng'],
-          ['Số lượng trên quầy', onSaleQuantity],
-          ['Số lượng tồn kho', stockQuantity]
+      // Biểu đồ tròn tình trạng hàng hóa
+      if (document.getElementById('stock-status-pie-chart')) {
+        const data = window.google.visualization.arrayToDataTable([
+          ['Tình trạng', 'Số lượng'],
+          ['Còn hàng', inStock],
+          ['Sắp hết hàng', lowStock],
+          ['Hết hàng', outOfStock]
         ]);
-
-        const inventoryOptions = {
-          title: 'Phân loại tổng kho',
-          colors: ['#22c55e', '#f59e0b'],
+        const options = {
+          title: '',
+          colors: ['#22c55e', '#facc15', '#ef4444'],
           chartArea: { width: '100%', height: '80%' },
           legend: { position: 'bottom' },
           pieHole: 0.4,
         };
+        const chart = new window.google.visualization.PieChart(document.getElementById('stock-status-pie-chart'));
+        chart.draw(data, options);
+      }
 
-        const inventoryChart = new window.google.visualization.PieChart(document.getElementById('inventory-pie-chart'));
-        inventoryChart.draw(inventoryData, inventoryOptions);
+      // Biểu đồ tổng kho theo ngày
+      if (window.google && window.google.visualization && document.getElementById('inventory-status-chart')) {
+        const startDateObj = parseDate(dateRange.startDate);
+        const endDateObj = parseDate(dateRange.endDate);
+        const dateArray = generateDatesBetween(startDateObj, endDateObj, 7);
+        const stockStatusByDate = dateArray.map((date: Date) => {
+          // Đếm số sản phẩm sắp hết hạn trong vòng 7 ngày kể từ ngày này
+          const soonExpired = productDetails.filter((detail: IProductDetail) => {
+            if (!detail.expiry_date) return false;
+            const expiry = new Date(detail.expiry_date);
+            return expiry >= date && expiry <= new Date(date.getTime() + 6 * 24 * 60 * 60 * 1000);
+          }).length;
+          return {
+            date: `${date.getDate()}/${date.getMonth() + 1}`,
+            soonExpired
+          };
+        });
+        const chartData = [
+          ['Ngày', 'Sắp hết hạn'],
+          ...stockStatusByDate.map((item: any) => [item.date, item.soonExpired])
+        ];
+        const data = window.google.visualization.arrayToDataTable(chartData);
+        const options = {
+          title: 'Số lượng sản phẩm sắp hết hạn theo ngày',
+          legend: { position: 'bottom' },
+          colors: ['#facc15'],
+          height: 300,
+          vAxis: { title: 'Số lượng sắp hết hạn' },
+          hAxis: { title: 'Ngày' }
+        };
+        const chart = new window.google.visualization.ColumnChart(document.getElementById('inventory-status-chart'));
+        chart.draw(data, options);
       }
     };
 
@@ -782,7 +839,7 @@ export default function Home(): ReactElement {
         window.removeEventListener('google-charts-loaded', initGoogleCharts);
       }
     };
-  }, [isLoading, totalRevenue, totalProducts, totalProductDetails, totalOrders, totalInventory, productInventoryData]);
+  }, [isLoading, totalRevenue, totalProducts, totalProductDetails, totalOrders, totalInventory, productInventoryData, productDetails, products]);
 
   // Hàm format số tiền
   const formatCurrency = (amount: number): string => {
@@ -960,6 +1017,20 @@ export default function Home(): ReactElement {
     );
   };
 
+  // Hàm tính số lượng theo trạng thái tồn kho
+  const countByStatus = (details: IProductDetail[]) => {
+    let inStock = 0, lowStock = 0, outOfStock = 0;
+    details.forEach(detail => {
+      const input = detail.input_quantity || 0;
+      const output = detail.output_quantity || 0;
+      const remaining = input - output;
+      if (remaining > 10) inStock++;
+      else if (remaining > 0) lowStock++;
+      else outOfStock++;
+    });
+    return { inStock, lowStock, outOfStock };
+  };
+
   // Phần hiển thị loading
   if (isLoading) {
     return (
@@ -971,6 +1042,8 @@ export default function Home(): ReactElement {
       </div>
     );
   }
+
+  const { inStock, lowStock, outOfStock } = countByStatus(productDetails);
 
   return (
     <>
@@ -1012,17 +1085,7 @@ export default function Home(): ReactElement {
               </div>
             </div>
 
-            <button className="ml-3 bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white rounded-lg py-2.5 px-6 text-sm font-medium flex items-center shadow-md hover:shadow-lg transition-all duration-200">
-              <Image
-                src="/icons/plus.svg"
-                alt="Thêm báo cáo"
-                width={20}
-                height={20}
-                className="mr-2"
-                priority
-              />
-              Thêm báo cáo
-            </button>
+
           </div>
         </div>
 
@@ -1097,7 +1160,12 @@ export default function Home(): ReactElement {
             </div>
 
             <div className="p-6 border-t border-gray-100 bg-gradient-to-r from-white to-blue-50">
-              <div id="revenue-pie-chart" className="h-64 w-full"></div>
+              <div className="w-full flex flex-col items-center justify-center py-8" style={{ minHeight: 340, borderRadius: 32, background: 'linear-gradient(135deg, #e0e7ff 0%, #f0f7ff 100%)', boxShadow: '0 12px 40px 0 rgba(96,165,250,0.10)' }}>
+                <h3 className="text-2xl md:text-3xl font-bold mb-6 text-center tracking-wide drop-shadow-lg" style={{ color: '#2563eb', letterSpacing: 1 }}>
+                  Top 5 sản phẩm bán chạy nhất
+                </h3>
+                <div id="revenue-pie-chart" style={{ width: '100%', height: 340, maxWidth: 900, margin: '0 auto' }}></div>
+              </div>
             </div>
           </div>
 
@@ -1155,7 +1223,12 @@ export default function Home(): ReactElement {
             </div>
 
             <div className="p-6 border-t border-gray-100 bg-gradient-to-r from-white to-green-50">
-              <div id="inventory-pie-chart" className="h-64 w-full"></div>
+              <div className="w-full flex flex-col items-center justify-center py-8" style={{ minHeight: 340, borderRadius: 32, background: 'linear-gradient(135deg, #e0ffe7 0%, #f0fff7 100%)', boxShadow: '0 12px 40px 0 rgba(34,197,94,0.10)' }}>
+                <h3 className="text-2xl md:text-3xl font-bold mb-6 text-center tracking-wide drop-shadow-lg" style={{ color: '#16a34a', letterSpacing: 1 }}>
+                  Tình trạng hàng hóa
+                </h3>
+                <div id="stock-status-pie-chart" style={{ width: '100%', height: 340, maxWidth: 900, margin: '0 auto' }}></div>
+              </div>
             </div>
           </div>
         </div>

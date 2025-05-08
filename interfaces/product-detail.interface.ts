@@ -4,6 +4,7 @@ export interface IProductDetail {
   updated_at: Date
 
   product_id: string
+  batch_number: string
   input_quantity: number
   output_quantity: number
   inventory: number

@@ -349,7 +349,7 @@ export default function Table<T extends { _id: string, index?: number }>({
               <td colSpan={columns.length} className="text-center py-4">Không có dữ liệu</td>
             </tr>
           ) : (
-            paginatedDatas.map((row, rowIndex) => isVisibles[rowIndex]? (
+            paginatedDatas.map((row, rowIndex) => isVisibles[rowIndex] ? (
               <tr key={row._id} className="hover:bg-blue-50 transition">
                 {columns.map((column, colIdx) => {
                   let cellContent: React.ReactNode = null;
@@ -374,7 +374,7 @@ export default function Table<T extends { _id: string, index?: number }>({
                   );
                 })}
               </tr>
-            ):<></>)
+            ) : <></>)
           )}
         </tbody>
       </table>

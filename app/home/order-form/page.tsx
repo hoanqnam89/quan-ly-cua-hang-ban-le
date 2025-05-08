@@ -28,6 +28,7 @@ import { fetchBusinessNames, fetchProductsBySupplier } from '@/utils/fetch-helpe
 import { IExtendedSelectOption } from '@/interfaces/extended-select-option.interface';
 import { addCollection } from '@/services/api-service';
 import { EStatusCode } from '@/enums';
+import { formatCurrency } from '@/utils/format-currency';
 
 
 
@@ -57,9 +58,9 @@ export default function Product() {
   const [isProductLoading, setIsProductLoading] = useState<boolean>(true);
   const [isBusinessLoading, setIsBusinessLoading] = useState<boolean>(true);
   const [isUnitLoading, setIsUnitLoading] = useState<boolean>(true);
-  const [productDetailOptions, setProductDetailOptions] =
+  const [productOptions, setProductOptions] =
     useState<IExtendedSelectOption[]>([]);
-  const [filteredProductDetailOptions, setFilteredProductDetailOptions] =
+  const [filteredProductOptions, setFilteredProductOptions] =
     useState<IExtendedSelectOption[]>([]);
   const [businessOptions, setBusinessOptions] = useState<ISelectOption[]>([]);
   const [unitOptions, setUnitOptions] = useState<ISelectOption[]>([]);
@@ -159,8 +160,8 @@ export default function Product() {
       // Sử dụng API mới để lấy sản phẩm theo nhà cung cấp
       const productOptions = await fetchProductsBySupplier(businessId);
 
-      setProductDetailOptions(productOptions);
-      setFilteredProductDetailOptions([...productOptions]);
+      setProductOptions(productOptions);
+      setFilteredProductOptions([...productOptions]);
 
       setIsProductLoading(false);
     } catch (error) {
@@ -344,7 +345,7 @@ export default function Product() {
   ];
 
   const handleAddOrderFormProduct = useCallback(() => {
-    if (filteredProductDetailOptions.length === 0) {
+    if (filteredProductOptions.length === 0) {
       createNotification({
         id: 0,
         children: <Text>Không có sản phẩm nào của nhà cung cấp này</Text>,
@@ -355,7 +356,7 @@ export default function Product() {
     }
 
     setOrderForm(prevOrderForm => {
-      if (prevOrderForm.product_details.length >= filteredProductDetailOptions.length) {
+      if (prevOrderForm.product_details.length >= filteredProductOptions.length) {
         createNotification({
           id: 0,
           children: <Text>Đã thêm tất cả sản phẩm của nhà cung cấp này vào phiếu đặt hàng</Text>,
@@ -366,11 +367,11 @@ export default function Product() {
       }
 
       // Tìm sản phẩm chưa được thêm vào
-      const availableProductDetails = filteredProductDetailOptions.filter(
+      const availableProducts = filteredProductOptions.filter(
         option => !prevOrderForm.product_details.some(detail => detail._id === option.value)
       );
 
-      if (availableProductDetails.length === 0) {
+      if (availableProducts.length === 0) {
         createNotification({
           id: 0,
           children: <Text>Đã thêm tất cả sản phẩm của nhà cung cấp này vào phiếu đặt hàng</Text>,
@@ -381,13 +382,13 @@ export default function Product() {
       }
 
       // Lấy giá nhập mặc định từ option hoặc 0 nếu không có
-      const inputPrice = availableProductDetails[0].input_price || 0;
+      const inputPrice = availableProducts[0].input_price || 0;
 
       const productToAdd = {
-        _id: availableProductDetails[0].value,
+        _id: availableProducts[0].value, // ID của product - đây là ID sản phẩm
         unit_id: unitOptions.length > 0 ? unitOptions[0].value : '',
         quantity: 1,
-        input_price: inputPrice, // Thêm giá nhập mặc định
+        input_price: 0, // Luôn mặc định là 0 để bắt buộc người dùng nhập
       };
 
       return {
@@ -398,7 +399,7 @@ export default function Product() {
         ],
       };
     });
-  }, [filteredProductDetailOptions, unitOptions, createNotification]);
+  }, [filteredProductOptions, unitOptions, createNotification]);
 
   const handleDeleteOrderFormProduct = useCallback((deleteIndex: number) => {
     setOrderForm(prevOrderForm => ({
@@ -485,6 +486,25 @@ export default function Product() {
     e: ChangeEvent<HTMLInputElement>,
     changeIndex: number,
   ): void => {
+    // Chuyển đổi chuỗi thành số bằng cách loại bỏ dấu chấm trong định dạng tiền tệ
+    const rawValue = e.target.value.replace(/\./g, '').replace(/\D/g, '');
+    const numericValue = parseInt(rawValue, 10) || 0;
+
+    // Hiển thị gợi ý khi giá nhập = 0
+    if (numericValue === 0 && e.target.value !== '') {
+      // Tìm tên sản phẩm để hiển thị trong thông báo
+      const productDetail = orderForm.product_details[changeIndex];
+      const productName = filteredProductOptions.find(option => option.value === productDetail?._id)?.label || 'sản phẩm';
+
+      // Hiển thị thông báo nhỏ tạm thời thay vì notification lớn
+      e.target.setCustomValidity(`Vui lòng nhập giá cho ${productName}`);
+      e.target.reportValidity();
+      setTimeout(() => {
+        e.target.setCustomValidity('');
+      }, 2000);
+    }
+
+    // Gán giá trị đã xử lý vào form
     setOrderForm(prevOrderForm => ({
       ...prevOrderForm,
       product_details: [
@@ -495,14 +515,14 @@ export default function Product() {
           if (index === changeIndex)
             return {
               ...orderFormProductDetail,
-              input_price: +e.target.value
+              input_price: numericValue
             }
           else
             return orderFormProductDetail;
         }),
       ],
     }));
-  }, []);
+  }, [orderForm.product_details, filteredProductOptions]);
 
   const handleOpenModal = useCallback((prev: boolean): boolean => {
     // Chỉ trả về false nếu modal đang mở
@@ -592,19 +612,19 @@ export default function Product() {
     return filteredOrders;
   }, [filterOrdersByDate]);
 
-  // Cập nhật filteredProductDetailOptions khi không có sản phẩm
+  // Cập nhật filteredProductOptions khi không có sản phẩm
   useEffect(() => {
-    if (filteredProductDetailOptions.length === 0 && productDetailOptions.length > 0) {
+    if (filteredProductOptions.length === 0 && productOptions.length > 0) {
       // const message = 'Không tìm thấy sản phẩm nào cho nhà cung cấp này';
     }
-  }, [filteredProductDetailOptions, productDetailOptions]);
+  }, [filteredProductOptions, productOptions]);
 
   // Dùng useMemo để tối ưu hóa các option
   // const memoizedFilteredOptions = useMemo(() =>
-  //   productDetailOptions.filter(
+  //   productOptions.filter(
   //     option => option.supplier_id === orderForm.supplier_id
   //   ),
-  //   [productDetailOptions, orderForm.supplier_id]
+  //   [productOptions, orderForm.supplier_id]
   // );
 
   // Dùng useMemo cho dateFilter options
@@ -689,10 +709,6 @@ export default function Product() {
     });
   }, [allOrders, dateFilter]);
 
-  const pagedOrders = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    return filteredOrders.slice(start, start + itemsPerPage);
-  }, [filteredOrders, currentPage, itemsPerPage]);
 
   // Reset trang về 1 khi filter thay đổi
   useEffect(() => {
@@ -738,6 +754,36 @@ export default function Product() {
       return;
     }
 
+    // Kiểm tra giá nhập phải lớn hơn 0
+    const invalidPrice = orderForm.product_details.some(detail => !detail.input_price || detail.input_price <= 0);
+    if (invalidPrice) {
+      // Tìm sản phẩm có giá nhập = 0 để hiển thị thông báo cụ thể hơn
+      const zeroPrice = orderForm.product_details.find(detail => detail.input_price === 0);
+      const emptyPrice = orderForm.product_details.find(detail => !detail.input_price);
+
+      // Hiển thị thông báo tùy theo loại lỗi
+      if (zeroPrice || emptyPrice) {
+        // Lấy tên sản phẩm để hiển thị trong thông báo
+        const productWithIssue = zeroPrice || emptyPrice;
+        const productName = filteredProductOptions.find(option => option.value === productWithIssue?._id)?.label || 'sản phẩm';
+
+        createNotification({
+          id: 0,
+          children: <Text>Vui lòng nhập giá cho sản phẩm {productName}</Text>,
+          type: ENotificationType.ERROR,
+          isAutoClose: true,
+        });
+      } else {
+        createNotification({
+          id: 0,
+          children: <Text>Vui lòng nhập giá nhập lớn hơn 0 cho tất cả sản phẩm</Text>,
+          type: ENotificationType.ERROR,
+          isAutoClose: true,
+        });
+      }
+      return;
+    }
+
     try {
       setIsSaving(true);
       const response = await addCollection(orderForm, collectionName);
@@ -747,8 +793,11 @@ export default function Product() {
         const updatedOrders = await fetchGetCollections<collectionType>(collectionName);
         setAllOrders(updatedOrders);
 
-        // Reset form
-        setOrderForm(DEFAULT_ORDER_FORM);
+        // Reset form nhưng giữ lại supplier_id
+        setOrderForm({
+          ...DEFAULT_ORDER_FORM,
+          supplier_id: orderForm.supplier_id,
+        });
 
         createNotification({
           id: 0,
@@ -757,13 +806,42 @@ export default function Product() {
           isAutoClose: true,
         });
       } else {
-        throw new Error('Failed to save order form');
+        // Cố gắng đọc thông báo lỗi từ response
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
+
+        // Kiểm tra nếu lỗi liên quan đến giá nhập
+        if (errorData?.details?.includes('giá nhập') ||
+          errorData?.message?.includes('giá nhập') ||
+          errorData?.message?.includes('input price') ||
+          errorData?.details?.includes('input price')) {
+          createNotification({
+            id: 0,
+            children: <Text>Vui lòng nhập giá cho tất cả sản phẩm</Text>,
+            type: ENotificationType.ERROR,
+            isAutoClose: true,
+          });
+        } else {
+          throw new Error(errorData?.message || 'Failed to save order form');
+        }
       }
     } catch (error) {
       console.error('Error saving order form:', error);
+
+      // Hiển thị thông báo lỗi cụ thể hơn nếu có
+      let errorMessage = 'Có lỗi xảy ra khi lưu phiếu đặt hàng';
+
+      if (error instanceof Error) {
+        if (error.message.includes('giá nhập') || error.message.includes('input price')) {
+          errorMessage = 'Vui lòng nhập giá cho tất cả sản phẩm';
+        } else if (error.message.includes('số lượng') || error.message.includes('quantity')) {
+          errorMessage = 'Vui lòng nhập số lượng hợp lệ cho tất cả sản phẩm';
+        }
+      }
+
       createNotification({
         id: 0,
-        children: <Text>Có lỗi xảy ra khi lưu phiếu đặt hàng</Text>,
+        children: <Text>{errorMessage}</Text>,
         type: ENotificationType.ERROR,
         isAutoClose: true,
       });
@@ -771,6 +849,14 @@ export default function Product() {
       setIsSaving(false);
     }
   }, [orderForm, isSaving, createNotification]);
+
+  // Hàm định dạng tiền tệ 
+  const formatInputPrice = (value: number | undefined): string => {
+    if (value === undefined || value === null) return "0";
+    // Format số với dấu chấm phân cách hàng nghìn theo chuẩn Việt Nam (1.000.000)
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
 
   return (
     <>
@@ -819,14 +905,14 @@ export default function Product() {
                 <div className={styles['product-form-container']}>
                   <div className={`grid items-center ${styles[`good-receipt-product-table-with-price`]} bg-gradient-to-r from-blue-600 to-blue-500 py-4 px-4 rounded-lg font-medium mb-4 shadow-md text-white`}>
                     <Text className="font-bold">#</Text>
-                    <Text className="font-bold">Sản phẩm</Text>
+                    <Text className="font-bold">Tên sản phẩm</Text>
                     <Text className="font-bold">Giá nhập (đ)</Text>
                     <Text className="font-bold">Đơn vị tính</Text>
                     <Text className="font-bold">Số lượng</Text>
                     <Text className="font-bold">Thao tác</Text>
                   </div>
 
-                  {filteredProductDetailOptions.length === 0 && orderForm.supplier_id && !isProductLoading && (
+                  {filteredProductOptions.length === 0 && orderForm.supplier_id && !isProductLoading && (
                     <div className="text-center py-10 bg-yellow-50 rounded-lg border border-dashed border-yellow-300 mb-4 shadow-inner">
                       <div className="flex flex-col items-center gap-4">
                         <div className="bg-yellow-100 p-3 rounded-full">
@@ -840,7 +926,7 @@ export default function Product() {
                     </div>
                   )}
 
-                  {orderForm.product_details.length === 0 && filteredProductDetailOptions.length > 0 && (
+                  {orderForm.product_details.length === 0 && filteredProductOptions.length > 0 && (
                     <div className="text-center py-10 bg-gray-50 rounded-lg border border-dashed border-gray-300 mb-4 shadow-inner">
                       <div className="flex flex-col items-center gap-4">
                         <div className="bg-blue-50 p-3 rounded-full">
@@ -870,9 +956,9 @@ export default function Product() {
                         className="bg-white border-blue-200 hover:border-blue-400"
                         isLoading={isProductLoading}
                         isDisable={isModalReadOnly}
-                        options={filteredProductDetailOptions}
+                        options={filteredProductOptions}
                         defaultOptionIndex={getSelectedOptionIndex(
-                          filteredProductDetailOptions,
+                          filteredProductOptions,
                           (orderFormProductDetail._id
                             ? orderFormProductDetail._id
                             : 0
@@ -889,7 +975,8 @@ export default function Product() {
                         min={0}
                         name={`input_price`}
                         isDisable={isModalReadOnly}
-                        value={orderFormProductDetail.input_price ? orderFormProductDetail.input_price + `` : "0"}
+                        isRequire={true}
+                        value={formatInputPrice(orderFormProductDetail.input_price)}
                         onInputChange={(e): void =>
                           handleChangeOrderFormProductInputPrice(e, index)
                         }
@@ -941,9 +1028,9 @@ export default function Product() {
 
                   {/* Nút thêm sản phẩm */}
                   <Button
-                    isDisable={isModalReadOnly || isProductLoading || isBusinessLoading || filteredProductDetailOptions.length === 0}
+                    isDisable={isModalReadOnly || isProductLoading || isBusinessLoading || filteredProductOptions.length === 0}
                     onClick={handleAddOrderFormProduct}
-                    className={`flex items-center justify-center gap-2 mt-6 w-full py-4 rounded-lg shadow-md ${styles['sticky-add-button']} ${filteredProductDetailOptions.length === 0 || isModalReadOnly ?
+                    className={`flex items-center justify-center gap-2 mt-6 w-full py-4 rounded-lg shadow-md ${styles['sticky-add-button']} ${filteredProductOptions.length === 0 || isModalReadOnly ?
                       'bg-gray-200 opacity-50 cursor-not-allowed text-gray-500' :
                       'bg-green-600 hover:bg-green-700 text-white hover:shadow-lg transition-all'
                       }`}

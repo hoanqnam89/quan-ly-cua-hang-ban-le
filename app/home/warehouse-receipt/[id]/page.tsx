@@ -5,7 +5,8 @@ import { EButtonType } from '@/components/button/interfaces/button-type.interfac
 import { COMPANY } from '@/constants/company.constant';
 import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import { ECollectionNames } from '@/enums';
-import { IOrderFormProductDetail } from '@/interfaces/order-form.interface';
+import { IBusiness } from '@/interfaces/business.interface';
+import { IOrderForm, IOrderFormProductDetail } from '@/interfaces/order-form.interface';
 import { IPageParams } from '@/interfaces/page-params.interface';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { IProduct } from '@/interfaces/product.interface';
@@ -23,6 +24,14 @@ const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;
 const companyAddress: string = `${COMPANY.address.number} ${COMPANY.address.street} ${COMPANY.address.ward} ${COMPANY.address.district} ${COMPANY.address.city} ${COMPANY.address.country}`;
 const date: string = new Date().toLocaleString();
 
+// Định nghĩa interface cho IWarehouseProductDetail để giải quyết lỗi
+interface IWarehouseProductDetail extends IOrderFormProductDetail {
+  date_of_manufacture?: string;
+  expiry_date?: string;
+  batch_number?: string;
+  input_price: number;
+}
+
 export default function PreviewOrderForm({
   params
 }: IPageParams): ReactElement {
@@ -34,14 +43,16 @@ export default function PreviewOrderForm({
   const [products, setProducts] = useState<IProduct[]>([]);
   const [productDetails, setProductDetails] = useState<IProductDetail[]>([]);
   const [units, setUnits] = useState<IUnit[]>([]);
+  const [supplier, setSupplier] = useState<IBusiness | null>(null);
   const [isOrderFormLoading, setIsOrderFormLoading] = useState<boolean>(true);
   const [isProductsLoading, setIsProductsLoading] = useState<boolean>(true);
   const [isProductDetailsLoading, setIsProductDetailsLoading] = useState<boolean>(true);
   const [isUnitLoading, setIsUnitLoading] = useState<boolean>(true);
+  const [isSupplierLoading, setIsSupplierLoading] = useState<boolean>(true);
 
   useEffect((): void => {
     const getWarehouseReceiptById = async () => {
-      const getWarehouseReceiptApiResponse: Response = 
+      const getWarehouseReceiptApiResponse: Response =
         await getCollectionById(id, collectionName);
       const getWarehouseReceiptApiJson = await getWarehouseReceiptApiResponse.json();
       setWarehouseReceipt(getWarehouseReceiptApiJson);
@@ -49,47 +60,72 @@ export default function PreviewOrderForm({
     }
     const getProducts = async () => {
       const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
-        ECollectionNames.PRODUCT, 
+        ECollectionNames.PRODUCT,
       );
       setProducts([...newProducts]);
       setIsProductsLoading(false);
     }
     const getProductDetails = async () => {
-      const newProductDetails: IProductDetail[] = 
+      const newProductDetails: IProductDetail[] =
         await fetchGetCollections<IProductDetail>(
-          ECollectionNames.PRODUCT_DETAIL, 
+          ECollectionNames.PRODUCT_DETAIL,
         );
       setProductDetails([...newProductDetails]);
       setIsProductDetailsLoading(false);
     }
     const getUnits = async () => {
       const newUnits: IUnit[] = await fetchGetCollections<IUnit>(
-        ECollectionNames.UNIT, 
+        ECollectionNames.UNIT,
       );
       setUnits([...newUnits]);
       setIsUnitLoading(false);
     }
 
-    getWarehouseReceiptById();
+    const getBusinesses = async () => {
+      try {
+        const businesses: IBusiness[] = await fetchGetCollections<IBusiness>(
+          ECollectionNames.BUSINESS,
+        );
+        setIsSupplierLoading(false);
+
+        const getWarehouseReceiptApiResponse: Response =
+          await getCollectionById(id, collectionName);
+        const warehouseReceiptData = await getWarehouseReceiptApiResponse.json();
+        setWarehouseReceipt(warehouseReceiptData);
+        setIsOrderFormLoading(false);
+
+        if (warehouseReceiptData && warehouseReceiptData.supplier_id) {
+          const supplierData = businesses.find(b => b._id === warehouseReceiptData.supplier_id);
+          if (supplierData) {
+            setSupplier(supplierData);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching businesses:", error);
+        setIsSupplierLoading(false);
+      }
+    };
+
     getProducts();
     getProductDetails();
     getUnits();
-  }, [id]);
+    getBusinesses();
+  }, [id, warehouseReceipt.supplier_id]);
 
   const printInvoice = async (): Promise<void> => {
     await toPdf(invoiceRef);
   }
 
   const getProduct = (id: string): IProduct | undefined => {
-    return products.find((product: IProduct): boolean => product._id === 
-      productDetails.find((productDetail: IProductDetail): boolean => 
+    return products.find((product: IProduct): boolean => product._id ===
+      productDetails.find((productDetail: IProductDetail): boolean =>
         productDetail._id === id
       )?.product_id
     );
   }
 
   const getProductDetail = (id: string): IProductDetail | undefined => {
-    return productDetails.find((productDetail: IProductDetail): boolean => 
+    return productDetails.find((productDetail: IProductDetail): boolean =>
       productDetail._id === id
     );
   }
@@ -98,101 +134,166 @@ export default function PreviewOrderForm({
     return units.find((unit: IUnit): boolean => unit._id === id);
   }
 
-  const getTotalPrice = () => warehouseReceipt.product_details.reduce(
-    (accumulator: number, currentValue: IOrderFormProductDetail): number => {
-      const foundProduct: IProduct | undefined = getProduct(currentValue._id);
+  const formatDate = (dateString: string | Date | undefined): string => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('vi-VN');
+  }
+
+  const getTotalPrice = (): number => warehouseReceipt.product_details.reduce(
+    (accumulator: number, currentValue: IWarehouseProductDetail): number => {
       const foundUnit: IUnit | undefined = getUnit(currentValue.unit_id);
+      const inputPrice = typeof currentValue.input_price === 'number' ? currentValue.input_price : 0;
 
-      if (!foundProduct || !foundUnit)
-        return 0;
+      if (!foundUnit) return accumulator;
 
-      return accumulator + foundProduct.input_price * currentValue.quantity * foundUnit.equal;
-    }, 
+      return accumulator + inputPrice * currentValue.quantity;
+    },
     0
   );
 
   const getTotalQuantity = (): number => warehouseReceipt.product_details.reduce(
-    (accumulator: number, currentValue: IOrderFormProductDetail): number => 
-      accumulator + currentValue.quantity, 
+    (accumulator: number, currentValue: IOrderFormProductDetail): number =>
+      accumulator + currentValue.quantity,
     0
   );
 
+  const getItemTotal = (item: IWarehouseProductDetail): number => {
+    const price = typeof item.input_price === 'number' ? item.input_price : 0;
+    return price * item.quantity;
+  };
+
   return (
     (
-      isOrderFormLoading || 
-      isProductsLoading || 
-      isProductDetailsLoading || 
-      isUnitLoading
-    ) 
+      isOrderFormLoading ||
+      isProductsLoading ||
+      isProductDetailsLoading ||
+      isUnitLoading ||
+      isSupplierLoading
+    )
       ? <LoadingScreen></LoadingScreen>
       : <>
-        <div 
-          ref={invoiceRef} 
-          className="bg-white p-4 rounded-xl shadow-xl border border-gray-100 pt-4"
-        >
-          <div className="w-full space-y-4 px-8">
+        <div className="max-w-5xl mx-auto mt-4 mb-2">
+          <Button
+            type={EButtonType.TRANSPARENT}
+            onClick={() => window.history.back()}
+            className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-sm font-medium rounded-lg border border-gray-300 shadow-sm"
+          >
+            <span className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                <path d="M19 12H5"></path>
+                <path d="M12 19l-7-7 7-7"></path>
+              </svg>
+              Quay lại
+            </span>
+          </Button>
+        </div>
 
-            <div className="flex justify-between items-start border-b-2 border-gray-300 pb-2">
+        <div
+          ref={invoiceRef}
+          className="bg-white p-6 rounded-xl shadow-xl border border-gray-100 max-w-5xl mx-auto my-4"
+        >
+          <div className="w-full space-y-6 px-8">
+
+            <div className="flex justify-between items-start border-b-2 border-gray-300 pb-4">
               <div className="space-y-1">
                 <p className="font-bold text-xl text-gray-900">{COMPANY.name}</p>
                 <p className="text-gray-700">{companyAddress}</p>
                 <p className="text-gray-700">Hotline: {COMPANY.phone}</p>
               </div>
               <div className="text-right space-y-1">
-                <p className="font-medium text-gray-700">Số phiếu: {COMPANY.number}</p>
-                <p className="text-gray-700">Ngày: {
-                  new Date(COMPANY.created_at).toLocaleString()
-                }</p>
+                <p className="font-medium text-gray-700">Số phiếu: {id.substring(id.length - 6)}</p>
+                <p className="text-gray-700">Ngày: {formatDate(warehouseReceipt.created_at)}</p>
               </div>
             </div>
 
-            <div className="text-center py-2 border-b-2 border-gray-300">
+            <div className="text-center py-3 border-b-2 border-gray-300">
               <h1 className="text-3xl font-bold text-gray-900">{
                 translateCollectionName(collectionName)
               }</h1>
             </div>
 
+            {/* Thông tin nhà cung cấp */}
+            {supplier && (
+              <div className="bg-blue-50 p-5 rounded-lg border-2 border-blue-300 mb-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="border-r border-blue-200 pr-4">
+                    <h2 className="font-bold text-blue-800 text-lg mb-3 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      Thông tin nhà cung cấp
+                    </h2>
+                    <p className="font-medium text-gray-800 text-lg">{supplier.name}</p>
+                    {supplier.address && (
+                      <p className="text-gray-700 mt-2">
+                        <span className="font-medium">Địa chỉ:</span> {supplier.address.number} {supplier.address.street}, {supplier.address.ward}, {supplier.address.district}, {supplier.address.city}
+                      </p>
+                    )}
+                    {supplier.email && <p className="text-gray-700 mt-1"><span className="font-medium">Email:</span> {supplier.email}</p>}
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-blue-800 text-lg mb-3 flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      Chi tiết phiếu nhập kho
+                    </h2>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-gray-700"><span className="font-medium">Mã phiếu:</span> {id.substring(id.length - 6)}</p>
+                        <p className="text-gray-700 mt-1"><span className="font-medium">Ngày nhập:</span> {formatDate(warehouseReceipt.created_at)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-700"><span className="font-medium">Số mặt hàng:</span> {warehouseReceipt.product_details.length}</p>
+                        <p className="text-gray-700 mt-1"><span className="font-medium">Tổng tiền:</span> <span className="font-bold text-green-700">{formatCurrency(getTotalPrice())} đ</span></p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="overflow-x-auto border-2 border-gray-300 rounded-lg">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-100">
-                    <th 
-                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[5%]"
+                  <tr className="bg-green-100">
+                    <th
+                      className="py-3 px-4 text-center font-bold text-gray-900 border-y-2 border-gray-300 w-[30px]"
                     >
-                      STT
+                      #
                     </th>
-                    <th 
-                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[35%]"
+                    <th
+                      className="py-3 px-4 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[35%]"
                     >
                       Tên sản phẩm
                     </th>
-                    <th 
-                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
+                    <th
+                      className="py-3 px-4 text-center font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
                     >
                       Đơn vị
                     </th>
-                    <th 
-                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]"
+                    <th
+                      className="py-3 px-4 text-center font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
                     >
-                      Ngày sản xuất
+                      NSX
                     </th>
-                    <th 
-                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]"
+                    <th
+                      className="py-3 px-4 text-center font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
                     >
-                      Hạn sử dụng
+                      HSD
                     </th>
-                    <th 
-                      className="py-2 px-3 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
+                    <th
+                      className="py-3 px-4 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
                     >
                       Giá
                     </th>
-                    <th 
-                      className="py-2 px-3 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
+                    <th
+                      className="py-3 px-4 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
                     >
                       Số lượng
                     </th>
-                    <th 
-                      className="py-2 px-3 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]"
+                    <th
+                      className="py-3 px-4 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]"
                     >
                       Tổng tiền
                     </th>
@@ -200,64 +301,58 @@ export default function PreviewOrderForm({
                 </thead>
                 <tbody>
                   {warehouseReceipt.product_details.map((item, index) => (
-                    <tr 
-                      key={index} 
+                    <tr
+                      key={index}
                       className="hover:bg-gray-50 transition-colors duration-150"
                     >
-                      <td 
-                        className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
+                      <td
+                        className="py-3 px-4 border-b-2 border-gray-300 text-gray-700 font-medium text-center"
                       >
                         {index + 1}
                       </td>
-                      <td 
-                        className="py-2 px-3 border-b-2 border-gray-300 text-gray-900 font-medium"
+                      <td
+                        className="py-3 px-4 border-b-2 border-gray-300 text-gray-900 font-medium"
                       >
                         {getProduct(item._id)?.name}
                       </td>
-                      <td 
-                        className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
+                      <td
+                        className="py-3 px-4 border-b-2 border-gray-300 text-gray-700 font-medium text-center"
                       >
                         {getUnit(item.unit_id)?.name}
                       </td>
-                      <td 
-                        className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
+                      <td
+                        className="py-3 px-4 border-b-2 border-gray-300 text-gray-700 font-medium text-center"
                       >
-                        {new Date(
-                          getProductDetail(item._id)?.date_of_manufacture || 
-                          new Date()
-                        ).toLocaleDateString()}
+                        {formatDate((item as IWarehouseProductDetail).date_of_manufacture)}
                       </td>
-                      <td 
-                        className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
+                      <td
+                        className="py-3 px-4 border-b-2 border-gray-300 text-gray-700 font-medium text-center"
                       >
-                        {new Date(
-                          getProductDetail(item._id)?.expiry_date || 
-                          new Date()
-                        ).toLocaleDateString()}
+                        {formatDate((item as IWarehouseProductDetail).expiry_date)}
                       </td>
-                      <td 
-                        className="py-2 px-3 text-right border-b-2 border-gray-300 text-gray-700 font-medium"
+                      <td
+                        className="py-3 px-4 text-right border-b-2 border-gray-300 text-gray-700 font-medium"
                       >
-                        {formatCurrency( getProduct(item._id)?.input_price || 0 )}
+                        {formatCurrency(typeof item.input_price === 'number' ? item.input_price : 0)}
                       </td>
-                      <td 
-                        className="py-2 px-3 text-right border-b-2 border-gray-300 text-gray-700 font-medium"
+                      <td
+                        className="py-3 px-4 text-right border-b-2 border-gray-300 text-gray-700 font-medium"
                       >
                         {item.quantity}
                       </td>
-                      <td 
-                        className="py-2 px-3 text-right border-b-2 border-gray-300 font-bold text-gray-900"
+                      <td
+                        className="py-3 px-4 text-right border-b-2 border-gray-300 font-bold text-gray-900"
                       >
-                        {formatCurrency( (getProduct(item._id)?.input_price || 0) * item.quantity * (getUnit(item.unit_id)?.equal || 0) )}
+                        {formatCurrency(getItemTotal(item as IWarehouseProductDetail))}
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-gray-100">
-                    <td colSpan={6} className="py-2 px-3 font-bold text-gray-900 border-t-2 border-gray-300">Tổng cộng</td>
-                    <td className="py-2 px-3 text-right font-bold text-gray-900 border-t-2 border-gray-300">{getTotalQuantity()}</td>
-                    <td className="py-2 px-3 text-right font-bold text-gray-900 border-t-2 border-gray-300">{formatCurrency( getTotalPrice() )}</td>
+                  <tr className="bg-green-100">
+                    <td colSpan={6} className="py-3 px-4 font-bold text-gray-900 border-t-2 border-gray-300">Tổng cộng</td>
+                    <td className="py-3 px-4 text-right font-bold text-gray-900 border-t-2 border-gray-300">{getTotalQuantity()}</td>
+                    <td className="py-3 px-4 text-right font-bold text-gray-900 border-t-2 border-gray-300">{formatCurrency(getTotalPrice())} đ</td>
                   </tr>
                 </tfoot>
               </table>
@@ -277,14 +372,27 @@ export default function PreviewOrderForm({
             </div>
 
             <div className="text-right text-gray-700 pt-4">
-              <p className="font-bold">{companyAddress}, {date}</p>
+              <p className="font-bold">{COMPANY.address.city}, {formatDate(new Date())}</p>
             </div>
           </div>
         </div>
 
-        <Button type={EButtonType.INFO} onClick={printInvoice}>
-          <Text>In hóa đơn</Text>
-        </Button>
-      </> 
+        <div className="max-w-5xl mx-auto mb-10 flex justify-end">
+          <Button
+            type={EButtonType.INFO}
+            onClick={printInvoice}
+            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-md"
+          >
+            <span className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+              </svg>
+              In phiếu nhập kho
+            </span>
+          </Button>
+        </div>
+      </>
   )
 }
