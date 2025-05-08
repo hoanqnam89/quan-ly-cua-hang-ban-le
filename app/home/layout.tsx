@@ -122,17 +122,17 @@ export default function RootLayout({
           label: `Thông tin cá nhân`,
           icon: circleUserRoundIcon,
         },
+        {
+          link: `${currentPath}/`,
+          label: `Báo cáo thống kê`,
+          icon: settingIcon,
+        },
+        {
+          link: `${currentPath}/setting`,
+          label: `Cài đặt`,
+          icon: settingIcon,
+        },
       ]
-    },
-    {
-      link: `${currentPath}/`,
-      label: `Báo cáo thống kê`,
-      icon: settingIcon,
-    },
-    {
-      link: `${currentPath}/setting`,
-      label: `Cài đặt`,
-      icon: settingIcon,
     },
   ];
 
