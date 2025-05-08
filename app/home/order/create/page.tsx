@@ -245,9 +245,6 @@ export default function CreateOrder() {
             case 'transfer':
                 setDisplayPaymentText('Thanh toán chuyển khoản');
                 break;
-            case 'card':
-                setDisplayPaymentText('Thanh toán qua thẻ');
-                break;
             default:
                 setDisplayPaymentText('Thanh toán tiền mặt');
         }

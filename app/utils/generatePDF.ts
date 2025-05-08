@@ -99,11 +99,11 @@ const createReceiptHTML = (orderData: OrderData) => {
                 </div>
                 <div style="display: flex; justify-content: space-between; font-weight: bold;font-size: 10px;">
                     <span>Tiền khách đưa:</span>
-                    <span>${formatCurrency(parseFloat(orderData.customerPayment)).replace(' ₫', '')}</span>
+                    <span>${formatCurrency(orderData.totalAmount).replace(' ₫', '')}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-weight: bold;font-size: 10px;">
                     <span>Tiền thối lại:</span>
-                    <span>${formatCurrency(orderData.totalAmount - parseFloat(orderData.customerPayment)).replace(' ₫', '')}</span>
+                    <span>${formatCurrency(Number(orderData.changeAmount.replace(/,/g, ''))).replace(' ₫', '')}</span>
                 </div>
             </div>
 
