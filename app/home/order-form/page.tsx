@@ -671,6 +671,13 @@ export default function Product() {
     try {
       const orders = await fetchGetCollections<collectionType>(collectionName);
       setAllOrders(orders);
+              const newOrders = orders.map((order) => {
+                const newOrder = {...order};
+                newOrder.product = generateOrderCode(order._id) 
+            
+                return newOrder;          
+              })
+               setAllOrders(newOrders)
     } catch (e) {
       // handle error
     } finally {

@@ -129,15 +129,40 @@ export default function Product() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        const newBusinesses: IBusiness[] = await fetchGetCollections<IBusiness>(
+          ECollectionNames.BUSINESS,
+        );
+        const newSuppliers: IBusiness[] = newBusinesses.filter((
+          business: IBusiness
+        ): boolean =>
+          business.type !== EBusinessType.SUPPLIER
+        );
+        const newCategories: ICategory[] = await fetchGetCollections<ICategory>(
+          ECollectionNames.CATEGORY,
+        );
         console.log('Đang fetch dữ liệu sản phẩm...');
         const fetchedProducts = await fetchGetCollections<IProduct>(ECollectionNames.PRODUCT);
-        console.log('Dữ liệu sản phẩm:', fetchedProducts);
+        console.log('Dữ liệu sản phẩm:', fetchedProducts);  
         setProducts(fetchedProducts);
+        console.log('acbc',fetchedProducts)
+        const newProducts = fetchedProducts.map((product) => {
+          const newProduct = {...product};
+          const foundCategory = newCategories.find((category) => category._id === product.category_id)
+          newProduct.category = foundCategory?.name 
+      
+          const foundSupplier = newSuppliers.find((supplier2) => supplier2._id === product.supplier_id)
+          newProduct.supplier = foundSupplier?.name
+          return newProduct;          
+        })
+        console.log('abc2', newProducts) 
+         setProducts(newProducts)
       } catch (error) {
         console.error('Lỗi khi lấy danh sách sản phẩm:', error);
       }
     };
     fetchProducts();
+  }, []);
+  useEffect(() => {
   }, []);
 
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
@@ -438,6 +463,8 @@ export default function Product() {
   }
 
   const productsList = Array.isArray(products) ? products : [product];
+  
+  
 
   return (
     <ManagerPage<collectionType>

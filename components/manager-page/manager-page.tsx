@@ -178,9 +178,7 @@ export default function ManagerPage<T extends { _id: string }>({
         setCollection({ ...defaultCollection })
       setIsAddCollectionModalOpen((prev: boolean): boolean => handleOpenModal(prev));
     },
-    [
-      setIsModalReadonly,
-    ],
+    [setIsModalReadonly],
   );
 
   const handleAddCollection = async (): Promise<void> => {
