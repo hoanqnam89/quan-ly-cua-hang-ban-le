@@ -25,8 +25,8 @@ const collectionName: ECollectionNames = ECollectionNames.USER;
 const defaultCollection: collectionType = DEFAULT_USER;
 const genderOptions: ISelectOption[] = enumToKeyValueArray(EUserGender)
   .map((array: string[]): ISelectOption => ({
-    label: array[0], 
-    value: array[1], 
+    label: array[0],
+    value: array[1],
   }));
 
 export default function Detail({
@@ -42,12 +42,12 @@ export default function Detail({
   const getAccounts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
       const newAccounts: IAccount[] = await fetchGetCollections<IAccount>(
-        ECollectionNames.ACCOUNT, 
+        ECollectionNames.ACCOUNT,
       );
 
       setCollection({
-        ...collection, 
-        account_id: newAccounts[0]._id, 
+        ...collection,
+        account_id: newAccounts[0]._id,
       });
       setAccountOptions([
         ...newAccounts.map((account: IAccount): ISelectOption => ({
@@ -56,7 +56,7 @@ export default function Detail({
         }))
       ]);
       setIsLoading(false);
-    }, 
+    },
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
     [collection.account_id],
   );
@@ -65,10 +65,10 @@ export default function Detail({
     getAccounts();
     /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
-  
+
   useEffect((): void => {
     const getCollectionNameById = async () => {
-      const getCollectionApiResponse: Response = 
+      const getCollectionApiResponse: Response =
         await getCollectionById(id, collectionName);
       const getCollectionApiJson = await getCollectionApiResponse.json();
       setCollection(getCollectionApiJson);
@@ -84,7 +84,7 @@ export default function Detail({
       <InputSection label={`Cho tài khoản`}>
         <div className={`flex items-center justify-center gap-2`}>
           {createCollectionDetailLink(
-            ECollectionNames.ACCOUNT, 
+            ECollectionNames.ACCOUNT,
             collection.account_id
           )}
 
@@ -192,7 +192,7 @@ export default function Detail({
         </TextInput>
       </InputSection>
 
-      {collection.birthday ? 
+      {collection.birthday ?
         <InputSection label={`Ngày sinh`}>
           <DateInput
             name={`birthday`}
@@ -208,26 +208,26 @@ export default function Detail({
           isDisable={true}
           options={genderOptions}
           defaultOptionIndex={getSelectedOptionIndex(
-            genderOptions, 
-            (collection.gender 
-              ? collection.gender 
+            genderOptions,
+            (collection.gender
+              ? collection.gender
               : EUserGender.FEMALE
             ) as unknown as string
           )}
         >
         </SelectDropdown>
       </InputSection>
-    
+
       <InputSection label={`Hình đại diện của nhân viên`}>
         <div>
           <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
             {
-              collection.avatar ? <div 
+              collection.avatar ? <div
                 className={`relative ${styles[`image-container`]}`}
               >
-                <Image 
+                <Image
                   className={`w-full max-w-full max-h-full`}
-                  src={collection.avatar} 
+                  src={collection.avatar}
                   alt={``}
                   width={0}
                   height={0}
@@ -236,7 +236,7 @@ export default function Detail({
                 </Image>
               </div> : <></>
             }
-          </div> 
+          </div>
         </div>
       </InputSection>
 

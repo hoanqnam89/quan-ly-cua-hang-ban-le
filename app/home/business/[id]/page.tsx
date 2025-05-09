@@ -23,8 +23,8 @@ const defaultCollection: collectionType = DEFAULT_BUSINESS;
 const gridColumns: string = `200px 1fr`;
 const businessTypeOptions: ISelectOption[] = enumToKeyValueArray(EBusinessType)
   .map((array: string[]): ISelectOption => ({
-    label: array[0], 
-    value: array[1], 
+    label: array[0],
+    value: array[1],
   }));
 
 export default function Detail({
@@ -38,7 +38,7 @@ export default function Detail({
 
   useEffect((): void => {
     const getCollectionNameById = async () => {
-      const getCollectionApiResponse: Response = 
+      const getCollectionApiResponse: Response =
         await getCollectionById(id, collectionName);
       const getCollectionApiJson = await getCollectionApiResponse.json();
       setCollection(getCollectionApiJson);
@@ -74,8 +74,8 @@ export default function Detail({
           isDisable={true}
           options={businessTypeOptions}
           defaultOptionIndex={getSelectedOptionIndex(
-            businessTypeOptions, 
-            (collection.type 
+            businessTypeOptions,
+            (collection.type
               ? collection.type
               : EBusinessType.MANUFACTURER
             ) as unknown as string
@@ -88,12 +88,12 @@ export default function Detail({
         <div>
           <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
             {
-              collection.logo ? <div 
+              collection.logo ? <div
                 className={`relative ${styles[`image-container`]}`}
               >
-                <Image 
+                <Image
                   className={`w-full max-w-full max-h-full`}
-                  src={collection.logo} 
+                  src={collection.logo}
                   alt={``}
                   width={0}
                   height={0}
@@ -102,7 +102,7 @@ export default function Detail({
                 </Image>
               </div> : <></>
             }
-          </div> 
+          </div>
         </div>
       </InputSection>
 

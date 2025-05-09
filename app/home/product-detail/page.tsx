@@ -10,7 +10,7 @@ import { infoIcon, trashIcon, externalLinkIcon } from '@/public';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
-import { IProduct } from '../../interfaces/product.interface';
+import { IProduct } from '@/interfaces/product.interface';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
@@ -27,7 +27,25 @@ import { EButtonType } from '@/components/button/interfaces/button-type.interfac
 import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { formatCurrency } from '@/utils/format-currency';
 import Image from 'next/image';
-import ProductGroupList from '../../components/ProductGroupList';
+import ProductGroupList from '@/components/ProductGroupList';
+import { generateBatchNumber } from '@/utils/batch-number';
+import dynamic from 'next/dynamic';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Tạo QueryClient instance
+const queryClient = new QueryClient();
+
+// Import Barcode component
+const ReactBarcode = dynamic(() => import('react-barcode'), { ssr: false });
+
+// Component wrapper với QueryClientProvider 
+function ProductDetailWithQueryClientProvider() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ProductDetail />
+    </QueryClientProvider>
+  );
+}
 
 interface ModalProps {
   isOpen: boolean;
@@ -94,10 +112,16 @@ interface ExpirationModalProps {
   onDeleteSuccess?: (deletedDetailId: string) => void;
 }
 
-function ExpirationModal({ isOpen, setIsOpen }: ExpirationModalProps) {
+function ExpirationModal({ isOpen, setIsOpen, onDeleteSuccess }: ExpirationModalProps) {
   const [loading, setLoading] = useState(false);
   const [expired, setExpired] = useState<Array<{ product: IProduct, detail: IProductDetail, daysExpired: number }>>([]);
   const [expiring, setExpiring] = useState<Array<{ product: IProduct, detail: IProductDetail, daysLeft: number }>>([]);
+
+  // Title màu đẹp hơn
+  const titleStyle = "text-xl font-bold mb-2 text-gray-800";
+  const sectionStyle = "bg-white rounded-lg shadow-md border border-gray-200 p-5 mb-6 overflow-hidden";
+
+  const onClose = () => setIsOpen(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -131,14 +155,14 @@ function ExpirationModal({ isOpen, setIsOpen }: ExpirationModalProps) {
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black opacity-40" onClick={() => setIsOpen(false)}></div>
+        <div className="fixed inset-0 bg-black opacity-40" onClick={onClose}></div>
         <div className="relative bg-white rounded-lg shadow-xl w-11/12 max-w-4xl">
-          <button onClick={() => setIsOpen(false)} className="absolute right-4 top-4 text-gray-400 hover:text-gray-500">
+          <button onClick={onClose} className="absolute right-4 top-4 text-gray-400 hover:text-gray-500">
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
           <div className="p-6">
             <div className="flex justify-between items-center mb-8">
-              <Text size={24} className="text-gray-900 font-bold">Kiểm tra hạn sử dụng sản phẩm</Text>
+              <Text size={24} className={titleStyle}>Kiểm tra hạn sử dụng sản phẩm</Text>
             </div>
             {loading ? (
               <div className="flex items-center justify-center p-8">
@@ -147,12 +171,14 @@ function ExpirationModal({ isOpen, setIsOpen }: ExpirationModalProps) {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="bg-white rounded-lg border border-red-100 overflow-hidden">
-                  <div className="p-4 border-b border-red-100 bg-red-50 flex items-center">
-                    <div className="flex-shrink-0 bg-red-100 rounded-full p-2">
-                      <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <div className={sectionStyle}>
+                  <div className="flex items-center mb-4">
+                    <div className="flex-shrink-0 mr-3 bg-red-100 rounded-full p-2">
+                      <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                     </div>
-                    <div className="ml-3">
+                    <div>
                       <Text size={16} className="font-semibold text-gray-900">Sản phẩm hết hạn</Text>
                       <Text size={12} className="text-gray-500">Có {expired.length} sản phẩm đã hết hạn</Text>
                     </div>
@@ -185,12 +211,15 @@ function ExpirationModal({ isOpen, setIsOpen }: ExpirationModalProps) {
                     </table>
                   </div>
                 </div>
-                <div className="bg-white rounded-lg border border-yellow-100 overflow-hidden">
-                  <div className="p-4 border-b border-yellow-100 bg-yellow-50 flex items-center">
-                    <div className="flex-shrink-0 bg-yellow-100 rounded-full p-2">
-                      <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+
+                <div className={sectionStyle}>
+                  <div className="flex items-center mb-4">
+                    <div className="flex-shrink-0 mr-3 bg-yellow-100 rounded-full p-2">
+                      <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
                     </div>
-                    <div className="ml-3">
+                    <div>
                       <Text size={16} className="font-semibold text-gray-900">Sản phẩm sắp hết hạn</Text>
                       <Text size={12} className="text-gray-500">Có {expiring.length} sản phẩm sắp hết hạn trong vòng 30 ngày tới</Text>
                     </div>
@@ -235,22 +264,15 @@ function ExpirationModal({ isOpen, setIsOpen }: ExpirationModalProps) {
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
 
-export default function Product() {
+function ProductDetail() {
   const { createNotification, notificationElements } = useNotificationsHook();
-  const [productDetail, setProductDetail] = useState<collectionType>(
-    DEFAULT_PROCDUCT_DETAIL
-  );
+
+  const [productDetail, setProductDetail] = useState<collectionType>(DEFAULT_PROCDUCT_DETAIL);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [productOptions, setProductOptions] = useState<ISelectOption[]>([]);
-  const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
-    id: '',
-    isClicked: false,
-  });
-  const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({
-    id: '',
-    isClicked: false,
-  });
+  const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({ id: '', isClicked: false });
+  const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({ id: '', isClicked: false });
   const [isExpirationModalOpen, setIsExpirationModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedProductDetail, setSelectedProductDetail] = useState<{ id: string; name: string } | null>(null);
@@ -263,127 +285,139 @@ export default function Product() {
   const [productStockInfo, setProductStockInfo] = useState<Record<string, number>>({});
   const [productDetails, setProductDetails] = useState<IProductDetail[]>([]);
 
-  const getProducts: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
-        ECollectionNames.PRODUCT,
-      );
+  // Hàm tải tất cả dữ liệu cần thiết một lần với tối ưu 
+  const fetchAllData = useCallback(async () => {
+    console.log('Đang tải dữ liệu sản phẩm...');
+    try {
+      setIsLoading(true);
 
-      setProductDetail({
-        ...productDetail,
-        product_id: newProducts[0]._id,
-      });
-      setProductOptions([
-        ...newProducts.map((product: IProduct): ISelectOption => ({
-          label: `${product.name}`,
-          value: product._id,
-        }))
-      ]);
-      setIsLoading(false);
-    },
-    [],
-  );
+      // Tải dữ liệu song song với timeout để tránh request quá nhiều
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-  const handleExpirationModalDelete = useCallback(() => {
-    setRefreshTrigger(prev => prev + 1);
-    createNotification({
-      type: ENotificationType.SUCCESS,
-      children: <div>Đã xóa sản phẩm hết hạn thành công</div>,
-      isAutoClose: true,
-      id: 0,
-    });
-  }, [createNotification]);
-
-  useEffect(() => {
-    if (refreshTrigger > 0) {
-      const refreshData = async () => {
-        try {
-          setIsLoading(true);
-          const detailsResponse = await fetch('/api/product-detail');
-          const details = await detailsResponse.json();
-          setProductDetails(details.filter((detail: IProductDetail) => detail.input_quantity > 0));
-          await getProducts();
-        } catch (error) {
-          console.error('Lỗi khi làm mới dữ liệu:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      refreshData();
-    }
-  }, [refreshTrigger, getProducts]);
-
-  useEffect(() => {
-    const refreshPage = async () => {
-      if (currentPage > 0) {
-        try {
-          setIsLoading(true);
-          const detailsResponse = await fetch('/api/product-detail');
-          const details = await detailsResponse.json();
-          setProductDetails(details.filter((detail: IProductDetail) => detail.input_quantity > 0));
-          await getProducts();
-        } catch (error) {
-          console.error('Lỗi khi chuyển trang:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-    refreshPage();
-  }, [currentPage, getProducts]);
-
-  useEffect((): void => {
-    getProducts();
-  }, []);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
       try {
-        const response = await fetch('/api/product');
-        const data = await response.json();
-        setProducts(data);
+        const [productResponse, detailsResponse] = await Promise.all([
+          fetch('/api/product', { signal: controller.signal }),
+          fetch('/api/product-detail', { signal: controller.signal })
+        ]);
 
-        // Tính toán tồn kho cho mỗi sản phẩm
+        clearTimeout(timeoutId);
+
+        if (!productResponse.ok || !detailsResponse.ok) {
+          throw new Error('Lỗi khi tải dữ liệu từ API');
+        }
+
+        const productsData = await productResponse.json();
+        const detailsData = await detailsResponse.json();
+
+        // Lưu dữ liệu gốc
+        setProducts(productsData);
+
+        // Xử lý options dropdown bằng useMemo (được xử lý bởi React)
+        const dropdownOptions = productsData.map((product: IProduct): ISelectOption => ({
+          label: product.name || '',
+          value: product._id,
+        }));
+        setProductOptions(dropdownOptions);
+
+        // Thiết lập sản phẩm mặc định nếu chưa có
+        if (!productDetail.product_id && productsData.length > 0) {
+          setProductDetail(prev => ({
+            ...prev,
+            product_id: productsData[0]._id,
+          }));
+        }
+
+        // Tính toán tồn kho từ chi tiết sản phẩm
         const stockInfo: Record<string, number> = {};
-        const detailsResponse = await fetch('/api/product-detail');
-        const details = await detailsResponse.json();
-
-        details.forEach((detail: IProductDetail) => {
+        detailsData.forEach((detail: IProductDetail) => {
           if (!stockInfo[detail.product_id]) {
             stockInfo[detail.product_id] = 0;
           }
           stockInfo[detail.product_id] += (detail.input_quantity - detail.output_quantity);
         });
-
         setProductStockInfo(stockInfo);
-        setProductDetails(details.filter((detail: IProductDetail) => detail.input_quantity > 0));
-        const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
-          ECollectionNames.PRODUCT,
+
+        // Xử lý và lọc chi tiết sản phẩm - chỉ lọc các phần tử có số lượng nhập > 0
+        const filteredDetails = detailsData.filter(
+          (detail: IProductDetail) => detail.input_quantity > 0
         );
 
-        const newDetails = details.filter((detail: IProductDetail) => detail.input_quantity > 0); 
-        const newDetails2 = newDetails.map((detail) => {
-          const newDetail = {...detail};
-          const foundDetail = newProducts.find((product) => product._id === newDetail.product_id)
-          newDetail.product = foundDetail?.name 
-      
-          return newDetail;          
-        })
-         setProductDetails(newDetails2)
-      } catch (error) {
-        console.error('Error fetching products:', error);
-      }
-    };
+        // Gộp thông tin sản phẩm và chi tiết
+        const processedDetails = filteredDetails.map((detail: IProductDetail) => {
+          const product = productsData.find((p: IProduct) => p._id === detail.product_id);
+          return {
+            ...detail,
+            product: product?.name || 'Không xác định'
+          };
+        });
 
-    fetchProducts();
-  }, []);
+        console.log(`Đã tải ${processedDetails.length} chi tiết sản phẩm thành công`);
+        setProductDetails(processedDetails);
+      } catch (fetchError: any) {
+        if (fetchError.name === 'AbortError') {
+          console.log('Fetch request timed out');
+        } else {
+          throw fetchError;
+        }
+      }
+    } catch (error) {
+      console.error('Lỗi khi tải dữ liệu:', error);
+      createNotification({
+        children: 'Không thể tải dữ liệu sản phẩm',
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+        id: Math.random()
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [createNotification, productDetail.product_id]);
+
+  // Tải dữ liệu ban đầu một lần duy nhất khi component mount
+  useEffect(() => {
+    console.log('Component mounted - Tải dữ liệu lần đầu');
+    // Tải dữ liệu khi component mount
+    fetchAllData();
+
+    // Thiết lập interval với thời gian dài (5 phút) để giảm số lần gọi API
+    const intervalId = setInterval(() => {
+      console.log('Tự động làm mới dữ liệu sản phẩm (mỗi 5 phút)');
+      fetchAllData();
+    }, 300000); // 5 phút = 300000ms
+
+    // Cleanup khi unmount
+    return () => {
+      console.log('Hủy interval làm mới dữ liệu');
+      clearInterval(intervalId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - chỉ chạy một lần khi mount
+
+  // Chỉ làm mới khi người dùng yêu cầu (click nút refresh hoặc chuyển trang)
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      console.log('Làm mới theo yêu cầu người dùng');
+      fetchAllData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshTrigger]);
+
+  // Chỉ làm mới khi thay đổi trang
+  useEffect(() => {
+    if (currentPage > 0) {
+      console.log('Làm mới khi thay đổi trang');
+      fetchAllData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps  
+  }, [currentPage]);
 
   const columns: Array<IColumnProps<collectionType>> = [
     {
       key: 'index',
       ref: useRef(null),
       title: '#',
-      size: '1fr',
+      size: '50px'
     },
     {
       key: `product_id`,
@@ -395,9 +429,24 @@ export default function Product() {
           option => option.value === collection.product_id
         );
         const name = productOption?.label || 'Không xác định';
+
+        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
+        const date = new Date(collection.expiry_date);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const isExpired = date < now;
+        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
+
+        let className = "py-3 px-2";
+        if (isExpired) {
+          className += " bg-red-100"; // Tăng độ đậm của màu nền
+        } else if (isExpiringSoon) {
+          className += " bg-yellow-100"; // Tăng độ đậm của màu nền
+        }
+
         return (
-          <div>
-            <Text>{name}</Text>
+          <div className={className}>
+            <Text className="font-medium text-gray-900">{name}</Text>
           </div>
         );
       }
@@ -406,11 +455,25 @@ export default function Product() {
       key: `inventory`,
       ref: useRef(null),
       title: `Tồn kho`,
-      size: `3fr`,
+      size: `1fr`,
       render: (collection: collectionType): ReactElement => {
+        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
+        const date = new Date(collection.expiry_date);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const isExpired = date < now;
+        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
+
+        let className = "py-3 px-2";
+        if (isExpired) {
+          className += " bg-red-100";
+        } else if (isExpiringSoon) {
+          className += " bg-yellow-100";
+        }
+
         return (
-          <div>
-            <Text>{collection.inventory}</Text>
+          <div className={className}>
+            <Text className="font-semibold text-blue-700">{collection.inventory}</Text>
           </div>
         );
       }
@@ -418,12 +481,26 @@ export default function Product() {
     {
       key: `input_quantity`,
       ref: useRef(null),
-      title: `Số lượng nhập`,
-      size: `4fr`,
+      title: `SL nhập`,
+      size: `1fr`,
       render: (collection: collectionType): ReactElement => {
+        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
+        const date = new Date(collection.expiry_date);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const isExpired = date < now;
+        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
+
+        let className = "py-3 px-2";
+        if (isExpired) {
+          className += " bg-red-100";
+        } else if (isExpiringSoon) {
+          className += " bg-yellow-100";
+        }
+
         return (
-          <div>
-            <Text>{collection.input_quantity}</Text>
+          <div className={className}>
+            <Text className="font-semibold text-green-700">{collection.input_quantity}</Text>
           </div>
         );
       }
@@ -431,12 +508,26 @@ export default function Product() {
     {
       key: `output_quantity`,
       ref: useRef(null),
-      title: `Số lượng xuất`,
-      size: `4fr`,
+      title: `SL xuất`,
+      size: `1fr`,
       render: (collection: collectionType): ReactElement => {
+        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
+        const date = new Date(collection.expiry_date);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const isExpired = date < now;
+        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
+
+        let className = "py-3 px-2";
+        if (isExpired) {
+          className += " bg-red-100";
+        } else if (isExpiringSoon) {
+          className += " bg-yellow-100";
+        }
+
         return (
-          <div>
-            <Text>{collection.output_quantity}</Text>
+          <div className={className}>
+            <Text className="font-semibold text-orange-700">{collection.output_quantity}</Text>
           </div>
         );
       }
@@ -444,14 +535,29 @@ export default function Product() {
     {
       key: `date_of_manufacture`,
       ref: useRef(null),
-      title: `Ngày sản xuất`,
-      size: `3fr`,
+      title: `Ngày SX`,
+      size: `1.5fr`,
       render: (collection: collectionType): ReactElement => {
         const date = new Date(collection.date_of_manufacture);
         const formattedDate = date.toLocaleDateString('vi-VN');
+
+        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
+        const expiryDate = new Date(collection.expiry_date);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const isExpired = expiryDate < now;
+        const isExpiringSoon = expiryDate > now && differenceInDays(expiryDate, now) <= 30;
+
+        let className = "py-3 px-2";
+        if (isExpired) {
+          className += " bg-red-100";
+        } else if (isExpiringSoon) {
+          className += " bg-yellow-100";
+        }
+
         return (
-          <div>
-            <Text isEllipsis={true} tooltip={formattedDate}>{formattedDate}</Text>
+          <div className={className}>
+            <Text isEllipsis={true} tooltip={formattedDate} className="text-gray-700">{formattedDate}</Text>
           </div>
         );
       }
@@ -459,8 +565,8 @@ export default function Product() {
     {
       key: `expiry_date`,
       ref: useRef(null),
-      title: `Ngày hết hạn`,
-      size: `3fr`,
+      title: `Hạn SD`,
+      size: `1.5fr`,
       render: (collection: collectionType): ReactElement => {
         const date = new Date(collection.expiry_date);
         const formattedDate = date.toLocaleDateString('vi-VN');
@@ -468,12 +574,94 @@ export default function Product() {
         now.setHours(0, 0, 0, 0);
         const isExpired = date < now;
         const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
-        const textClass = isExpired ? styles.expiredDate
-          : isExpiringSoon ? styles.expiringDate
-            : '';
+
+        let className = "py-3 px-2";
+        if (isExpired) {
+          className += " bg-red-100";
+        } else if (isExpiringSoon) {
+          className += " bg-yellow-100";
+        }
+
         return (
-          <div className={textClass}>
-            <Text isEllipsis={true} tooltip={formattedDate}>{formattedDate}</Text>
+          <div className={className}>
+            <Text
+              isEllipsis={true}
+              tooltip={formattedDate}
+              className={isExpired ? "text-red-700 font-semibold" : isExpiringSoon ? "text-yellow-700 font-semibold" : ""}
+            >
+              {formattedDate}
+            </Text>
+            {isExpired && (
+              <span className="text-xs text-red-600 block font-medium">Đã hết hạn</span>
+            )}
+            {isExpiringSoon && (
+              <span className="text-xs text-yellow-600 block font-medium">Sắp hết hạn</span>
+            )}
+          </div>
+        );
+      }
+    },
+    // {
+    //   title: `Số lô`,
+    //   ref: useRef(null),
+    //   size: `2fr`,
+    //   render: (collection: collectionType): ReactElement => {
+    //     // Kiểm tra và áp dụng màu nền tương ứng với trạng thái hết hạn
+    //     const date = new Date(collection.expiry_date);
+    //     const now = new Date();
+    //     now.setHours(0, 0, 0, 0);
+    //     const isExpired = date < now;
+    //     const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
+
+    //     let className = "py-3 px-2";
+    //     if (isExpired) {
+    //       className += " bg-red-100";
+    //     } else if (isExpiringSoon) {
+    //       className += " bg-yellow-100";
+    //     }
+
+    //     // Vd: 681C7-20250509-2966
+    //     const lotNumber = collection.batch_number || 'N/A';
+
+    //     return (
+    //       <div className={className}>
+    //         <Text className="font-semibold text-blue-700">{lotNumber}</Text>
+    //       </div>
+    //     );
+    //   }
+    // },
+    {
+      key: `batch_number`,
+      ref: useRef(null),
+      title: `Mã vạch`,
+      size: `2.5fr`,
+      render: (collection: collectionType): ReactElement => {
+        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
+        const date = new Date(collection.expiry_date);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const isExpired = date < now;
+        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
+
+        let className = "p-2";
+        if (isExpired) {
+          className += " bg-red-100";
+        } else if (isExpiringSoon) {
+          className += " bg-yellow-100";
+        }
+
+        return (
+          <div className={className}>
+            {collection.batch_number && (
+              <ReactBarcode
+                value={collection.batch_number}
+                height={40}
+                width={1.5}
+                fontSize={10}
+                displayValue={true}
+                margin={0}
+              />
+            )}
           </div>
         );
       }
@@ -481,27 +669,29 @@ export default function Product() {
     {
       title: `Thao tác`,
       ref: useRef(null),
-      size: `3fr`,
+      size: `120px`,
       render: (collection: collectionType): ReactElement => {
+        // Kiểm tra và áp dụng màu nền cho toàn bộ hàng
+        const date = new Date(collection.expiry_date);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        const isExpired = date < now;
+        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
+
+        let className = "flex items-center justify-center gap-2 p-2";
+        if (isExpired) {
+          className += " bg-red-100";
+        } else if (isExpiringSoon) {
+          className += " bg-yellow-100";
+        }
+
         return (
-          <div className="flex items-center justify-center gap-2">
-            {/* Xem chi tiết */}
-            <Button
-              className="bg-white border border-gray-300 rounded-full w-9 h-9 flex items-center justify-center hover:bg-blue-50 transition"
-              title="Xem chi tiết"
-              onClick={() => window.location.href = `/home/product-detail/${collection._id}`}
-            >
-              <IconContainer
-                tooltip="Xem chi tiết"
-                iconLink={externalLinkIcon}
-                className="text-blue-500"
-              />
-            </Button>
-            {/* Xem thêm */}
-            <Button
-              className="bg-white border border-gray-300 rounded-full w-9 h-9 flex items-center justify-center hover:bg-yellow-50 transition"
-              title={createMoreInfoTooltip(collectionName)}
-              onClick={(): void => {
+          <div className={className}>
+            {/* Nút xem thông tin */}
+            <button
+              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              title="Thông tin"
+              onClick={() => {
                 setIsClickShowMore({
                   id: collection._id,
                   isClicked: !isClickShowMore.isClicked,
@@ -509,23 +699,41 @@ export default function Product() {
               }}
             >
               <IconContainer
-                tooltip={createMoreInfoTooltip(collectionName)}
                 iconLink={infoIcon}
-                className="text-yellow-500"
+                className="w-4 h-4 text-gray-700"
               />
-            </Button>
-            {/* Xóa */}
-            <Button
-              className="bg-white border border-gray-300 rounded-full w-9 h-9 flex items-center justify-center hover:bg-red-50 transition"
-              title={createDeleteTooltip(collectionName)}
-              onClick={(): void => { handleDeleteClick(collection); }}
+            </button>
+
+            {/* Nút xóa */}
+            <button
+              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              title="Xóa"
+              onClick={() => {
+                setIsClickDelete({
+                  id: collection._id,
+                  isClicked: !isClickDelete.isClicked,
+                });
+              }}
             >
               <IconContainer
-                tooltip={createDeleteTooltip(collectionName)}
                 iconLink={trashIcon}
-                className="text-red-500"
+                className="w-4 h-4 text-gray-700"
               />
-            </Button>
+            </button>
+
+            {/* Nút in */}
+            <button
+              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              title="In"
+              onClick={() => {
+                window.location.href = `/home/product-detail/${collection._id}`;
+              }}
+            >
+              <IconContainer
+                iconLink="/icons/print.svg"
+                className="w-4 h-4 text-gray-700"
+              />
+            </button>
           </div>
         );
       }
@@ -540,9 +748,11 @@ export default function Product() {
   }
 
   const handleChangeProductId = (e: ChangeEvent<HTMLSelectElement>): void => {
+    const newProductId = e.target.value;
     setProductDetail({
       ...productDetail,
-      product_id: e.target.value,
+      product_id: newProductId,
+      batch_number: generateBatchNumber(newProductId)
     });
   }
 
@@ -582,8 +792,6 @@ export default function Product() {
     }
   };
 
-  const gridColumns: string = `00px 1fr`;
-
   const handleViewDetail = (product: IProduct) => {
     window.location.href = `/home/product-detail/${product._id}`;
   };
@@ -598,97 +806,129 @@ export default function Product() {
     setConfirmDeleteModal(true);
   };
 
-  const productDetailsList = [productDetail];
-
   return (
     <>
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div>
+      <div className="h-full w-full px-[30px]">
+        <div className="flex flex-col w-full">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-2xl font-bold text-gray-800">Chi tiết sản phẩm</div>
 
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => setViewMode(viewMode === 'list' ? 'group' : 'list')}
-              type={EButtonType.SUCCESS}
-              className="px-4 py-4 flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                {viewMode === 'list' ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                )}
-              </svg>
-              <Text>{viewMode === 'list' ? 'Xem theo nhóm' : 'Xem theo danh sách'}</Text>
-            </Button>
-            <Button
-              className="bg-gradient-to-r from-zinc-300 to-slate-400 from-amber-500 to-amber-600 text-black px-2 py-0.5 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-sm hover:from-amber-600 hover:to-amber-700 border border-amber-500"
-              onClick={() => setIsExpirationModalOpen(true)}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="font-medium">Kiểm tra hạn sử dụng</span>
-            </Button>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          {viewMode === 'group' ? (
-            <div className="p-4">
-              <ProductGroupList
-                products={products}
-                onViewDetail={handleViewDetail}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                productStockInfo={productStockInfo}
-              />
+            <div className="flex gap-4">
+              <Button
+                className="flex items-center gap-2 text-blue-600 bg-white border border-blue-600 rounded-md py-2 px-4 hover:bg-blue-50 min-w-[180px] justify-center"
+                onClick={() => setIsExpirationModalOpen(true)}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Kiểm tra hạn sử dụng</span>
+              </Button>
             </div>
-          ) : (
-            <ManagerPage<collectionType>
-              columns={columns}
-              collectionName={collectionName}
-              defaultCollection={DEFAULT_PROCDUCT_DETAIL}
-              collection={productDetail}
-              setCollection={setProductDetail}
-              isModalReadonly={isModalReadOnly}
-              setIsModalReadonly={setIsModalReadOnly}
-              isClickShowMore={isClickShowMore}
-              isClickDelete={isClickDelete}
-              isLoaded={isLoading}
-              displayedItems={productDetails}
-              currentPage={currentPage}
-              setCurrentPage={setCurrentPage}
-              totalItems={productDetails.length}
-            >
-              <Tabs>
-                <TabItem label={translateCollectionName(collectionName)}>
-                  <InputSection label="Cho sản phẩm" children={
-                    <div style={{ position: 'relative', zIndex: 100 }}>
-                      <SelectDropdown
-                        isLoading={isLoading}
-                        isDisable={isModalReadOnly}
-                        options={productOptions}
-                        defaultOptionIndex={getSelectedOptionIndex(
-                          productOptions, productDetail.product_id
-                        )}
-                        onInputChange={handleChangeProductId}
-                      />
-                    </div>
-                  } />
-                </TabItem>
-              </Tabs>
-            </ManagerPage>
-          )}
+          </div>
+
+          {notificationElements}
+
+          <div className="mt-2">
+            <div className="flex justify-between items-center mb-4">
+              <div className="bg-gray-100 py-1 px-3 rounded-md">
+                <span className="text-sm font-medium text-gray-700">
+                  Tổng số: <span className="text-blue-600 font-semibold">{productDetails.length}</span> sản phẩm
+                </span>
+              </div>
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={() => setViewMode(viewMode === 'list' ? 'group' : 'list')}
+                  className="flex items-center gap-2 text-blue-600 bg-white border border-blue-600 rounded-md py-2 px-4 hover:bg-blue-50 min-w-[180px] justify-center"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {viewMode === 'list' ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    )}
+                  </svg>
+                  <span>Xem theo {viewMode === 'list' ? 'nhóm' : 'danh sách'}</span>
+                </Button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+              {viewMode === 'group' ? (
+                <div className="p-5">
+                  <ProductGroupList
+                    products={products}
+                    onViewDetail={handleViewDetail}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    productStockInfo={productStockInfo}
+                  />
+                </div>
+              ) : (
+                <div className="overflow-hidden">
+                  <ManagerPage<collectionType>
+                    columns={columns}
+                    collectionName={collectionName}
+                    defaultCollection={DEFAULT_PROCDUCT_DETAIL}
+                    collection={productDetail}
+                    setCollection={setProductDetail}
+                    isModalReadonly={isModalReadOnly}
+                    setIsModalReadonly={setIsModalReadOnly}
+                    isClickShowMore={isClickShowMore}
+                    isClickDelete={isClickDelete}
+                    isLoaded={isLoading}
+                    displayedItems={productDetails}
+                    currentPage={currentPage}
+                    setCurrentPage={setCurrentPage}
+                    totalItems={productDetails.length}
+                  >
+                    <div></div>
+                  </ManagerPage>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Modal xác nhận xóa sản phẩm */}
+          <Modal
+            isOpen={deleteModalOpen}
+            onClose={() => setDeleteModalOpen(false)}
+            className="w-full max-w-md p-6"
+          >
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                <TrashIcon className="h-6 w-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Xác nhận xóa</h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Bạn có chắc chắn muốn xóa chi tiết sản phẩm "{selectedProductDetail?.name}"?
+                Hành động này không thể hoàn tác.
+              </p>
+              <div className="flex justify-center gap-4">
+                <Button
+                  onClick={() => setDeleteModalOpen(false)}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg"
+                >
+                  Hủy
+                </Button>
+                <Button
+                  onClick={handleDeleteConfirm}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                >
+                  Xác nhận xóa
+                </Button>
+              </div>
+            </div>
+          </Modal>
+
+          <ExpirationModal
+            isOpen={isExpirationModalOpen}
+            setIsOpen={setIsExpirationModalOpen}
+            onDeleteSuccess={() => fetchAllData()}
+          />
         </div>
       </div>
-
-      <ExpirationModal
-        isOpen={isExpirationModalOpen}
-        setIsOpen={setIsExpirationModalOpen}
-        onDeleteSuccess={handleExpirationModalDelete}
-      />
     </>
   );
 }
+
+export default ProductDetailWithQueryClientProvider;

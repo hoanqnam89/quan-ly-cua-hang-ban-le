@@ -1,3 +1,5 @@
+'use client';
+
 import React, { ChangeEvent, CSSProperties, memo, ReactElement } from 'react';
 import { TColorMode } from '@/components/interfaces/color-mode.interface';
 
@@ -16,7 +18,7 @@ interface ICheckboxProps {
 }
 
 function Checkbox({
-  name = ``, 
+  name = ``,
   size = 16,
   background = {
     light: `#ffffff`,
@@ -28,13 +30,13 @@ function Checkbox({
   padding = 0,
   isChecked = false,
   isDisable = false,
-  onInputChange = () => {},
-  onInputBlur = () => {},
+  onInputChange = () => { },
+  onInputBlur = () => { },
 }: Readonly<ICheckboxProps>): ReactElement {
   const inputStyle: CSSProperties = {
     background: `light-dark(${background.light}, ${background.dark})`,
-    width: size, 
-    height: size, 
+    width: size,
+    height: size,
     borderStyle: `solid`,
     borderWidth: borderWidth,
     borderColor: borderColor,
@@ -43,10 +45,10 @@ function Checkbox({
     // fieldSizing: `content`,
   }
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => 
+  const handleChange = (e: ChangeEvent<HTMLInputElement>): void =>
     onInputChange(e);
 
-  const handleBlur = (e: ChangeEvent<HTMLInputElement>): void => 
+  const handleBlur = (e: ChangeEvent<HTMLInputElement>): void =>
     onInputBlur(e);
 
   return (
@@ -64,4 +66,4 @@ function Checkbox({
   )
 }
 
-export default memo( Checkbox );
+export default memo(Checkbox);

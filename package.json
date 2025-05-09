@@ -24,6 +24,7 @@
     "next": "^15.2.2",
     "quan-ly-cua-hang-ban-le": "file:",
     "react": "^19.0.0",
+    "react-barcode": "^1.6.1",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {

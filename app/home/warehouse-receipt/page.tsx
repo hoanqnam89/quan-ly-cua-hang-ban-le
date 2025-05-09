@@ -11,7 +11,7 @@ import printIcon from '@/public/icons/print.svg';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
-import { IWarehouseReceipt, IWarehouseProductDetail } from '@/app/interfaces/warehouse-receipt.interface';
+import { IWarehouseReceipt, IWarehouseProductDetail } from '@/interfaces/warehouse-receipt.interface';
 import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { translateCollectionName } from '@/utils/translate-collection-name';
@@ -34,6 +34,13 @@ import { EStatusCode } from '@/enums/status-code.enum';
 import { ROOT } from '@/constants/root.constant';
 import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 import { useQuery, QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
+import { generateBatchNumber } from '@/utils/batch-number';
+import BarcodeComponent from '@/components/barcode/barcode';
+import ReactBarcode from 'react-barcode';
+import dynamic from 'next/dynamic';
+
+// Import Barcode component với dynamic import
+const DynamicReactBarcode = dynamic(() => import('react-barcode'), { ssr: false });
 
 // Interfaces
 interface IDateFilter {
@@ -64,6 +71,19 @@ const formatReceiptCode = (id: string, date: Date): string => {
   const sequence = id.substring(id.length - 4).padStart(4, '0');
 
   return `NK-${dateStr}-${sequence}`;
+};
+
+// Hàm mới định dạng mã phiếu đặt hàng
+const formatOrderFormCode = (id: string, date: Date): string => {
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear().toString();
+  const dateStr = `${day}${month}${year}`;
+
+  // Tạo số thứ tự từ id
+  const sequence = id.substring(id.length - 4).padStart(4, '0');
+
+  return `DH-${dateStr}-${sequence}`;
 };
 
 // Hàm định dạng số thành chuỗi tiền tệ VND với dấu chấm phân cách
@@ -214,9 +234,41 @@ function WarehouseReceipt() {
 
   const { data: orderForms = [], isLoading: isLoadingOrderForms } = useQuery({
     queryKey: ['warehouse-receipt'],
-    queryFn: () => fetchGetCollections<IOrderForm>(ECollectionNames.ORDER_FORM),
+    queryFn: async () => {
+      try {
+        // Lấy tất cả phiếu đặt hàng
+        const allOrderForms = await fetchGetCollections<IOrderForm>(ECollectionNames.ORDER_FORM);
+
+        // Lấy tất cả phiếu nhập kho để kiểm tra phiếu đặt hàng đã sử dụng
+        const allWarehouseReceipts = await fetchGetCollections<IWarehouseReceipt>(ECollectionNames.WAREHOUSE_RECEIPT);
+
+        // Lấy danh sách ID phiếu đặt hàng đã được sử dụng
+        const usedOrderFormIds = allWarehouseReceipts.map(receipt => receipt.supplier_receipt_id);
+
+        // Lọc tất cả phiếu đặt hàng có trạng thái PENDING
+        const pendingOrderForms = allOrderForms.filter(form => form.status === OrderFormStatus.PENDING);
+
+        // Đánh dấu các phiếu đã được sử dụng
+        const markedOrderForms = pendingOrderForms.map(form => ({
+          ...form,
+          isUsed: usedOrderFormIds.includes(form._id)
+        }));
+
+        // Sắp xếp: phiếu chưa sử dụng lên đầu
+        const sortedOrderForms = markedOrderForms.sort((a, b) => {
+          if (a.isUsed === b.isUsed) return 0;
+          return a.isUsed ? 1 : -1;
+        });
+
+        console.log(`Tìm thấy ${pendingOrderForms.length} phiếu đặt hàng chưa hoàn thành, trong đó ${markedOrderForms.filter(f => f.isUsed).length} phiếu đã được sử dụng`);
+
+        return sortedOrderForms;
+      } catch (error) {
+        console.error('Lỗi khi lấy phiếu đặt hàng:', error);
+        return [];
+      }
+    },
     enabled: businesses.length > 0,
-    select: (data: IOrderForm[]) => data.filter(form => form.status === OrderFormStatus.PENDING),
   });
 
   const { data: warehouseReceipts = [], isLoading: isLoadingWarehouseReceipts } = useQuery({
@@ -229,8 +281,9 @@ function WarehouseReceipt() {
     if (orderForms.length > 0) {
       // Cập nhật danh sách options cho SelectDropdown
       const newOrderFormOptions = orderForms.map(form => ({
-        label: `${formatReceiptCode(form._id, new Date(form.created_at))} - ${formatShortDate(new Date(form.created_at))}`,
-        value: form._id
+        label: `${formatOrderFormCode(form._id, new Date(form.created_at))} - ${formatShortDate(new Date(form.created_at))}${form.isUsed ? ' (Đã sử dụng)' : ''}`,
+        value: form._id,
+        disabled: form.isUsed // Disable các phiếu đã sử dụng
       }));
       setOrderFormOptions(newOrderFormOptions);
 
@@ -251,6 +304,7 @@ function WarehouseReceipt() {
             ...detail, // Giữ nguyên _id từ phiếu đặt hàng
             date_of_manufacture: '',
             expiry_date: '',
+            batch_number: generateBatchNumber(detail._id), // Tự động tạo số lô
             note: ''
           } as IWarehouseProductDetail))
         }));
@@ -262,6 +316,36 @@ function WarehouseReceipt() {
       setWarehouseReceipt(DEFAULT_WAREHOUST_RECEIPT);
     }
   }, [orderForms]);
+
+  useEffect(() => {
+    // Tự động tạo số lô cho các sản phẩm khi component được tải
+    if (warehouseReceipt.product_details && warehouseReceipt.product_details.length > 0) {
+      console.log('Đang tự động tạo số lô cho sản phẩm khi khởi tạo component');
+      setWarehouseReceipt(prev => {
+        // Log thông tin sản phẩm trước khi tạo số lô
+        console.log('Danh sách sản phẩm trước khi tạo số lô:', JSON.stringify(prev.product_details));
+
+        const newProductDetails = prev.product_details.map(detail => {
+          if (!detail.batch_number) {
+            console.log(`Tạo số lô cho sản phẩm ID: ${detail._id}`);
+            return {
+              ...detail,
+              batch_number: generateBatchNumber(detail._id)
+            };
+          }
+          return detail;
+        });
+
+        // Log thông tin sau khi tạo số lô
+        console.log('Danh sách sản phẩm sau khi tạo số lô:', JSON.stringify(newProductDetails));
+
+        return {
+          ...prev,
+          product_details: newProductDetails
+        };
+      });
+    }
+  }, []);
 
   // Derived states
   const isLoading = isLoadingProducts || isLoadingUnits || isLoadingBusinesses ||
@@ -313,15 +397,83 @@ function WarehouseReceipt() {
     if (isSaving) return;
 
     if (!warehouseReceipt.supplier_receipt_id || !warehouseReceipt.supplier_id) {
+      createNotification({
+        children: 'Không tìm thấy thông tin phiếu đặt hàng hoặc nhà cung cấp!',
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+        id: Math.random()
+      });
+      return;
+    }
+
+    // Kiểm tra xem phiếu đặt hàng có còn tồn tại trong danh sách hiện tại không
+    const orderFormExists = orderForms.some(form => form._id === warehouseReceipt.supplier_receipt_id);
+    if (!orderFormExists) {
+      createNotification({
+        children: 'Phiếu đặt hàng này đã được sử dụng hoặc không tồn tại!',
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+        id: Math.random()
+      });
       return;
     }
 
     if (!warehouseReceipt.product_details || warehouseReceipt.product_details.length === 0) {
+      createNotification({
+        children: 'Không có sản phẩm nào trong phiếu nhập kho!',
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+        id: Math.random()
+      });
       return;
     }
 
+    // Kiểm tra chi tiết phiếu nhập kho và sửa các lỗi nhỏ
+    const fixedProductDetails = warehouseReceipt.product_details.map(detail => {
+      // Đảm bảo có batch_number
+      const batchNumber = detail.batch_number || generateBatchNumber(detail._id);
+
+      // Xử lý input_price
+      let inputPrice = 0;
+      if (typeof detail.input_price === 'number') {
+        inputPrice = detail.input_price;
+      } else if (typeof detail.input_price === 'string') {
+        const numericString = detail.input_price.replace(/[^\d]/g, '');
+        inputPrice = numericString ? parseInt(numericString) : 0;
+      }
+
+      // Xử lý quantity
+      let quantity = 0;
+      if (typeof detail.quantity === 'number') {
+        quantity = detail.quantity;
+      } else if (typeof detail.quantity === 'string') {
+        quantity = parseInt(detail.quantity) || 0;
+      }
+
+      // Tạo bản sao để không ảnh hưởng đến state gốc
+      return {
+        ...detail,
+        batch_number: batchNumber,
+        input_price: inputPrice,
+        quantity: quantity
+      };
+    });
+
+    // Cập nhật state với dữ liệu đã được sửa
+    setWarehouseReceipt(prev => ({
+      ...prev,
+      product_details: fixedProductDetails
+    }));
+
+    // Log phiếu nhập kho đã được sửa
+    console.log('Phiếu nhập kho sau khi đã sửa:', {
+      supplier_id: warehouseReceipt.supplier_id,
+      supplier_receipt_id: warehouseReceipt.supplier_receipt_id,
+      product_details: fixedProductDetails
+    });
+
     // Kiểm tra số lượng hợp lệ
-    const invalidQuantity = warehouseReceipt.product_details.some(detail => !detail.quantity || detail.quantity <= 0);
+    const invalidQuantity = fixedProductDetails.some(detail => !detail.quantity || detail.quantity <= 0);
     if (invalidQuantity) {
       createNotification({
         children: 'Số lượng sản phẩm không được để trống hoặc nhỏ hơn 1',
@@ -332,7 +484,7 @@ function WarehouseReceipt() {
     }
 
     // Kiểm tra giá nhập
-    const invalidPrice = warehouseReceipt.product_details.some(detail => !detail.input_price || detail.input_price <= 0);
+    const invalidPrice = fixedProductDetails.some(detail => !detail.input_price || detail.input_price <= 0);
     if (invalidPrice) {
       createNotification({
         children: 'Giá nhập không được để trống hoặc nhỏ hơn 1',
@@ -343,7 +495,7 @@ function WarehouseReceipt() {
     }
 
     // Kiểm tra ngày sản xuất và hạn sử dụng
-    const missingDates = warehouseReceipt.product_details.some(detail => !detail.date_of_manufacture || !detail.expiry_date);
+    const missingDates = fixedProductDetails.some(detail => !detail.date_of_manufacture || !detail.expiry_date);
     if (missingDates) {
       createNotification({
         children: 'Ngày sản xuất và hạn sử dụng không được để trống',
@@ -354,7 +506,7 @@ function WarehouseReceipt() {
     }
 
     // Kiểm tra nếu có sản phẩm nào có HSD <= NSX thì không cho lưu
-    const invalidDates = warehouseReceipt.product_details.some(detail => {
+    const invalidDates = fixedProductDetails.some(detail => {
       if (!detail.date_of_manufacture || !detail.expiry_date) return false;
 
       const mfgDate = new Date(detail.date_of_manufacture);
@@ -374,16 +526,49 @@ function WarehouseReceipt() {
 
     try {
       setIsSaving(true);
+      console.log('Đang gửi dữ liệu phiếu nhập kho:', JSON.stringify(warehouseReceipt));
+
       const response = await addCollection(warehouseReceipt, collectionName);
+      console.log('Kết quả phản hồi từ server:', response);
 
       if (response.status === EStatusCode.OK || response.status === EStatusCode.CREATED) {
         // Update order form status
         await updateOrderStatus(warehouseReceipt.supplier_receipt_id, OrderFormStatus.COMPLETED);
 
+        // Cập nhật barcode cho product detail
+        for (const detail of fixedProductDetails) {
+          try {
+            // Tạo đối tượng product detail mới
+            const productDetail: IProductDetail = {
+              product_id: detail._id,
+              input_quantity: detail.quantity,
+              output_quantity: 0,
+              date_of_manufacture: detail.date_of_manufacture,
+              expiry_date: detail.expiry_date,
+              batch_number: detail.batch_number,
+              barcode: detail.batch_number // Sử dụng batch_number làm barcode
+            };
+
+            // Gọi API để thêm product detail mới
+            const responseDetail = await addCollection(productDetail, ECollectionNames.PRODUCT_DETAIL);
+            console.log('Đã thêm product detail với barcode:', detail.batch_number);
+          } catch (error) {
+            console.error('Lỗi khi thêm product detail với barcode:', error);
+          }
+        }
+
         // Refetch lại danh sách phiếu nhập kho
         await queryClient.invalidateQueries({ queryKey: ['warehouse-receipts'] });
         // Refetch lại danh sách phiếu đặt hàng (SelectDropdown)
         await queryClient.invalidateQueries({ queryKey: ['warehouse-receipt'] });
+
+        // Hiển thị thông báo thành công
+        createNotification({
+          children: 'Tạo phiếu nhập kho thành công!',
+          type: ENotificationType.SUCCESS,
+          isAutoClose: true,
+          id: Math.random(),
+        });
 
         // Sau khi invalidate, filter lại state nếu cần
         setOrderFormOptions(prev => prev.filter(option => option.value !== warehouseReceipt.supplier_receipt_id));
@@ -392,14 +577,33 @@ function WarehouseReceipt() {
         setOrderForm(DEFAULT_ORDER_FORM);
         setWarehouseReceipt(DEFAULT_WAREHOUST_RECEIPT);
       } else {
-        throw new Error('Failed to save warehouse receipt');
+        // Xử lý phản hồi lỗi từ API
+        let errorMessage = 'Không thể lưu phiếu nhập kho';
+
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (err) {
+          console.error('Không thể parse phản hồi lỗi:', err);
+        }
+
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Error saving warehouse receipt:', error);
+      // Hiển thị thông báo lỗi cho người dùng
+      createNotification({
+        children: error instanceof Error ? error.message : 'Không thể lưu phiếu nhập kho',
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+        id: Math.random(),
+      });
     } finally {
       setIsSaving(false);
     }
-  }, [warehouseReceipt, isSaving, queryClient]);
+  }, [warehouseReceipt, isSaving, orderForms, queryClient]);
 
   const handleOpenModal = useCallback((prev: boolean): boolean => {
     return !prev;
@@ -511,6 +715,7 @@ function WarehouseReceipt() {
                             ...detail, // Giữ nguyên thông tin sản phẩm từ phiếu đặt hàng
                             date_of_manufacture: '',
                             expiry_date: '',
+                            batch_number: generateBatchNumber(detail._id), // Tự động tạo số lô
                             note: ''
                           } as IWarehouseProductDetail))
                         }));
@@ -670,7 +875,9 @@ function WarehouseReceipt() {
                                 const newProductDetails = [...prev.product_details];
                                 newProductDetails[index] = {
                                   ...newProductDetails[index],
-                                  date_of_manufacture: e.target.value
+                                  date_of_manufacture: e.target.value,
+                                  // Nếu chưa có số lô thì tự động tạo
+                                  batch_number: newProductDetails[index].batch_number || generateBatchNumber(newProductDetails[index]._id)
                                 } as IWarehouseProductDetail;
                                 return {
                                   ...prev,
@@ -778,6 +985,49 @@ function WarehouseReceipt() {
                             className="border border-gray-200 rounded-lg py-1 w-full text-center"
                             placeholder="Ghi chú..."
                           />
+                        </div>
+                      </div>
+
+                      {/* Hiển thị thông tin số lô và mã vạch */}
+                      <div className="col-span-2 mt-2 grid grid-cols-2 gap-4">
+                        <div className="flex flex-col">
+                          <label className="text-sm font-medium text-gray-700 mb-1">Số lô</label>
+                          <BarcodeComponent
+                            productId={warehouseProductDetail?._id || ''}
+                            value={warehouseProductDetail?.batch_number || ''}
+                            onChange={(value: string) => {
+                              setWarehouseReceipt(prev => {
+                                const newProductDetails = [...prev.product_details];
+                                newProductDetails[index] = {
+                                  ...newProductDetails[index],
+                                  batch_number: value
+                                } as IWarehouseProductDetail;
+                                return {
+                                  ...prev,
+                                  product_details: newProductDetails
+                                };
+                              });
+                            }}
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <label className="text-sm font-medium text-gray-700 mb-1">Mã vạch</label>
+                          <div className="border border-gray-200 rounded-lg py-2 px-3 bg-gray-50 h-[50px] flex items-center justify-center">
+                            {warehouseProductDetail?.batch_number ? (
+                              <div className="w-full flex justify-center">
+                                <DynamicReactBarcode
+                                  value={warehouseProductDetail.batch_number}
+                                  height={40}
+                                  width={1.5}
+                                  fontSize={10}
+                                  displayValue={true}
+                                  margin={0}
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-gray-500 text-sm italic">Chưa có số lô</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

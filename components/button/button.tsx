@@ -1,3 +1,5 @@
+'use client';
+
 import React, { CSSProperties, ReactElement, ReactNode } from 'react';
 import styles from './style.module.css';
 import { EButtonType } from './interfaces/button-type.interface';

@@ -1,7 +1,10 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components';
 import Image from 'next/image';
-import { formatCurrency } from '@/app/utils/format';
+import { formatCurrency } from '@/utils/format';
+import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 
 interface OrderItem {
     product_id: string;
@@ -199,175 +202,141 @@ export default function PaymentModal({ isOpen, onClose, onComplete, orderId, tot
                 throw new Error('Không thể cập nhật trạng thái thanh toán');
             }
 
-            console.log("Đã cập nhật trạng thái thanh toán thành công");
-
-            // Cập nhật số lượng sản phẩm đang bán sau khi thanh toán thành công
+            // Cập nhật số lượng sản phẩm trong kho
             await updateProductQuantities();
 
-            // Thông báo hoàn thành
+            // Gọi hàm callback để báo hoàn thành
             onComplete();
         } catch (error) {
-            console.error('Error completing payment:', error);
-            alert('Có lỗi xảy ra khi cập nhật đơn hàng hoặc số lượng sản phẩm');
+            console.error('Lỗi khi hoàn tất thanh toán:', error);
+            alert('Đã xảy ra lỗi khi thanh toán. Vui lòng thử lại.');
         } finally {
             setIsProcessing(false);
         }
     };
 
+    const renderMoMoQRCode = () => {
+        return (
+            <div className="flex flex-col items-center mt-4 bg-white p-6 rounded-xl shadow-md">
+                <h3 className="font-semibold text-lg mb-4 text-[#d82d8b]">Quét mã để thanh toán qua MoMo</h3>
+
+                {/* Mã QR MoMo SVG trực tiếp thay vì ảnh */}
+                <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="200" height="200" fill="white" />
+                    <path d="M84 32H32V84H84V32Z" fill="black" />
+                    <path d="M116 32H100V48H116V32Z" fill="black" />
+                    <path d="M148 32H132V48H148V32Z" fill="black" />
+                    <path d="M84 64H68V80H84V64Z" fill="white" />
+                    <path d="M148 48H132V64H148V48Z" fill="black" />
+                    <path d="M116 64H100V80H116V64Z" fill="black" />
+                    <path d="M100 116H84V132H100V116Z" fill="black" />
+                    <path d="M68 100H52V116H68V100Z" fill="black" />
+                    <path d="M132 116H116V132H132V116Z" fill="black" />
+                    <path d="M84 132H68V148H84V132Z" fill="black" />
+                    <path d="M148 100H132V116H148V100Z" fill="black" />
+                    <path d="M116 132H100V148H116V132Z" fill="black" />
+                    <path d="M132 148H116V164H132V148Z" fill="black" />
+                    <path d="M148 164H132V168H148V164Z" fill="black" />
+                    <path d="M168 32H152V48H168V32Z" fill="black" />
+                    <path d="M168 64H152V80H168V64Z" fill="black" />
+                    <path d="M168 116H152V132H168V116Z" fill="black" />
+                    <path d="M168 148H152V164H168V148Z" fill="black" />
+                    <path d="M84 148H68V168H84V148Z" fill="black" />
+                    <path d="M52 148H32V168H52V148Z" fill="black" />
+                    <path d="M168 32V84H116V32H168Z" stroke="black" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M84 116V168H32V116H84Z" stroke="black" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M168 116V168H116V116H168Z" stroke="black" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                    <rect width="200" height="200" stroke="#D82D8B" strokeWidth="8" />
+                </svg>
+
+                <div className="mt-4 text-center">
+                    <p className="text-gray-600 text-sm">Số tiền: {formatCurrency(totalAmount)}</p>
+                    <p className="text-gray-500 text-xs mt-1">Mã đơn hàng: {orderId}</p>
+                </div>
+            </div>
+        );
+    };
+
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6 relative max-h-[90vh] overflow-y-auto">
-                <button
-                    onClick={onClose}
-                    className="absolute right-4 top-4 text-slate-500 hover:text-slate-700 transition-colors"
-                >
-                    <Image
-                        src="/icons/close.svg"
-                        alt="close"
-                        width={20}
-                        height={20}
-                    />
-                </button>
+        <div className="fixed inset-0 flex items-center justify-center z-50 overflow-auto bg-black bg-opacity-60 p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-auto overflow-hidden animate-fade-in">
+                {/* Tiêu đề */}
+                <div className="bg-blue-600 p-4 text-white">
+                    <h2 className="text-xl font-semibold">Thanh toán đơn hàng</h2>
+                </div>
 
-                <h2 className="text-xl font-semibold text-slate-900 mb-5 flex items-center gap-2">
-                    <Image
-                        src="/icons/payment.svg"
-                        alt="payment"
-                        width={24}
-                        height={24}
-                    />
-                    Hoàn thành thanh toán
-                </h2>
-
-                {/* Hiển thị danh sách sản phẩm */}
-                {orderItems && orderItems.length > 0 && (
-                    <div className="mb-6 border border-slate-200 rounded-lg overflow-hidden">
-                        <div className="bg-slate-50 px-4 py-2 border-b border-slate-200">
-                            <h3 className="font-medium text-slate-700">Danh sách sản phẩm</h3>
-                        </div>
-                        <div className="divide-y divide-slate-200">
-                            {orderItems.map((item, index) => (
-                                <div key={index} className="flex items-center gap-3 p-3 hover:bg-slate-50">
-                                    <div className="w-14 h-14 bg-slate-100 rounded-md relative overflow-hidden flex-shrink-0 border border-slate-200">
-                                        {item.product?.image_links?.[0] ? (
-                                            <Image
-                                                src={item.product.image_links[0]}
-                                                alt={item.product?.name || 'Sản phẩm'}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center">
-                                                <Image
-                                                    src="/icons/product.svg"
-                                                    alt="product"
-                                                    width={24}
-                                                    height={24}
-                                                    className="text-slate-400"
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-slate-800 truncate">
-                                            {item.product?.name || `Sản phẩm #${item.product_id}`}
-                                        </p>
-                                        <div className="flex items-center gap-3 text-sm text-slate-500 mt-1">
-                                            <span>{formatCurrency(item.price)}</span>
-                                            <span className="text-slate-300">×</span>
-                                            <span className="font-medium text-slate-600">{item.quantity}</span>
-                                        </div>
-                                    </div>
-                                    <div className="text-right font-medium text-slate-800">
-                                        {formatCurrency(item.price * item.quantity)}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="bg-slate-50 px-4 py-3 border-t border-slate-200 flex justify-between">
-                            <span className="font-medium text-slate-600">Tổng cộng:</span>
-                            <span className="font-semibold text-slate-900">{formatCurrency(totalAmount)}</span>
-                        </div>
-                    </div>
-                )}
-
-                <div className="space-y-4">
-                    <div className="flex justify-between items-center py-3 border-b border-slate-100">
-                        <span className="text-slate-700 text-[17px]">Tổng tiền hàng</span>
-                        <span className="text-slate-900 font-medium text-[17px]">
-                            {formatCurrency(totalAmount)}
-                        </span>
+                <div className="p-6">
+                    {/* Tổng tiền */}
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="text-gray-700">Tổng cộng:</div>
+                        <div className="text-2xl font-bold text-blue-600">{formatCurrency(totalAmount)}</div>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-900 mb-1">
-                            Hình thức thanh toán
-                        </label>
+                    {/* Phương thức thanh toán */}
+                    <div className="mb-6">
+                        <label className="block mb-2 text-gray-700">Phương thức thanh toán</label>
                         <select
-                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium text-slate-900"
                             value={paymentMethod}
                             onChange={handlePaymentMethodChange}
+                            className="block w-full px-4 py-3 border border-gray-300 rounded-lg"
+                            disabled={isProcessing}
                         >
-                            <option value="cash">Thanh toán tiền mặt</option>
-                            <option value="transfer">Thanh toán chuyển khoản</option>
-                            <option value="card">Thanh toán qua thẻ</option>
+                            <option value="cash">Tiền mặt</option>
+                            <option value="banking">Chuyển khoản ngân hàng</option>
+                            <option value="momo">Ví MoMo</option>
                         </select>
                     </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-900 mb-1">
-                            Số tiền khách đưa
-                        </label>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-medium text-slate-900"
-                                value={customerPayment}
-                                onChange={handlePaymentAmountChange}
-                                placeholder="0"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-900">
-                                đ
-                            </span>
-                        </div>
-                    </div>
+                    {/* Hiển thị QR MoMo nếu chọn thanh toán MoMo */}
+                    {paymentMethod === 'momo' && renderMoMoQRCode()}
 
-                    <div>
-                        <label className="block text-sm font-medium text-slate-900 mb-1">
-                            Số tiền thối lại
-                        </label>
-                        <div className="relative">
-                            <input
-                                type="text"
-                                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-medium text-green-600"
-                                value={changeAmount}
-                                readOnly
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
-                                đ
-                            </span>
-                        </div>
-                    </div>
+                    {/* Số tiền khách đưa (chỉ hiển thị khi thanh toán tiền mặt) */}
+                    {paymentMethod === 'cash' && (
+                        <>
+                            <div className="mb-6">
+                                <label className="block mb-2 text-gray-700">Khách thanh toán</label>
+                                <input
+                                    type="text"
+                                    value={customerPayment}
+                                    onChange={handlePaymentAmountChange}
+                                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                    disabled={isProcessing}
+                                />
+                            </div>
 
-                    <div className="flex items-center justify-end gap-3 mt-6">
+                            {/* Tiền thối lại */}
+                            <div className="mb-6">
+                                <label className="block mb-2 text-gray-700">Tiền thối lại</label>
+                                <div className="px-4 py-3 border border-gray-200 bg-gray-50 rounded-lg text-lg font-medium">
+                                    {changeAmount}
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Nút hoàn tất */}
+                    <div className="flex space-x-4 mt-8">
                         <Button
                             onClick={onClose}
-                            className="px-6 py-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-lg font-medium transition-colors border border-slate-300"
+                            type={EButtonType.TRANSPARENT}
+                            isDisable={isProcessing}
+                            className="flex-1"
                         >
                             Hủy
                         </Button>
                         <Button
                             onClick={handleCompletePayment}
+                            type={EButtonType.SUCCESS}
                             isDisable={isProcessing}
-                            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-black rounded-lg font-medium transition-colors border border-slate-300"
+                            className="flex-1"
                         >
-                            {isProcessing ? 'Đang xử lý...' : 'Hoàn thành thanh toán'}
+                            {isProcessing ? "Đang xử lý..." : "Hoàn tất thanh toán"}
                         </Button>
                     </div>
                 </div>
             </div>
         </div>
     );
-}
+} 

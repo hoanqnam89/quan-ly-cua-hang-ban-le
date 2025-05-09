@@ -2,33 +2,46 @@
 
 ## Tối ưu API và Triển khai React Query
 
-### Cải tiến đã thực hiện
+# Hướng dẫn sử dụng hệ thống mã vạch và số lô
 
-#### 1. Tối ưu API `/api/business` 
+## Tổng quan
+Hệ thống hiện đã được tích hợp mã vạch (Barcode) cho từng lô sản phẩm. Mỗi sản phẩm khi nhập kho sẽ được tự động tạo số lô (batch number) và mã vạch tương ứng.
 
-- **Caching Server-side**: Lưu trữ kết quả truy vấn trong 5 phút để giảm tải cho database
-- **Phân trang (Pagination)**: Thêm tham số `page` và `limit` để phân trang dữ liệu
-- **Giới hạn dữ liệu**: Mặc định 20 bản ghi mỗi trang, có thể tùy chỉnh qua tham số `limit`
-- **Bộ lọc**: Thêm bộ lọc theo loại doanh nghiệp qua tham số `type`
-- **Tối ưu query MongoDB**: Sử dụng `lean()` và `maxTimeMS()` để tăng hiệu suất
-- **Response Headers**: Thêm headers chứa thông tin về số lượng, trang hiện tại, tổng số trang
+## Quy trình hoạt động
 
-#### 2. Tích hợp React Query
+### 1. Tạo phiếu nhập kho
+- Khi tạo phiếu nhập kho và chọn sản phẩm, hệ thống sẽ tự động tạo số lô (batch_number) duy nhất cho mỗi sản phẩm.
+- Số lô được tạo theo định dạng: `PREFIX-YYYYMMDD-RANDOM`
+  - PREFIX: 5 ký tự đầu của product_id
+  - YYYYMMDD: Ngày tháng năm hiện tại
+  - RANDOM: 4 chữ số ngẫu nhiên
 
-- **React Query Provider**: Thiết lập provider cho toàn ứng dụng
-- **Hook `use-business.ts`**: Tạo hook để quản lý và truy vấn dữ liệu
-- **Tự động quản lý cache**: Invalidate cache khi có thay đổi dữ liệu 
-- **Xử lý các trạng thái**: Loading, error, và success states
+### 2. Mã vạch (Barcode)
+- Mã vạch được tạo tự động dựa trên số lô của sản phẩm.
+- Sử dụng chuẩn CODE128 cho mã vạch, đảm bảo tương thích với hầu hết các máy quét.
+- Mã vạch sẽ được hiển thị trong chi tiết sản phẩm và có thể in ra để dán lên sản phẩm.
 
-#### 3. Cải tiến UI
+### 3. Quản lý hàng tồn
+- Mỗi lô sản phẩm có một mã vạch riêng, giúp dễ dàng phân biệt các lô khác nhau của cùng một sản phẩm.
+- Hệ thống theo dõi số lượng nhập, xuất và tồn kho cho từng lô sản phẩm.
+- Kiểm soát hạn sử dụng theo từng lô, giúp áp dụng nguyên tắc FIFO (First In, First Out) trong quản lý hàng hóa.
 
-- **Component Pagination**: Dễ dàng điều hướng giữa các trang
-- **Responsive UI**: Hiển thị trạng thái loading và lỗi
-- **Bộ lọc**: Thêm bộ lọc theo loại doanh nghiệp trên UI
+### 4. Lợi ích
+- Truy xuất nguồn gốc: Biết chính xác thông tin của từng lô sản phẩm
+- Kiểm soát chất lượng: Dễ dàng thu hồi một lô sản phẩm cụ thể nếu có vấn đề
+- Quản lý hạn sử dụng: Theo dõi và cảnh báo các sản phẩm sắp hết hạn theo từng lô
+- Quản lý kho: Chính xác và minh bạch hơn với việc theo dõi từng lô sản phẩm
 
-### Cách sử dụng API
+## Hướng dẫn sử dụng
+1. Khi tạo phiếu nhập kho, chọn sản phẩm để hệ thống tự động tạo số lô.
+2. Có thể điều chỉnh số lô nếu cần thiết.
+3. Sau khi lưu, mã vạch sẽ được tạo tự động dựa trên số lô.
+4. Để in mã vạch, vào chi tiết của sản phẩm và sử dụng chức năng in mã vạch.
 
-#### Lấy danh sách Business
+## Lưu ý
+- Mỗi lô sản phẩm nên có một số lô duy nhất.
+- Không nên thay đổi số lô sau khi đã tạo để đảm bảo tính nhất quán.
+- Mã vạch tương thích với hầu hết các máy quét mã vạch thương mại. 
 
 ```
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).

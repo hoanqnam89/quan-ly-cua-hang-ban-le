@@ -10,18 +10,32 @@ import SelectDropdown from "./select-dropdown/select-dropdown";
 import Tag from "./tag/tag";
 import TagsInput from "./tags-input/tags-input";
 import TextInput from "./text-input/text-input";
+import BarcodeScanner from "./barcode-scanner";
+import BarcodeScannerAdvanced from "./barcode-scanner/index";
+import Barcode from "./barcode/index";
+import BarcodeComponent from "./barcode/barcode";
+import PaymentModal from "./PaymentModal";
+import ProductList from "./ProductList";
+import ProductGroupList from "./ProductGroupList";
 
 export {
-  Button, 
-  ColorInput, 
-  IconContainer, 
-  LoadingIcon, 
-  LoadingScreen, 
-  Modal, 
-  NumberInput, 
-  SelectDropdown, 
-  Tag, 
-  TagsInput, 
-  Text, 
+  Barcode,
+  BarcodeComponent,
+  BarcodeScanner,
+  BarcodeScannerAdvanced,
+  Button,
+  ColorInput,
+  IconContainer,
+  LoadingIcon,
+  LoadingScreen,
+  Modal,
+  NumberInput,
+  PaymentModal,
+  ProductGroupList,
+  ProductList,
+  SelectDropdown,
+  Tag,
+  TagsInput,
+  Text,
   TextInput,
 }

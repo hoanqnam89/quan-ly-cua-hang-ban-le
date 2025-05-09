@@ -1,3 +1,5 @@
+'use client';
+
 import React, { ChangeEvent, Fragment, MouseEvent, ReactElement, useCallback, useEffect, useState } from 'react';
 import { Button, Text, IconContainer, LoadingIcon, TextInput } from '@/components';
 import { IColumnProps } from './interfaces/column-props.interface';

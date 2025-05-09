@@ -21,6 +21,7 @@ import { ProductModel } from "@/models/Product";
 import { IProduct } from "@/interfaces/product.interface";
 import { CategoryModel } from "@/models/Category";
 import { ICategory } from "@/interfaces/category.interface";
+import { generateBatchNumber } from "@/utils/batch-number";
 
 // Local interface - same as IWarehouseProductDetail in warehouse-receipt.interface.ts
 interface WarehouseProductDetail extends IOrderFormProductDetail {
@@ -168,12 +169,20 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     for (const detail of warehouseReceipt.product_details) {
       const productDetail = detail as WarehouseProductDetail;
 
+      console.log('Đang xử lý chi tiết sản phẩm:', JSON.stringify(productDetail));
+
       // Tìm Product và Unit tương ứng trực tiếp từ ProductModel
       const product = await ProductModel.findById(productDetail._id);
-      if (!product) continue;
+      if (!product) {
+        console.error(`Không tìm thấy sản phẩm với ID: ${productDetail._id}`);
+        continue;
+      }
 
       const unit = await UnitModel.findById(productDetail.unit_id);
-      if (!unit) continue;
+      if (!unit) {
+        console.error(`Không tìm thấy đơn vị tính với ID: ${productDetail.unit_id}`);
+        continue;
+      }
 
       // Tìm category của sản phẩm để lấy giá trị discount
       const category = await CategoryModel.findById(product.category_id);
@@ -182,17 +191,64 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       }
 
       const currentDate = new Date();
-      const batchNumber = productDetail.batch_number || `LOT-${currentDate.getTime()}`;
 
-      // Kiểm tra xem đã có chi tiết kho cho sản phẩm này với cùng ngày tạo không
+      // Đảm bảo có số lô
+      let batchNumber = productDetail.batch_number;
+      if (!batchNumber || batchNumber.trim() === '') {
+        batchNumber = generateBatchNumber(product._id);
+        console.log(`Tạo số lô mới cho sản phẩm ${product.name}: ${batchNumber}`);
+      }
+
+      // Xử lý ngày sản xuất và hạn sử dụng
+      let dateOfManufacture: Date | null = null;
+      let expiryDate: Date | null = null;
+
+      try {
+        if (productDetail.date_of_manufacture) {
+          dateOfManufacture = new Date(productDetail.date_of_manufacture);
+          if (isNaN(dateOfManufacture.getTime())) {
+            console.error(`Ngày sản xuất không hợp lệ: ${productDetail.date_of_manufacture}`);
+            dateOfManufacture = new Date(); // Sử dụng ngày hiện tại làm giá trị mặc định
+          }
+        } else {
+          dateOfManufacture = new Date();
+        }
+
+        if (productDetail.expiry_date) {
+          expiryDate = new Date(productDetail.expiry_date);
+          if (isNaN(expiryDate.getTime())) {
+            console.error(`Ngày hết hạn không hợp lệ: ${productDetail.expiry_date}`);
+            // Sử dụng ngày hiện tại + 30 ngày làm giá trị mặc định
+            expiryDate = new Date();
+            expiryDate.setDate(expiryDate.getDate() + 30);
+          }
+        } else {
+          expiryDate = new Date();
+          expiryDate.setDate(expiryDate.getDate() + 30);
+        }
+      } catch (error) {
+        console.error(`Lỗi khi xử lý ngày tháng:`, error);
+        dateOfManufacture = new Date();
+        expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 30);
+      }
+
+      console.log(`Chi tiết ngày tháng của sản phẩm ${product.name}:`, {
+        rawDateOfManufacture: productDetail.date_of_manufacture,
+        parsedDateOfManufacture: dateOfManufacture,
+        rawExpiryDate: productDetail.expiry_date,
+        parsedExpiryDate: expiryDate
+      });
+
+      // Kiểm tra xem đã có chi tiết kho cho sản phẩm này với cùng số lô không
       const existingProductDetail = await ProductDetailModel.findOne({
         product_id: product._id,
-        date_of_manufacture: new Date(productDetail.date_of_manufacture || ''),
-        expiry_date: new Date(productDetail.expiry_date || ''),
         batch_number: batchNumber
       });
 
+      // Lấy số lượng được nhập
       const additionalQuantity = productDetail.quantity * (unit?.equal || 1);
+      console.log(`Số lượng nhập kho: ${additionalQuantity} (${productDetail.quantity} x ${unit?.equal || 1})`);
 
       if (existingProductDetail) {
         // Cập nhật chi tiết kho hiện tại
@@ -212,19 +268,33 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
         );
       } else {
         // Tạo mới chi tiết kho
-        const newProductDetail = new ProductDetailModel({
-          created_at: currentDate,
-          updated_at: currentDate,
-          product_id: product._id,
-          batch_number: batchNumber,
-          input_quantity: additionalQuantity,
-          output_quantity: 0,
-          inventory: additionalQuantity,
-          date_of_manufacture: new Date(productDetail.date_of_manufacture || ''),
-          expiry_date: new Date(productDetail.expiry_date || '')
-        });
+        try {
+          const newProductDetail = new ProductDetailModel({
+            created_at: currentDate,
+            updated_at: currentDate,
+            product_id: product._id,
+            batch_number: batchNumber,
+            input_quantity: additionalQuantity,
+            output_quantity: 0,
+            inventory: additionalQuantity,
+            date_of_manufacture: dateOfManufacture,
+            expiry_date: expiryDate
+          });
 
-        await newProductDetail.save();
+          const savedDetail = await newProductDetail.save();
+          console.log(`Đã tạo chi tiết kho mới với ID: ${savedDetail._id}`);
+        } catch (error) {
+          console.error(`Lỗi khi tạo chi tiết kho mới:`, error);
+          return NextResponse.json(
+            createErrorMessage(
+              `Failed to create product detail.`,
+              error instanceof Error ? error.message : "Unknown error when creating product detail",
+              path,
+              `Please check your product details and try again.`,
+            ),
+            { status: EStatusCode.INTERNAL_SERVER_ERROR }
+          );
+        }
       }
 
       // Kiểm tra và xử lý trường hợp giá nhập = 0

@@ -1,25 +1,7 @@
 'use client'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
-import { formatCurrency } from './format'
-
-// interface IProduct {
-//     stt: number
-//     name: string
-//     unit: string
-//     expiryDate: string
-//     price: number
-//     quantity: number
-//     total: number
-// }
-
-// interface ICompany {
-//     name: string
-//     address: string
-//     phone: string
-//     invoiceNumber: string
-//     date: string
-// }
+import { formatCurrency } from './format-currency'
 
 interface OrderItem {
     product: {
@@ -157,4 +139,4 @@ export const generatePDF = async (orderData: OrderData) => {
         // Xóa element tạm
         document.body.removeChild(tempDiv);
     }
-};
+}; 

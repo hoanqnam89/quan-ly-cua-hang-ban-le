@@ -4,8 +4,8 @@ import { Button } from '@/components';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { formatCurrency } from '@/app/utils/format';
-import { generatePDF } from '@/app/utils/generatePDF';
+import { formatCurrency } from '@/utils/format';
+import { generatePDF } from '@/utils/generatePDF';
 import { use } from 'react';
 
 interface OrderItem {
@@ -330,7 +330,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
                             >
                                 In đơn hàng
                             </Button>
-                            
+
                         </div>
                     </div>
                 </div>

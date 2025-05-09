@@ -25,6 +25,9 @@ import { IProduct } from '@/interfaces/product.interface';
 import { DEFAULT_PROCDUCT } from '@/constants/product.constant';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 import { IUnit } from '@/interfaces/unit.interface';
+import { EStatusCode } from '@/enums/status-code.enum';
+import { addCollection } from '@/services/api-service';
+import { ENotificationType } from '@/components/notify/notification/notification';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -51,117 +54,139 @@ export default function Product() {
   const [products, setProducts] = useState<collectionType[]>([]);
   const [units, setUnits] = useState<IUnit[]>([]);
 
-  const getSuppliers: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const newBusinesses: IBusiness[] = await fetchGetCollections<IBusiness>(
-        ECollectionNames.BUSINESS,
-      );
-      const newSuppliers: IBusiness[] = newBusinesses.filter((
-        business: IBusiness
-      ): boolean =>
-        business.type !== EBusinessType.SUPPLIER
-      );
-      setSupplier([...newSuppliers])
+  // Dùng ref để đảm bảo chỉ gọi API khi cần thiết
+  const dataFetched = useRef(false);
+  const productAdded = useRef(false);
 
-      if (newSuppliers.length > 0) {
-        setProduct({
-          ...product,
-          supplier_id: newSuppliers[0]._id,
-        });
-      }
-      setSupplierOptions([
-        ...newSuppliers.map((supplier: IBusiness): ISelectOption => ({
-          label: `${supplier.name}`,
-          value: supplier._id,
-        }))
-      ]);
-      setIsLoading(false);
-    },
-    [product],
-  );
-  const getCategory: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const newCategories: ICategory[] = await fetchGetCollections<ICategory>(
-        ECollectionNames.CATEGORY,
-      );
-      setCategories([...newCategories])
-
-      if (newCategories.length > 0) {
-        setProduct({
-          ...product,
-          category_id: newCategories[0]._id,
-        });
-      }
-      setCategoryOptions([
-        ...newCategories.map((category: ICategory): ISelectOption => ({
-          label: `${category.name}`,
-          value: category._id,
-        }))
-      ]);
-      setIsLoading(false);
-    },
-    [product],
-  );
-
-  const getUnits: () => Promise<void> = useCallback(
-    async (): Promise<void> => {
-      const newUnits: IUnit[] = await fetchGetCollections<IUnit>(
-        ECollectionNames.UNIT,
-      );
-      setUnits([...newUnits]);
-      setIsLoading(false);
-    },
-    [],
-  );
-
-  useEffect((): void => {
-    getSuppliers();
-  }, []);
-  useEffect((): void => {
-    getCategory();
-  }, []);
-  useEffect((): void => {
-    getUnits();
-  }, []);
-
+  // Hàm fetch data chỉ chạy 1 lần khi component mount
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const newBusinesses: IBusiness[] = await fetchGetCollections<IBusiness>(
-          ECollectionNames.BUSINESS,
-        );
-        const newSuppliers: IBusiness[] = newBusinesses.filter((
-          business: IBusiness
-        ): boolean =>
-          business.type !== EBusinessType.SUPPLIER
-        );
-        const newCategories: ICategory[] = await fetchGetCollections<ICategory>(
-          ECollectionNames.CATEGORY,
-        );
-        console.log('Đang fetch dữ liệu sản phẩm...');
-        const fetchedProducts = await fetchGetCollections<IProduct>(ECollectionNames.PRODUCT);
-        console.log('Dữ liệu sản phẩm:', fetchedProducts);
-        setProducts(fetchedProducts);
-        console.log('acbc', fetchedProducts)
-        const newProducts = fetchedProducts.map((product) => {
-          const newProduct = { ...product };
-          const foundCategory = newCategories.find((category) => category._id === product.category_id)
-          newProduct.category = foundCategory?.name
+    // Nếu đã fetch data rồi thì không fetch nữa
+    if (dataFetched.current) return;
 
-          const foundSupplier = newSuppliers.find((supplier2) => supplier2._id === product.supplier_id)
-          newProduct.supplier = foundSupplier?.name
+    const fetchAllData = async () => {
+      setIsLoading(true);
+      try {
+        console.log("Đang tải dữ liệu ban đầu...");
+
+        // Fetch tất cả dữ liệu cần thiết
+        const [newBusinesses, newCategories, newUnits, fetchedProducts] = await Promise.all([
+          fetchGetCollections<IBusiness>(ECollectionNames.BUSINESS),
+          fetchGetCollections<ICategory>(ECollectionNames.CATEGORY),
+          fetchGetCollections<IUnit>(ECollectionNames.UNIT),
+          fetchGetCollections<IProduct>(ECollectionNames.PRODUCT)
+        ]);
+
+        // Xử lý suppliers
+        const newSuppliers = newBusinesses.filter(
+          (business: IBusiness): boolean => business.type !== EBusinessType.SUPPLIER
+        );
+        setSupplier(newSuppliers);
+
+        // Chỉ set supplier_id nếu chưa có
+        if (newSuppliers.length > 0) {
+          setProduct(prev => ({
+            ...prev,
+            supplier_id: prev.supplier_id || newSuppliers[0]._id,
+          }));
+        }
+
+        setSupplierOptions(
+          newSuppliers.map((supplier: IBusiness): ISelectOption => ({
+            label: `${supplier.name}`,
+            value: supplier._id,
+          }))
+        );
+
+        // Xử lý categories
+        setCategories(newCategories);
+
+        // Chỉ set category_id nếu chưa có
+        if (newCategories.length > 0) {
+          setProduct(prev => ({
+            ...prev,
+            category_id: prev.category_id || newCategories[0]._id,
+          }));
+        }
+
+        setCategoryOptions(
+          newCategories.map((category: ICategory): ISelectOption => ({
+            label: `${category.name}`,
+            value: category._id,
+          }))
+        );
+
+        // Xử lý units
+        setUnits(newUnits);
+
+        // Xử lý products
+        // Sắp xếp sản phẩm theo thời gian tạo mới nhất
+        fetchedProducts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        const newProducts = fetchedProducts.map((product) => {
+          const newProduct = { ...product } as any;
+          const foundCategory = newCategories.find((category) => category._id === product.category_id);
+          newProduct.category = foundCategory?.name;
+
+          const foundSupplier = newSuppliers.find((supplier2) => supplier2._id === product.supplier_id);
+          newProduct.supplier = foundSupplier?.name;
           return newProduct;
-        })
-        console.log('abc2', newProducts)
-        setProducts(newProducts)
+        });
+
+        setProducts(newProducts);
+
+        // Đánh dấu đã tải dữ liệu
+        dataFetched.current = true;
+        console.log("Đã tải dữ liệu xong!");
       } catch (error) {
-        console.error('Lỗi khi lấy danh sách sản phẩm:', error);
+        console.error('Lỗi khi lấy dữ liệu:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
-    fetchProducts();
-  }, []);
+
+    fetchAllData();
+  }, []); // Chỉ chạy 1 lần khi component mount
+
+  // Tách riêng useEffect cho việc tải lại dữ liệu khi thêm sản phẩm thành công
   useEffect(() => {
-  }, []);
+    // Nếu đã thêm sản phẩm thành công thì tải lại dữ liệu
+    if (productAdded.current) {
+      const reloadProducts = async () => {
+        setIsLoading(true);
+        try {
+          console.log("Đang tải lại danh sách sản phẩm...");
+
+          // Chỉ cần tải lại sản phẩm, không cần tải lại các dữ liệu khác
+          const fetchedProducts = await fetchGetCollections<IProduct>(ECollectionNames.PRODUCT);
+
+          // Sắp xếp sản phẩm theo thời gian tạo mới nhất
+          fetchedProducts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+          const newProducts = fetchedProducts.map((product) => {
+            const newProduct = { ...product } as any;
+            const foundCategory = categories.find((category) => category._id === product.category_id);
+            newProduct.category = foundCategory?.name;
+
+            const foundSupplier = supplier.find((supplier2) => supplier2._id === product.supplier_id);
+            newProduct.supplier = foundSupplier?.name;
+            return newProduct;
+          });
+
+          setProducts(newProducts);
+
+          // Đặt lại trạng thái
+          productAdded.current = false;
+          console.log("Đã tải lại danh sách sản phẩm xong!");
+        } catch (error) {
+          console.error('Lỗi khi tải lại danh sách sản phẩm:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      reloadProducts();
+    }
+  }, [categories, supplier]);
 
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
     const { files } = e.target;
@@ -236,7 +261,7 @@ export default function Product() {
       render: (collection: collectionType): ReactElement =>
         <div className="flex items-center justify-center min-h-[60px]">
           {
-            collection.image_links.map((image: string, index: number) =>
+            collection.image_links?.map((image: string, index: number) =>
               image ? (
                 <div
                   key={index}
@@ -253,7 +278,7 @@ export default function Product() {
                   />
                 </div>
               ) : null
-            )
+            ) || []
           }
         </div>
     },
@@ -319,16 +344,6 @@ export default function Product() {
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
-    // {
-    //   key: `updated_at`,
-    //   ref: useRef(null),
-    //   title: `Ngày cập nhật`,
-    //   size: `4fr`,
-    //   render: (collection: collectionType): ReactElement => {
-    //     const date: string = new Date(collection.updated_at).toLocaleString();
-    //     return <Text isEllipsis={true} tooltip={date}>{date}</Text>
-    //   }
-    // },
     {
       title: `Thao tác`,
       ref: useRef(null),
@@ -423,9 +438,9 @@ export default function Product() {
   }
 
   const handleDeleteImage = (index: number): void => {
-    const newImages: string[] = product.image_links.filter(
+    const newImages: string[] = product.image_links?.filter(
       (_image: string, imageIndex: number) => imageIndex !== index
-    );
+    ) || [];
     const newImageFiles: File[] = imageFiles.filter(
       (_imageFile: File, imageFileIndex: number) => imageFileIndex !== index
     );
@@ -439,16 +454,6 @@ export default function Product() {
   const gridColumns: string = `200px 1fr`;
 
   const handleOpenModal = (prev: boolean): boolean => {
-    // if (businessOptions.length === 0) {
-    //   createNotification({
-    //     id: 0,
-    //     children: <Text>Thêm nhà cung cấp vào trước khi thêm sản phẩm!</Text>,
-    //     type: ENotificationType.ERROR,
-    //     isAutoClose: true, 
-    //   });
-    //   return prev;
-    // }
-
     return !prev;
   }
 
@@ -460,9 +465,81 @@ export default function Product() {
     }));
   }
 
+  // Custom handle add collection
+  const customHandleAddCollection = async (): Promise<void> => {
+    try {
+      console.log("Đang thêm sản phẩm mới...");
+      const response = await addCollection<IProduct>(product, collectionName);
+
+      if (response.status === EStatusCode.CREATED || response.status === EStatusCode.OK) {
+        console.log("Thêm sản phẩm thành công, đang cập nhật lại danh sách...");
+
+        // Cập nhật lại danh sách sản phẩm trực tiếp
+        const fetchedProducts = await fetchGetCollections<IProduct>(ECollectionNames.PRODUCT);
+        // Sắp xếp sản phẩm theo thời gian tạo mới nhất
+        fetchedProducts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        const newProducts = fetchedProducts.map((product) => {
+          const newProduct = { ...product } as any;
+          const foundCategory = categories.find((category) => category._id === product.category_id);
+          newProduct.category = foundCategory?.name;
+
+          const foundSupplier = supplier.find((supplier2) => supplier2._id === product.supplier_id);
+          newProduct.supplier = foundSupplier?.name;
+          return newProduct;
+        });
+
+        // Cập nhật danh sách sản phẩm trực tiếp
+        setProducts(newProducts);
+
+        // Hiển thị thông báo thành công
+        createNotification({
+          id: Date.now(),
+          children: `Lưu sản phẩm ${product.name} thành công!`,
+          type: ENotificationType.SUCCESS,
+          isAutoClose: true,
+          title: 'Thành công'
+        });
+
+        // Reset form
+        setProduct(DEFAULT_PROCDUCT);
+        setImageFiles([]);
+      } else {
+        // Hiển thị thông báo lỗi
+        let errorMessage = "Lưu sản phẩm thất bại!";
+        try {
+          const errorData = await response.json();
+          if (errorData && errorData.message) {
+            errorMessage += ' ' + errorData.message;
+          }
+        } catch { }
+
+        createNotification({
+          id: Date.now(),
+          children: errorMessage,
+          type: ENotificationType.ERROR,
+          isAutoClose: true,
+          title: 'Lỗi'
+        });
+      }
+
+      return;
+    } catch (error) {
+      console.error("Lỗi khi thêm sản phẩm:", error);
+
+      // Hiển thị thông báo lỗi
+      createNotification({
+        id: Date.now(),
+        children: `Lỗi khi lưu sản phẩm: ${error instanceof Error ? error.message : 'Lỗi không xác định'}`,
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+        title: 'Lỗi'
+      });
+    }
+  };
 
   return (
-    <ManagerPage<collectionType>
+    <ManagerPage
       columns={columns}
       collectionName={collectionName}
       defaultCollection={DEFAULT_PROCDUCT}
@@ -478,6 +555,7 @@ export default function Product() {
       currentPage={currentPage}
       setCurrentPage={setCurrentPage}
       totalItems={products.length}
+      customHandleAddCollection={customHandleAddCollection}
     >
       <>
         <Tabs>
@@ -520,16 +598,6 @@ export default function Product() {
               </TextInput>
             </InputSection>
 
-            {/* <InputSection label={`Code`} gridColumns={gridColumns}>
-            <TextInput
-              name={`code`}
-              isDisable={isModalReadOnly}
-              value={product.code}
-              onInputChange={handleChangeProduct}
-            >
-            </TextInput>
-          </InputSection> */}
-
             <InputSection label={`Mô tả`} gridColumns={gridColumns}>
               <TextInput
                 name={`description`}
@@ -539,16 +607,6 @@ export default function Product() {
               >
               </TextInput>
             </InputSection>
-
-            {/* <InputSection label={`Mã sản phẩm`} gridColumns={gridColumns}>
-            <TextInput
-              name={`code`}
-              isDisable={isModalReadOnly}
-              value={product.code}
-              onInputChange={handleChangeProduct}
-            >
-            </TextInput>
-          </InputSection> */}
 
             <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>
               <div>
@@ -563,7 +621,7 @@ export default function Product() {
 
                 <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
                   {
-                    product.image_links.map((image: string, index: number) =>
+                    product.image_links?.map((image: string, index: number) => (
                       <div
                         key={index}
                         className={`relative ${styles[`image-container`]}`}
@@ -578,17 +636,19 @@ export default function Product() {
                         >
                         </Image>
 
-                        {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
-                          <Button
-                            className={`absolute top-0 right-0`}
-                            onClick={() => handleDeleteImage(index)}
-                          >
-                            <IconContainer iconLink={trashIcon}>
-                            </IconContainer>
-                          </Button>
-                        </div> : null}
+                        {!isModalReadOnly ? (
+                          <div className={`absolute top-0 right-0`}>
+                            <Button
+                              className={`absolute top-0 right-0`}
+                              onClick={() => handleDeleteImage(index)}
+                            >
+                              <IconContainer iconLink={trashIcon}>
+                              </IconContainer>
+                            </Button>
+                          </div>
+                        ) : null}
                       </div>
-                    )
+                    )) || []
                   }
                 </div>
               </div>
@@ -601,16 +661,3 @@ export default function Product() {
     </ManagerPage>
   );
 }
-
-// function loadBusinessNames() {
-//   throw new Error('Function not implemented.');
-// }
-
-// function getCategory() {
-//   throw new Error('Function not implemented.');
-// }
-
-// function setImageFiles(arg0: File[]) {
-//   throw new Error('Function not implemented.');
-// }
-

@@ -11,6 +11,7 @@ export interface IWarehouseProductDetail extends IOrderFormProductDetail {
     date_of_manufacture?: string;
     expiry_date?: string;
     batch_number?: string;
+    barcode?: string;
     input_price: number;
 }
 

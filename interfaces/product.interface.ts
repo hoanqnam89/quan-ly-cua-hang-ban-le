@@ -5,10 +5,11 @@ export interface IProduct {
 
   supplier_id: string
   category_id: string
+  business_name?: string
   code: string
   name: string
-  description: string
-  image_links: string[]
+  description?: string
+  image_links?: string[]
   input_price: number
   output_price: number
 }

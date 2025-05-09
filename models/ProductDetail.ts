@@ -41,6 +41,14 @@ const ProductDetailSchema = new Schema({
     default: () => Date.now(),
     type: Date,
   },
+  batch_number: {
+    type: String,
+    default: '',
+  },
+  barcode: {
+    type: String,
+    default: '',
+  },
 });
 
 export const ProductDetailModel =

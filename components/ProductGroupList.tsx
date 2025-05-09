@@ -1,7 +1,7 @@
 'use client';
 
 import { IProduct } from '../interfaces/product.interface';
-import { formatCurrency } from '../utils/format-currency';
+import { formatCurrency } from '@/utils/format-currency';
 import { useState, useEffect } from 'react';
 import { ChevronDownIcon, ChevronUpIcon, PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { IProductDetail } from '../interfaces/product-detail.interface';

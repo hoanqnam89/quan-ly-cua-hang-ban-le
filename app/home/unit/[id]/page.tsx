@@ -27,7 +27,7 @@ export default function Detail({
 
   useEffect((): void => {
     const getCollectionNameById = async () => {
-      const getCollectionApiResponse: Response = 
+      const getCollectionApiResponse: Response =
         await getCollectionById(id, collectionName);
       const getCollectionApiJson = await getCollectionApiResponse.json();
       setCollection(getCollectionApiJson);

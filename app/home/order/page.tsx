@@ -4,8 +4,8 @@ import { Button } from '@/components'
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { formatCurrency } from '@/app/utils/format';
-import PaymentModal from '@/app/components/PaymentModal';
+import { formatCurrency } from '@/utils/format';
+import PaymentModal from '@/components/PaymentModal';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 
 interface OrderItem {
@@ -273,7 +273,7 @@ const ImportOrderList = () => {
           </div>
         </header>
 
-        
+
 
         <div className="space-y-4 mb-8">
           <div className="w-full">
@@ -448,7 +448,7 @@ const ImportOrderList = () => {
                   />
                 </svg>
                 <span>
-                  {sortField === 'date' 
+                  {sortField === 'date'
                     ? `Sắp xếp theo ngày ${sortOrder === 'asc' ? '↑' : '↓'}`
                     : `Sắp xếp theo giá ${sortOrder === 'asc' ? '↑' : '↓'}`
                   }

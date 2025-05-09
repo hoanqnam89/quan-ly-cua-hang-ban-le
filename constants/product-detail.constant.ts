@@ -11,4 +11,6 @@ export const DEFAULT_PROCDUCT_DETAIL: IProductDetail = {
   inventory: 0,
   date_of_manufacture: new Date(),
   expiry_date: new Date(),
+  batch_number: '',
+  barcode: '',
 }

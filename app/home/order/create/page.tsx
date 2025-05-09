@@ -3,11 +3,14 @@
 import { Button } from '@/components';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import type { IProduct } from '../../../interfaces/product.interface';
+import type { IProduct } from '@/interfaces/product.interface';
 import { useEffect, useState } from 'react';
-import { formatCurrency } from '@/app/utils/format';
+import { formatCurrency } from '@/utils/format';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
-import { generatePDF } from '@/app/utils/generatePDF';
+import { generatePDF } from '@/utils/generatePDF';
+import BarcodeScanner from '@/components/barcode-scanner';
+import { generateBatchNumber } from '@/utils/batch-number';
+import { Modal } from '@/components';
 
 interface OrderItem {
     product: IProduct;
@@ -42,6 +45,7 @@ export default function CreateOrder() {
         detailId: string
     }>>>({});
     const [isDropdownVisible, setIsDropdownVisible] = useState(false);
+    const [showMomoQR, setShowMomoQR] = useState<boolean>(false);
 
     const totalAmount = orderItems.reduce(
         (sum, item) => sum + item.product.output_price * item.quantity,
@@ -241,12 +245,15 @@ export default function CreateOrder() {
         switch (value) {
             case 'cash':
                 setDisplayPaymentText('Thanh toán tiền mặt');
+                setShowMomoQR(false);
                 break;
             case 'transfer':
-                setDisplayPaymentText('Thanh toán chuyển khoản');
+                setDisplayPaymentText('Chuyển khoản ngân hàng');
+                setShowMomoQR(true);
                 break;
             default:
                 setDisplayPaymentText('Thanh toán tiền mặt');
+                setShowMomoQR(false);
         }
     };
 
@@ -383,6 +390,32 @@ export default function CreateOrder() {
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
+        setIsDropdownVisible(true);
+    };
+
+    const handleProductFound = (productDetail: IProductDetail, product: any) => {
+        // Tìm thấy sản phẩm qua barcode
+        if (productDetail) {
+            console.log('Tìm thấy thông tin sản phẩm chi tiết:', productDetail);
+
+            // Tìm sản phẩm theo product_id từ productDetail
+            const foundProduct = products.find(p => p._id === productDetail.product_id);
+
+            if (foundProduct) {
+                console.log('Tìm thấy sản phẩm:', foundProduct.name);
+                handleAddToOrder(foundProduct, productDetail._id);
+            } else {
+                alert(`Không tìm thấy sản phẩm với mã: ${productDetail.batch_number}`);
+            }
+        } else {
+            alert(`Không tìm thấy sản phẩm với mã vạch đã quét`);
+        }
+    };
+
+    const handleBarcodeError = (message: string) => {
+        // Hiển thị thông báo lỗi nếu cần
+        console.error(message);
+        alert(`Lỗi quét mã: ${message}`);
     };
 
     useEffect(() => {
@@ -600,155 +633,96 @@ export default function CreateOrder() {
                     {/* Cột trái - Sản phẩm đã chọn và tìm kiếm */}
                     <div className="col-span-4">
                         <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm h-[710px] flex flex-col">
-                            <div className="flex gap-3 mb-5">
-                                <div id="search-container" className="w-full relative">
-                                    <div className="relative">
-                                        <input
-                                            type="text"
-                                            placeholder="Tìm theo tên sản phẩm... (F3)"
-                                            className="w-full h-12 px-4 pl-12 bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-base text-slate-900 placeholder:text-slate-400 transition-all duration-200"
-                                            value={searchTerm}
-                                            onChange={handleSearchChange}
-                                            onFocus={() => setIsDropdownVisible(true)}
-                                        />
-                                        <div className="absolute left-4 top-1/2 -translate-y-1/2">
-                                            <Image
-                                                src="/icons/search.svg"
-                                                alt="search"
-                                                width={20}
-                                                height={20}
-                                                className="text-slate-400"
-                                                priority
-                                            />
-                                        </div>
-                                    </div>
+                            <div className="flex flex-col mb-4 relative">
+                                <h2 className="text-lg font-semibold mb-2">Quét mã vạch</h2>
+                                <div className="flex items-center justify-between mb-3">
+                                    <BarcodeScanner
+                                        onProductFound={handleProductFound}
+                                        onError={handleBarcodeError}
+                                    />
+                                </div>
 
-                                    {searchTerm && isDropdownVisible && (
-                                        <div className="absolute z-50 left-0 right-0 mt-2">
-                                            <div className="bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
-                                                <div className="max-h-[420px] overflow-y-auto custom-scrollbar">
-                                                    {loading ? (
-                                                        <div className="flex items-center justify-center p-6">
-                                                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                                                        </div>
-                                                    ) : error ? (
-                                                        <div className="flex items-center justify-center p-6 text-red-500">
-                                                            {error}
-                                                        </div>
-                                                    ) : filteredProducts.length === 0 ? (
-                                                        <div className="flex items-center justify-center p-6">
-                                                            <div className="text-center">
-                                                                <Image
-                                                                    src="/icons/empty-cart.svg"
-                                                                    alt="empty"
-                                                                    width={44}
-                                                                    height={44}
-                                                                    className="mx-auto mb-3 text-slate-400"
-                                                                    priority
-                                                                />
-                                                                <p className="text-slate-600 mb-3 text-[16px]">
-                                                                    Không tìm thấy sản phẩm phù hợp
-                                                                </p>
+                                <h2 className="text-lg font-semibold mb-2">Tìm kiếm sản phẩm</h2>
+                                <div className="relative" id="search-container">
+                                    <input
+                                        type="text"
+                                        value={searchTerm}
+                                        onChange={handleSearchChange}
+                                        placeholder="Tên sản phẩm..."
+                                        className="w-full p-2 border border-gray-300 rounded-lg"
+                                        onFocus={() => setIsDropdownVisible(true)}
+                                    />
+                                    {isDropdownVisible && searchTerm.length > 0 && filteredProducts.length > 0 && (
+                                        <div className="absolute z-10 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg w-full max-h-80 overflow-y-auto">
+                                            {filteredProducts.map(product => {
+                                                // Lấy thông tin tồn kho của sản phẩm
+                                                const stockDetails = productStockInfo[product._id] || [];
+                                                const totalStock = stockDetails.reduce((sum, detail) => sum + detail.quantity, 0);
+
+                                                // Nếu không có tồn kho, không hiển thị sản phẩm
+                                                if (totalStock <= 0) return null;
+
+                                                // Nếu chỉ có một lô sản phẩm
+                                                if (stockDetails.length === 1) {
+                                                    const detail = stockDetails[0];
+                                                    return (
+                                                        <div
+                                                            key={product._id}
+                                                            className="p-3 hover:bg-blue-50 cursor-pointer border-b border-gray-200"
+                                                            onClick={() => {
+                                                                handleAddToOrder(product, detail.detailId);
+                                                                setSearchTerm('');
+                                                                setIsDropdownVisible(false);
+                                                            }}
+                                                        >
+                                                            <div className="font-semibold text-base text-slate-800">{product.name}</div>
+                                                            <div className="flex justify-between mt-1">
+                                                                <div className="text-sm text-gray-600 font-medium">Giá: {formatCurrency(product.output_price)}</div>
+                                                                <div className="text-sm text-green-600 font-medium">SL: {detail.quantity}</div>
+                                                            </div>
+                                                            <div className="text-sm text-gray-600 mt-1">
+                                                                HSD: {detail.expiryDate ? new Date(detail.expiryDate).toLocaleDateString('vi-VN') : 'Không có'}
                                                             </div>
                                                         </div>
-                                                    ) : (
-                                                        <div className="divide-y divide-slate-100">
-                                                            {filteredProducts.map((product) => {
-                                                                const stockDetails = productStockInfo[product._id] || [];
-                                                                const totalQuantity = stockDetails.reduce((sum, detail) => sum + detail.quantity, 0);
+                                                    );
+                                                }
 
-                                                                // Skip products with zero quantity
-                                                                if (totalQuantity === 0) return null;
-
-                                                                return (
-                                                                    <div key={product._id} className="p-4 hover:bg-slate-50 transition-colors">
-                                                                        <div className="flex items-center gap-4">
-                                                                            <div className="w-14 h-14 bg-slate-100 rounded-lg relative overflow-hidden flex-shrink-0">
-                                                                                {product.image_links?.[0] ? (
-                                                                                    <Image
-                                                                                        src={product.image_links[0]}
-                                                                                        alt={product.name}
-                                                                                        fill
-                                                                                        className="object-cover"
-                                                                                    />
-                                                                                ) : (
-                                                                                    <div className="w-full h-full flex items-center justify-center">
-                                                                                        <Image
-                                                                                            src="/icons/product.svg"
-                                                                                            alt="product"
-                                                                                            width={24}
-                                                                                            height={24}
-                                                                                            className="text-slate-400"
-                                                                                        />
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                            <div className="flex-1 min-w-0">
-                                                                                <h3 className="font-medium text-[15px] text-slate-900 truncate mb-1">
-                                                                                    {product.name}
-                                                                                </h3>
-                                                                                <div className="flex items-center gap-3">
-                                                                                    <span className="text-[15px] font-medium text-blue-600">
-                                                                                        {formatCurrency(product.output_price)}
-                                                                                    </span>
-
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {stockDetails.length > 0 && (
-                                                                            <div className="mt-3 grid gap-2">
-                                                                                {stockDetails.map((detail) => (
-                                                                                    // Skip individual batch entries with zero quantity
-                                                                                    detail.quantity > 0 ? (
-                                                                                        <div
-                                                                                            key={detail.detailId}
-                                                                                            className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-blue-50 transition-colors group"
-                                                                                        >
-                                                                                            <div className="flex items-center gap-4">
-                                                                                                <div className="flex items-center gap-2">
-                                                                                                    <div className="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 group-hover:bg-blue-100">
-                                                                                                        SL: {detail.quantity}
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                                <div className="flex items-center gap-3">
-                                                                                                    <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                                                                                                        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                                                                                        </svg>
-                                                                                                        NSX: {detail.dateOfManufacture ? new Date(detail.dateOfManufacture).toLocaleDateString('vi-VN') : 'Không có'}
-                                                                                                    </div>
-                                                                                                    <span className="text-slate-300">|</span>
-                                                                                                    <div className="flex items-center gap-1.5 text-xs text-slate-600">
-                                                                                                        <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                                                        </svg>
-                                                                                                        HSD: {detail.expiryDate ? new Date(detail.expiryDate).toLocaleDateString('vi-VN') : 'Không có'}
-                                                                                                    </div>
-                                                                                                </div>
-                                                                                            </div>
-                                                                                            <button
-                                                                                                className="px-3 py-1.5 bg-white text-blue-600 rounded-lg border border-blue-200 hover:bg-blue-500 hover:text-white hover:border-blue-500 transition-all duration-200 text-sm font-medium shadow-sm whitespace-nowrap"
-                                                                                                onClick={(e) => {
-                                                                                                    e.stopPropagation();
-                                                                                                    handleAddToOrder(product, detail.detailId);
-                                                                                                    setIsDropdownVisible(false);
-                                                                                                }}
-                                                                                            >
-                                                                                                Thêm vào giỏ
-                                                                                            </button>
-                                                                                        </div>
-                                                                                    ) : null
-                                                                                ))}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            })}
+                                                // Nếu có nhiều lô sản phẩm, hiển thị từng lô
+                                                return (
+                                                    <div key={product._id} className="border-b border-gray-200">
+                                                        <div className="p-3 bg-blue-50">
+                                                            <div className="font-semibold text-base text-slate-800">{product.name}</div>
+                                                            <div className="flex justify-between mt-1">
+                                                                <div className="text-sm text-gray-600 font-medium">Giá: {formatCurrency(product.output_price)}</div>
+                                                                <div className="text-sm text-green-600 font-medium">Tổng: {totalStock}</div>
+                                                            </div>
                                                         </div>
-                                                    )}
-                                                </div>
-                                            </div>
+                                                        <div>
+                                                            {stockDetails.map(detail => (
+                                                                <div
+                                                                    key={detail.detailId}
+                                                                    className="p-3 hover:bg-blue-50 cursor-pointer border-t border-gray-100 pl-4"
+                                                                    onClick={() => {
+                                                                        handleAddToOrder(product, detail.detailId);
+                                                                        setSearchTerm('');
+                                                                        setIsDropdownVisible(false);
+                                                                    }}
+                                                                >
+                                                                    <div className="flex justify-between">
+                                                                        <div className="text-sm text-slate-700 font-medium">
+                                                                            Lô: {new Date(detail.dateOfManufacture || '').toLocaleDateString('vi-VN')}
+                                                                        </div>
+                                                                        <div className="text-sm text-green-600 font-medium">SL: {detail.quantity}</div>
+                                                                    </div>
+                                                                    <div className="text-sm text-gray-600 mt-1">
+                                                                        HSD: {detail.expiryDate ? new Date(detail.expiryDate).toLocaleDateString('vi-VN') : 'Không có'}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>
@@ -984,8 +958,8 @@ export default function CreateOrder() {
                                                     onChange={handlePaymentChange}
                                                 >
                                                     <option value="cash">{paymentMethod === 'cash' ? displayPaymentText : 'Thanh toán tiền mặt'}</option>
-                                                    <option value="transfer">{paymentMethod === 'transfer' ? displayPaymentText : 'Thanh toán chuyển khoản'}</option>
-                                                    <option value="card">{paymentMethod === 'card' ? displayPaymentText : 'Thanh toán qua thẻ'}</option>
+                                                    <option value="transfer">{paymentMethod === 'transfer' ? displayPaymentText : 'Chuyển khoản ngân hàng'}</option>
+
                                                 </select>
                                             </div>
                                             <div>
@@ -1093,6 +1067,42 @@ export default function CreateOrder() {
                     </div>
                 </div>
             </div>
+
+            {showMomoQR && (
+                <div className="bg-pink-50 border border-pink-200 rounded-lg mt-2 p-3">
+                    <div className="text-center mb-2">
+                        <p className="text-sm font-medium text-pink-700">Quét mã MoMo để thanh toán</p>
+                        <p className="text-xs text-pink-600 mt-1">Số tiền: {formatCurrency(totalAmount)}</p>
+                    </div>
+                    <div className="flex justify-center">
+                        <div className="bg-white p-3 rounded-lg border border-pink-200 shadow-sm">
+                            <div className="w-48 h-48 relative">
+                                <Image
+                                    src="/images/qr_momo.jpg"
+                                    alt="Mã QR MoMo"
+                                    fill
+                                    className="object-contain"
+                                    priority
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-center mt-2">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                            <Image
+                                src="/images/momo-logo.png"
+                                alt="MoMo"
+                                width={24}
+                                height={24}
+                                className="object-contain"
+                            />
+                            <p className="text-sm text-pink-700 font-medium">Võ Minh Anh</p>
+                        </div>
+                        <p className="text-xs text-pink-600">SĐT: <span className="font-medium">*******470</span></p>
+                        <p className="text-xs text-pink-600 mt-1">Nội dung: <span className="font-medium">Thanh toan don hang</span></p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 } 

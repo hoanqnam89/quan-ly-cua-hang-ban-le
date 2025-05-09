@@ -28,7 +28,7 @@ export default function Detail({
 
   useEffect((): void => {
     const getCollectionNameById = async () => {
-      const getCollectionApiResponse: Response = 
+      const getCollectionApiResponse: Response =
         await getCollectionById(id, collectionName);
       const getCollectionApiJson = await getCollectionApiResponse.json();
       setCollection(getCollectionApiJson);
@@ -61,7 +61,7 @@ export default function Detail({
       </InputSection>
 
       <InputSection label={`Là quản trị viên`} gridColumns={gridColumns}>
-        <Checkbox 
+        <Checkbox
           isChecked={collection.is_admin}
           isDisable={true}
         >

@@ -3,7 +3,7 @@
 import { CSSProperties, ReactElement, useState } from 'react';
 import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
 import { boxesIcon, boxIcon, chevronLeftIcon, chevronRightIcon, circleSmallIcon, circleUserRoundIcon, factoryIcon, homeIcon, scrollIcon, settingIcon, toyBrickIcon, userIcon } from '@/public';
-import { IRootLayout } from '@/app/interfaces/root-layout.interface';
+import { IRootLayout } from '@/interfaces/root-layout.interface';
 import styles from './style.module.css';
 
 export interface CNavbarItem {
