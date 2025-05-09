@@ -47,14 +47,28 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
 
     // Đảm bảo có code hợp lệ và độc nhất
     if (!product.code || product.code.trim() === '') {
-      product.code = `${nameToHyphenAndLowercase(product.name)}-${Date.now()}`;
+      // Tạo mã sản phẩm với format: SP-[ngày hiện tại dạng ddMMyyyy]-[timestamp]
+      const today = new Date();
+      const day = String(today.getDate()).padStart(2, '0');
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const year = today.getFullYear();
+      const formattedDate = `${day}${month}${year}`;
+      const timestamp = Date.now();
+      product.code = `SP-${formattedDate}-${timestamp}`;
+    } else {
+      // Đảm bảo code không có dấu tiếng Việt
+      product.code = nameToHyphenAndLowercase(product.code);
     }
 
     // Kiểm tra xem code đã tồn tại chưa
     const existingProduct = await collectionModel.findOne({ code: product.code });
     if (existingProduct) {
-      // Nếu đã tồn tại, tạo mã mới với timestamp
-      product.code = `${product.code}-${Date.now()}`;
+      // Nếu đã tồn tại, tạo mã mới với timestamp mới
+      const parts = product.code.split('-');
+      const prefix = parts[0];
+      const dateCode = parts[1];
+      const timestamp = Date.now();
+      product.code = `${prefix}-${dateCode}-${timestamp}`;
     }
 
     const newProduct = new collectionModel({
@@ -90,18 +104,18 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
 
     return NextResponse.json(savedProduct, { status: EStatusCode.CREATED });
   } catch (error: unknown) {
-  console.error(error);
+    console.error(error);
 
-  return NextResponse.json(
-    createErrorMessage(
-      `Failed to create ${collectionName}.`,
-      error as string,
-      path,
-      `Please contact for more information.`,
-    ),
-    { status: EStatusCode.INTERNAL_SERVER_ERROR }
-  );
-}
+    return NextResponse.json(
+      createErrorMessage(
+        `Failed to create ${collectionName}.`,
+        error as string,
+        path,
+        `Please contact for more information.`,
+      ),
+      { status: EStatusCode.INTERNAL_SERVER_ERROR }
+    );
+  }
 };
 
 export const GET = async (req: NextRequest): Promise<NextResponse> => {

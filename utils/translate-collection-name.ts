@@ -14,31 +14,29 @@ export const translateCollectionName = (
     case 'vn':
       switch (collectionName) {
         case ECollectionNames.ACCOUNT:
-          return 'Tài khoản';
+          return 'tài khoản';
         case ECollectionNames.ORDER_FORM:
-          return 'Phiếu đặt hàng';
+          return 'phiếu đặt hàng';
         case ECollectionNames.SUPPLIER_RECEIPT:
-          return 'Phiếu nhập kho của nhà cung cấp';
+          return 'phiếu nhập kho của nhà cung cấp';
         case ECollectionNames.PRODUCT:
-          return 'Sản phẩm';
+          return 'sản phẩm';
         case ECollectionNames.PRODUCT_DETAIL:
-          return 'Chi tiết sản phẩm';
+          return 'chi tiết sản phẩm';
         case ECollectionNames.BUSINESS:
-          return 'Đối tác';
+          return 'nhà cung cấp';
         case ECollectionNames.UNIT:
-          return 'Đơn vị tính';
+          return 'đơn vị tính';
         case ECollectionNames.USER:
-          return 'Nhân viên';
+          return 'nhân viên';
         case ECollectionNames.WAREHOUSE_RECEIPT:
-          return 'Phiếu nhập kho';
-        case ECollectionNames.MARKET_RECEIPT:
-          return 'Phiếu xuất kho';
+          return 'phiếu nhập kho';
         case ECollectionNames.CUSTOMER:
-          return 'Khách hàng';
+          return 'khách hàng';
         case ECollectionNames.RECEIPT:
-          return 'Hóa đơn';
+          return 'hóa đơn';
         case ECollectionNames.CATEGORY:
-          return 'Danh mục';
+          return 'danh mục';
         default:
           return typeof collectionName === 'string' ? collectionName : '';
       }

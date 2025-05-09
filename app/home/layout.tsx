@@ -45,67 +45,10 @@ export default function RootLayout({
       icon: homeIcon,
     },
     {
-      label: `Quản lý kho`,
+      label: `Quản lý danh mục`,
       icon: boxesIcon,
       isExpanded: expandedGroups['warehouse'],
       onClick: () => toggleGroup('warehouse'),
-      children: [
-        {
-          link: `${currentPath}/business`,
-          label: `Doanh nghiệp`,
-          icon: factoryIcon,
-        },
-        {
-          link: `${currentPath}/unit`,
-          label: `Đơn vị tính`,
-          icon: circleSmallIcon,
-        },
-        {
-          link: `${currentPath}/category`,
-          label: `Danh mục`,
-          icon: toyBrickIcon,
-        },
-        {
-          link: `${currentPath}/product`,
-          label: `Sản phẩm`,
-          icon: boxIcon,
-        },
-        {
-          link: `${currentPath}/product-detail`,
-          label: `Chi tiết kho`,
-          icon: boxesIcon,
-        },
-
-      ]
-    },
-    {
-      label: `Quản lý đơn hàng`,
-      icon: scrollIcon,
-      isExpanded: expandedGroups['orders'],
-      onClick: () => toggleGroup('orders'),
-      children: [
-        {
-          link: `${currentPath}/order-form`,
-          label: `Phiếu đặt hàng`,
-          icon: scrollIcon,
-        },
-        {
-          link: `${currentPath}/warehouse-receipt`,
-          label: `Phiếu nhập kho`,
-          icon: scrollIcon,
-        },
-        {
-          link: `${currentPath}/order`,
-          label: `Đơn hàng`,
-          icon: scrollIcon,
-        },
-      ]
-    },
-    {
-      label: `Quản lý hệ thống`,
-      icon: settingIcon,
-      isExpanded: expandedGroups['settings'],
-      onClick: () => toggleGroup('settings'),
       children: [
         {
           link: `${currentPath}/account`,
@@ -118,20 +61,65 @@ export default function RootLayout({
           icon: userIcon,
         },
         {
+          link: `${currentPath}/business`,
+          label: `Nhà cung cấp`,
+          icon: factoryIcon,
+        },
+        {
+          link: `${currentPath}/unit`,
+          label: `Đơn vị tính`,
+          icon: circleSmallIcon,
+        },
+        {
+          link: `${currentPath}/category`,
+          label: `Loại sản phẩm`,
+          icon: toyBrickIcon,
+        },
+        {
+          link: `${currentPath}/product`,
+          label: `Sản phẩm`,
+          icon: boxIcon,
+        },
+      ]
+    },
+    {
+      link: `${currentPath}/product-detail`,
+      label: `Quản lý kho`,
+      icon: boxesIcon,
+    },
+    {
+      link: `${currentPath}/order-form`,
+      label: `Quản lý đặt hàng`,
+      icon: scrollIcon,
+    },
+    {
+      link: `${currentPath}/warehouse-receipt`,
+      label: `Quản lý nhập kho`,
+      icon: scrollIcon,
+    },
+    {
+      link: `${currentPath}/order`,
+      label: `Quản lý bán hàng`,
+      icon: scrollIcon,
+    },
+
+    {
+      link: `${currentPath}/`,
+      label: `Báo cáo thống kê`,
+      icon: settingIcon,
+    },
+    {
+      label: `Cài đặt`,
+      icon: settingIcon,
+      isExpanded: expandedGroups['settings'],
+      onClick: () => toggleGroup('settings'),
+      children: [
+        {
           link: `${currentPath}/personal-info`,
           label: `Thông tin cá nhân`,
           icon: circleUserRoundIcon,
         },
-        {
-          link: `${currentPath}/`,
-          label: `Báo cáo thống kê`,
-          icon: settingIcon,
-        },
-        {
-          link: `${currentPath}/setting`,
-          label: `Cài đặt`,
-          icon: settingIcon,
-        },
+
       ]
     },
   ];

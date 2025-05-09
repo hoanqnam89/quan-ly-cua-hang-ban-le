@@ -184,28 +184,51 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    // Await params before using its properties
-    const id = (await Promise.resolve(params)).id;
+    const id = params.id;
     print(`${collectionName} API - DELETE ${collectionName} ID: ${id}`, ETerminal.FgRed);
 
-    await connectToDatabase();
-    const deletedProductDetail = await collectionModel.findByIdAndDelete(id);
-
-    if (!deletedProductDetail) {
+    if (!id || id === 'undefined') {
+      console.error(`Lỗi: ID không hợp lệ - ${id}`);
       return NextResponse.json(
-        { message: `${collectionName} not found` },
+        { message: `Invalid product detail ID: ${id}` },
+        { status: 400 }
+      );
+    }
+
+    await connectToDatabase();
+
+    console.log(`Đang xóa product-detail với ID: ${id}`);
+
+    // Kiểm tra xem product detail có tồn tại không trước khi xóa
+    const existingProductDetail = await collectionModel.findById(id);
+    if (!existingProductDetail) {
+      console.error(`Không tìm thấy product-detail với ID: ${id}`);
+      return NextResponse.json(
+        { message: `${collectionName} not found with ID: ${id}` },
         { status: 404 }
       );
     }
 
+    // Thực hiện xóa nếu product detail tồn tại
+    const deletedProductDetail = await collectionModel.findByIdAndDelete(id);
+
+    if (!deletedProductDetail) {
+      console.error(`Xóa product-detail thất bại, ID: ${id}`);
+      return NextResponse.json(
+        { message: `Failed to delete ${collectionName}` },
+        { status: 500 }
+      );
+    }
+
+    console.log(`Đã xóa thành công product-detail với ID: ${id}`);
     return NextResponse.json(
-      { message: `${collectionName} deleted successfully` },
+      { message: `${collectionName} deleted successfully`, id: id },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error deleting product detail:', error);
     return NextResponse.json(
-      { message: `Error deleting ${collectionName}` },
+      { message: `Error deleting ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}` },
       { status: 500 }
     );
   }

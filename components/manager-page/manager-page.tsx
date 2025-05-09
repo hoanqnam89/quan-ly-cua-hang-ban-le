@@ -11,8 +11,6 @@ import CollectionForm from './collection-form/collection-form';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '../notify/notification/notification';
 import { translateCollectionName } from '@/utils/translate-collection-name';
-import CheckIcon from '@/public/icons/check.svg';
-import XCircleIcon from '@/public/icons/x-circle.svg';
 
 export interface ICollectionIdNotify {
   id: string
@@ -117,6 +115,7 @@ export default function ManagerPage<T extends { _id: string }>({
   setIsModalReadonly,
   isClickShowMore,
   isClickDelete,
+  setIsClickDelete,
   isLoaded = false,
   handleOpenModal = (isOpen: boolean): boolean => !isOpen,
   onExitModalForm = () => { },
@@ -362,52 +361,88 @@ export default function ManagerPage<T extends { _id: string }>({
     collectionId: string
   ) => Promise<void> = useCallback(
     async (collectionId: string): Promise<void> => {
-      if (!confirm(`Bạn có muốn xóa ${translatedCollectionName} này?`))
-        return;
-
       setIsLoading(true);
 
-      const deleteCollectionByIdApiResponse: Response =
-        await deleteCollectionById(collectionId, collectionName);
+      try {
+        const deleteCollectionByIdApiResponse: Response =
+          await deleteCollectionById(collectionId, collectionName);
 
-      let notificationText: string = ``;
-      let notificationType: ENotificationType = ENotificationType.ERROR;
+        let notificationText: string = ``;
+        let notificationType: ENotificationType = ENotificationType.ERROR;
 
-      switch (deleteCollectionByIdApiResponse.status) {
-        case EStatusCode.OK:
+        if (deleteCollectionByIdApiResponse.status === EStatusCode.OK ||
+          deleteCollectionByIdApiResponse.status === EStatusCode.CREATED) {
           notificationText = `Xóa ${translatedCollectionName} có mã ${collectionId} thành công!`;
           notificationType = ENotificationType.SUCCESS;
-          break;
-        case EStatusCode.CREATED:
-          notificationText = `Xóa ${translatedCollectionName} có mã ${collectionId} thành công!`;
-          notificationType = ENotificationType.SUCCESS;
-          break;
-        case EStatusCode.INTERNAL_SERVER_ERROR:
+
+          // Cập nhật collections trực tiếp tại đây
+          const updatedCollections = collections.filter(item => item._id !== collectionId);
+          setCollections(updatedCollections);
+
+          // Nếu có setAllItems, cũng cập nhật ở đó
+          if (setAllItems) {
+            setAllItems(prevItems => prevItems.filter(item => item._id !== collectionId));
+          }
+
+          // Làm mới dữ liệu từ server để đảm bảo UI đồng bộ
+          await getCollections();
+        } else if (deleteCollectionByIdApiResponse.status === EStatusCode.INTERNAL_SERVER_ERROR) {
           notificationText = `Xóa ${translatedCollectionName} có mã ${collectionId} thất bại! Server bị lỗi.`;
-          break;
-        default:
+        } else {
           notificationText = `Xóa ${translatedCollectionName} có mã ${collectionId} thất bại! Lỗi không xác định.`;
+        }
+
+        createNotification({
+          id: Date.now(),
+          children: notificationText,
+          type: notificationType,
+          isAutoClose: true,
+          title: notificationType === ENotificationType.SUCCESS
+            ? 'Thành công'
+            : notificationType === ENotificationType.ERROR
+              ? 'Lỗi'
+              : notificationType === ENotificationType.WARNING
+                ? 'Cảnh báo'
+                : 'Thông tin',
+        });
+      } catch (error) {
+        console.error("Lỗi khi xóa item:", error);
+        createNotification({
+          id: Date.now(),
+          children: `Xóa ${translatedCollectionName} thất bại! Lỗi: ${error}`,
+          type: ENotificationType.ERROR,
+          isAutoClose: true,
+          title: 'Lỗi',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [collectionName, createNotification, translatedCollectionName, collections, setCollections, setAllItems, getCollections],
+  );
+
+  const [lastDeletedId, setLastDeletedId] = useState<string>('');
+
+  useEffect(() => {
+    if (isClickDelete.isClicked && isClickDelete.id && isClickDelete.id !== lastDeletedId) {
+      const idToDelete = isClickDelete.id;
+
+      setLastDeletedId(idToDelete);
+
+      const confirmResult = confirm(`Bạn có muốn xóa ${translatedCollectionName} này?`);
+
+      if (confirmResult) {
+        handleDeleteCollectionById(idToDelete);
       }
 
-      createNotification({
-        id: 0,
-        children: notificationText,
-        type: notificationType,
-        isAutoClose: true,
-        title: notificationType === ENotificationType.SUCCESS
-          ? 'Thành công'
-          : notificationType === ENotificationType.ERROR
-            ? 'Lỗi'
-            : notificationType === ENotificationType.WARNING
-              ? 'Cảnh báo'
-              : 'Thông tin',
-      });
-
-      await getCollections();
-    },
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
-    [collectionName, getCollections],
-  );
+      if (setIsClickDelete) {
+        setIsClickDelete({
+          id: '',
+          isClicked: false
+        });
+      }
+    }
+  }, [isClickDelete, handleDeleteCollectionById, translatedCollectionName, lastDeletedId, setIsClickDelete]);
 
   const mounted = useRef(false);
 
@@ -417,12 +452,6 @@ export default function ManagerPage<T extends { _id: string }>({
     else
       mounted.current = true;
   }, [handleShowMore, isClickShowMore]);
-
-  useEffect(() => {
-    if (isClickDelete.isClicked) {
-      handleDeleteCollectionById(isClickDelete.id);
-    }
-  }, [handleDeleteCollectionById, isClickDelete]);
 
   const tableData = displayedItems || collections;
 

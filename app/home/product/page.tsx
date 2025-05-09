@@ -188,6 +188,18 @@ export default function Product() {
     }
   }, [categories, supplier]);
 
+  // Thêm xử lý riêng cho product page khi xóa
+  const handleProductDelete = useCallback((productId: string) => {
+    // Cập nhật UI ngay lập tức
+    setProducts(prevProducts => prevProducts.filter(product => product._id !== productId));
+
+    // Đánh dấu để xóa
+    setIsClickDelete({
+      id: productId,
+      isClicked: true
+    });
+  }, []);
+
   const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
     const { files } = e.target;
     const validImageFiles: File[] = [];
@@ -388,10 +400,8 @@ export default function Product() {
             <Button
               title={createDeleteTooltip(collectionName)}
               onClick={(): void => {
-                setIsClickDelete({
-                  id: collection._id,
-                  isClicked: !isClickShowMore.isClicked,
-                });
+                // Gọi hàm xử lý xóa sản phẩm cụ thể
+                handleProductDelete(collection._id);
               }}
               style={{
                 background: 'transparent',
