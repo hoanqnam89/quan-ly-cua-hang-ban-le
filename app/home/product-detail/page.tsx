@@ -27,7 +27,6 @@ import { EButtonType } from '@/components/button/interfaces/button-type.interfac
 import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { formatCurrency } from '@/utils/format-currency';
 import Image from 'next/image';
-import ProductGroupList from '@/components/ProductGroupList';
 import { generateBatchNumber } from '@/utils/batch-number';
 import dynamic from 'next/dynamic';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -278,9 +277,6 @@ function ProductDetail() {
   const [selectedProductDetail, setSelectedProductDetail] = useState<{ id: string; name: string } | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState<'list' | 'group'>('list');
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [confirmDeleteModal, setConfirmDeleteModal] = useState(false);
   const [products, setProducts] = useState<IProduct[]>([]);
   const [productStockInfo, setProductStockInfo] = useState<Record<string, number>>({});
   const [productDetails, setProductDetails] = useState<IProductDetail[]>([]);
@@ -430,22 +426,8 @@ function ProductDetail() {
         );
         const name = productOption?.label || 'Không xác định';
 
-        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
-        const date = new Date(collection.expiry_date);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const isExpired = date < now;
-        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
-
-        let className = "py-3 px-2";
-        if (isExpired) {
-          className += " bg-red-100"; // Tăng độ đậm của màu nền
-        } else if (isExpiringSoon) {
-          className += " bg-yellow-100"; // Tăng độ đậm của màu nền
-        }
-
         return (
-          <div className={className}>
+          <div className="py-3 px-2">
             <Text className="font-medium text-gray-900">{name}</Text>
           </div>
         );
@@ -457,22 +439,8 @@ function ProductDetail() {
       title: `Tồn kho`,
       size: `1fr`,
       render: (collection: collectionType): ReactElement => {
-        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
-        const date = new Date(collection.expiry_date);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const isExpired = date < now;
-        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
-
-        let className = "py-3 px-2";
-        if (isExpired) {
-          className += " bg-red-100";
-        } else if (isExpiringSoon) {
-          className += " bg-yellow-100";
-        }
-
         return (
-          <div className={className}>
+          <div className="py-3 px-2">
             <Text className="font-semibold text-blue-700">{collection.inventory}</Text>
           </div>
         );
@@ -484,22 +452,8 @@ function ProductDetail() {
       title: `SL nhập`,
       size: `1fr`,
       render: (collection: collectionType): ReactElement => {
-        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
-        const date = new Date(collection.expiry_date);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const isExpired = date < now;
-        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
-
-        let className = "py-3 px-2";
-        if (isExpired) {
-          className += " bg-red-100";
-        } else if (isExpiringSoon) {
-          className += " bg-yellow-100";
-        }
-
         return (
-          <div className={className}>
+          <div className="py-3 px-2">
             <Text className="font-semibold text-green-700">{collection.input_quantity}</Text>
           </div>
         );
@@ -511,157 +465,9 @@ function ProductDetail() {
       title: `SL xuất`,
       size: `1fr`,
       render: (collection: collectionType): ReactElement => {
-        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
-        const date = new Date(collection.expiry_date);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const isExpired = date < now;
-        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
-
-        let className = "py-3 px-2";
-        if (isExpired) {
-          className += " bg-red-100";
-        } else if (isExpiringSoon) {
-          className += " bg-yellow-100";
-        }
-
         return (
-          <div className={className}>
+          <div className="py-3 px-2">
             <Text className="font-semibold text-orange-700">{collection.output_quantity}</Text>
-          </div>
-        );
-      }
-    },
-    {
-      key: `date_of_manufacture`,
-      ref: useRef(null),
-      title: `Ngày SX`,
-      size: `1.5fr`,
-      render: (collection: collectionType): ReactElement => {
-        const date = new Date(collection.date_of_manufacture);
-        const formattedDate = date.toLocaleDateString('vi-VN');
-
-        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
-        const expiryDate = new Date(collection.expiry_date);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const isExpired = expiryDate < now;
-        const isExpiringSoon = expiryDate > now && differenceInDays(expiryDate, now) <= 30;
-
-        let className = "py-3 px-2";
-        if (isExpired) {
-          className += " bg-red-100";
-        } else if (isExpiringSoon) {
-          className += " bg-yellow-100";
-        }
-
-        return (
-          <div className={className}>
-            <Text isEllipsis={true} tooltip={formattedDate} className="text-gray-700">{formattedDate}</Text>
-          </div>
-        );
-      }
-    },
-    {
-      key: `expiry_date`,
-      ref: useRef(null),
-      title: `Hạn SD`,
-      size: `1.5fr`,
-      render: (collection: collectionType): ReactElement => {
-        const date = new Date(collection.expiry_date);
-        const formattedDate = date.toLocaleDateString('vi-VN');
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const isExpired = date < now;
-        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
-
-        let className = "py-3 px-2";
-        if (isExpired) {
-          className += " bg-red-100";
-        } else if (isExpiringSoon) {
-          className += " bg-yellow-100";
-        }
-
-        return (
-          <div className={className}>
-            <Text
-              isEllipsis={true}
-              tooltip={formattedDate}
-              className={isExpired ? "text-red-700 font-semibold" : isExpiringSoon ? "text-yellow-700 font-semibold" : ""}
-            >
-              {formattedDate}
-            </Text>
-            {isExpired && (
-              <span className="text-xs text-red-600 block font-medium">Đã hết hạn</span>
-            )}
-            {isExpiringSoon && (
-              <span className="text-xs text-yellow-600 block font-medium">Sắp hết hạn</span>
-            )}
-          </div>
-        );
-      }
-    },
-    // {
-    //   title: `Số lô`,
-    //   ref: useRef(null),
-    //   size: `2fr`,
-    //   render: (collection: collectionType): ReactElement => {
-    //     // Kiểm tra và áp dụng màu nền tương ứng với trạng thái hết hạn
-    //     const date = new Date(collection.expiry_date);
-    //     const now = new Date();
-    //     now.setHours(0, 0, 0, 0);
-    //     const isExpired = date < now;
-    //     const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
-
-    //     let className = "py-3 px-2";
-    //     if (isExpired) {
-    //       className += " bg-red-100";
-    //     } else if (isExpiringSoon) {
-    //       className += " bg-yellow-100";
-    //     }
-
-    //     // Vd: 681C7-20250509-2966
-    //     const lotNumber = collection.batch_number || 'N/A';
-
-    //     return (
-    //       <div className={className}>
-    //         <Text className="font-semibold text-blue-700">{lotNumber}</Text>
-    //       </div>
-    //     );
-    //   }
-    // },
-    {
-      key: `batch_number`,
-      ref: useRef(null),
-      title: `Mã vạch`,
-      size: `2.5fr`,
-      render: (collection: collectionType): ReactElement => {
-        // Kiểm tra và áp dụng màu nền đồng nhất cho toàn bộ hàng
-        const date = new Date(collection.expiry_date);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const isExpired = date < now;
-        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
-
-        let className = "p-2";
-        if (isExpired) {
-          className += " bg-red-100";
-        } else if (isExpiringSoon) {
-          className += " bg-yellow-100";
-        }
-
-        return (
-          <div className={className}>
-            {collection.batch_number && (
-              <ReactBarcode
-                value={collection.batch_number}
-                height={40}
-                width={1.5}
-                fontSize={10}
-                displayValue={true}
-                margin={0}
-              />
-            )}
           </div>
         );
       }
@@ -671,68 +477,19 @@ function ProductDetail() {
       ref: useRef(null),
       size: `120px`,
       render: (collection: collectionType): ReactElement => {
-        // Kiểm tra và áp dụng màu nền cho toàn bộ hàng
-        const date = new Date(collection.expiry_date);
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const isExpired = date < now;
-        const isExpiringSoon = date > now && differenceInDays(date, now) <= 30;
-
-        let className = "flex items-center justify-center gap-2 p-2";
-        if (isExpired) {
-          className += " bg-red-100";
-        } else if (isExpiringSoon) {
-          className += " bg-yellow-100";
-        }
-
         return (
-          <div className={className}>
-            {/* Nút xem thông tin */}
+          <div className="flex items-center justify-center p-2">
             <button
-              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-              title="Thông tin"
-              onClick={() => {
-                setIsClickShowMore({
-                  id: collection._id,
-                  isClicked: !isClickShowMore.isClicked,
-                });
-              }}
-            >
-              <IconContainer
-                iconLink={infoIcon}
-                className="w-4 h-4 text-gray-700"
-              />
-            </button>
-
-            {/* Nút xóa */}
-            <button
-              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-              title="Xóa"
-              onClick={() => {
-                setIsClickDelete({
-                  id: collection._id,
-                  isClicked: !isClickDelete.isClicked,
-                });
-              }}
-            >
-              <IconContainer
-                iconLink={trashIcon}
-                className="w-4 h-4 text-gray-700"
-              />
-            </button>
-
-            {/* Nút in */}
-            <button
-              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-              title="In"
+              className="px-4 py-1.5 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors text-sm font-medium flex items-center gap-1.5"
               onClick={() => {
                 window.location.href = `/home/product-detail/${collection._id}`;
               }}
             >
-              <IconContainer
-                iconLink="/icons/print.svg"
-                className="w-4 h-4 text-gray-700"
-              />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              Xem chi tiết
             </button>
           </div>
         );
@@ -792,26 +549,12 @@ function ProductDetail() {
     }
   };
 
-  const handleViewDetail = (product: IProduct) => {
-    window.location.href = `/home/product-detail/${product._id}`;
-  };
-
-  const handleEdit = (product: IProduct) => {
-    setSelectedProductDetail({ id: product._id, name: product.name });
-    setIsEditModalOpen(true);
-  };
-
-  const handleDelete = (product: IProduct) => {
-    setSelectedProductDetail({ id: product._id, name: product.name });
-    setConfirmDeleteModal(true);
-  };
-
   return (
     <>
       <div className="h-full w-full px-[30px]">
         <div className="flex flex-col w-full">
           <div className="flex items-center justify-between mb-4">
-            <div className="text-2xl font-bold text-gray-800">Chi tiết sản phẩm</div>
+            <div className="text-2xl font-bold text-gray-800">Báo cáo tồn kho</div>
 
             <div className="flex gap-4">
               <Button
@@ -835,56 +578,29 @@ function ProductDetail() {
                   Tổng số: <span className="text-blue-600 font-semibold">{productDetails.length}</span> sản phẩm
                 </span>
               </div>
-              <div className="flex items-center gap-4">
-                <Button
-                  onClick={() => setViewMode(viewMode === 'list' ? 'group' : 'list')}
-                  className="flex items-center gap-2 text-blue-600 bg-white border border-blue-600 rounded-md py-2 px-4 hover:bg-blue-50 min-w-[180px] justify-center"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {viewMode === 'list' ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    )}
-                  </svg>
-                  <span>Xem theo {viewMode === 'list' ? 'nhóm' : 'danh sách'}</span>
-                </Button>
-              </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
-              {viewMode === 'group' ? (
-                <div className="p-5">
-                  <ProductGroupList
-                    products={products}
-                    onViewDetail={handleViewDetail}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    productStockInfo={productStockInfo}
-                  />
-                </div>
-              ) : (
-                <div className="overflow-hidden">
-                  <ManagerPage<collectionType>
-                    columns={columns}
-                    collectionName={collectionName}
-                    defaultCollection={DEFAULT_PROCDUCT_DETAIL}
-                    collection={productDetail}
-                    setCollection={setProductDetail}
-                    isModalReadonly={isModalReadOnly}
-                    setIsModalReadonly={setIsModalReadOnly}
-                    isClickShowMore={isClickShowMore}
-                    isClickDelete={isClickDelete}
-                    isLoaded={isLoading}
-                    displayedItems={productDetails}
-                    currentPage={currentPage}
-                    setCurrentPage={setCurrentPage}
-                    totalItems={productDetails.length}
-                  >
-                    <div></div>
-                  </ManagerPage>
-                </div>
-              )}
+              <div className="overflow-hidden">
+                <ManagerPage<collectionType>
+                  columns={columns}
+                  collectionName={collectionName}
+                  defaultCollection={DEFAULT_PROCDUCT_DETAIL}
+                  collection={productDetail}
+                  setCollection={setProductDetail}
+                  isModalReadonly={isModalReadOnly}
+                  setIsModalReadonly={setIsModalReadOnly}
+                  isClickShowMore={isClickShowMore}
+                  isClickDelete={isClickDelete}
+                  isLoaded={isLoading}
+                  displayedItems={productDetails}
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
+                  totalItems={productDetails.length}
+                >
+                  <div></div>
+                </ManagerPage>
+              </div>
             </div>
           </div>
 

@@ -15,7 +15,7 @@ export default function IconContainer({
   iconLink = xIcon,
   size = 24,
   tooltip = ``,
-  color = `#ff0000`,
+  color = `currentColor`,
   style = {},
   className = ``,
 }: Readonly<IIconContainerProps>): ReactElement {
@@ -28,7 +28,6 @@ export default function IconContainer({
   const imageStyle: CSSProperties = {
     width: size,
     height: size,
-    color: color,
   }
 
   return (

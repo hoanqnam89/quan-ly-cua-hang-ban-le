@@ -30,9 +30,12 @@ import { addCollection } from '@/services/api-service';
 import { EStatusCode } from '@/enums';
 import { formatCurrency } from '@/utils/format-currency';
 
+// Định nghĩa thêm interface mở rộng từ IOrderForm để hỗ trợ thuộc tính displayCode
+interface IExtendedOrderForm extends IOrderForm {
+  displayCode?: string;
+}
 
-
-type collectionType = IOrderForm;
+type collectionType = IExtendedOrderForm;
 const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
 
 interface IDateFilter {
@@ -486,43 +489,46 @@ export default function Product() {
     e: ChangeEvent<HTMLInputElement>,
     changeIndex: number,
   ): void => {
-    // Chuyển đổi chuỗi thành số bằng cách loại bỏ dấu chấm trong định dạng tiền tệ
-    const rawValue = e.target.value.replace(/\./g, '').replace(/\D/g, '');
-    const numericValue = parseInt(rawValue, 10) || 0;
+    try {
+      // Xử lý giá trị nhập vào - loại bỏ tất cả dấu chấm và ký tự không phải số
+      const rawValue = e.target.value.replace(/\./g, '').replace(/,/g, '').replace(/\D/g, '');
 
-    // Hiển thị gợi ý khi giá nhập = 0
-    if (numericValue === 0 && e.target.value !== '') {
-      // Tìm tên sản phẩm để hiển thị trong thông báo
-      const productDetail = orderForm.product_details[changeIndex];
-      const productName = filteredProductOptions.find(option => option.value === productDetail?._id)?.label || 'sản phẩm';
+      // Chuyển đổi thành số - nếu rỗng thì gán là 0
+      let numericValue = rawValue === '' ? 0 : Number(rawValue);
 
-      // Hiển thị thông báo nhỏ tạm thời thay vì notification lớn
-      e.target.setCustomValidity(`Vui lòng nhập giá cho ${productName}`);
-      e.target.reportValidity();
-      setTimeout(() => {
-        e.target.setCustomValidity('');
-      }, 2000);
+      // Giới hạn số tối đa là 9999999
+      if (numericValue > 9999999) {
+        numericValue = 9999999;
+        createNotification({
+          id: 1,
+          children: <Text>Giá trị không được vượt quá 9.999.999</Text>,
+          type: ENotificationType.WARNING,
+          isAutoClose: true,
+        });
+      }
+
+      // Gán giá trị vào form
+      setOrderForm(prevOrderForm => ({
+        ...prevOrderForm,
+        product_details: [
+          ...prevOrderForm.product_details.map((
+            orderFormProductDetail: IOrderFormProductDetail,
+            index: number
+          ): IOrderFormProductDetail => {
+            if (index === changeIndex)
+              return {
+                ...orderFormProductDetail,
+                input_price: numericValue
+              }
+            else
+              return orderFormProductDetail;
+          }),
+        ],
+      }));
+    } catch (error) {
+      console.error("Lỗi xử lý giá nhập:", error);
     }
-
-    // Gán giá trị đã xử lý vào form
-    setOrderForm(prevOrderForm => ({
-      ...prevOrderForm,
-      product_details: [
-        ...prevOrderForm.product_details.map((
-          orderFormProductDetail: IOrderFormProductDetail,
-          index: number
-        ): IOrderFormProductDetail => {
-          if (index === changeIndex)
-            return {
-              ...orderFormProductDetail,
-              input_price: numericValue
-            }
-          else
-            return orderFormProductDetail;
-        }),
-      ],
-    }));
-  }, [orderForm.product_details, filteredProductOptions]);
+  }, [orderForm.product_details, filteredProductOptions, createNotification]);
 
   const handleOpenModal = useCallback((prev: boolean): boolean => {
     // Chỉ trả về false nếu modal đang mở
@@ -670,14 +676,19 @@ export default function Product() {
     setIsLoading(true);
     try {
       const orders = await fetchGetCollections<collectionType>(collectionName);
+      // Thiết lập danh sách orders mà không sửa đổi trực tiếp cấu trúc đối tượng
       setAllOrders(orders);
+      // Xử lý hiển thị mã đơn hàng trong giao diện, không thay đổi cấu trúc dữ liệu
       const newOrders = orders.map((order) => {
-        const newOrder = { ...order };
-        newOrder.product = generateOrderCode(order._id)
-
-        return newOrder;
-      })
-      setAllOrders(newOrders)
+        // Tạo bản sao đối tượng thay vì chỉnh sửa trực tiếp
+        const orderCode = generateOrderCode(order._id);
+        return {
+          ...order,
+          // Thêm thuộc tính hiển thị mã đơn hàng vào đối tượng hiển thị
+          displayCode: orderCode
+        };
+      });
+      setAllOrders(newOrders as collectionType[]);
     } catch (e) {
       // handle error
     } finally {
@@ -857,11 +868,16 @@ export default function Product() {
     }
   }, [orderForm, isSaving, createNotification]);
 
-  // Hàm định dạng tiền tệ 
+  // Hàm định dạng tiền tệ
   const formatInputPrice = (value: number | undefined): string => {
-    if (value === undefined || value === null) return "0";
-    // Format số với dấu chấm phân cách hàng nghìn theo chuẩn Việt Nam (1.000.000)
-    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    if (value === undefined || value === null || value === 0) return "";
+    try {
+      // Format số với dấu chấm phân cách hàng nghìn theo chuẩn Việt Nam (1.000.000)
+      return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    } catch (error) {
+      console.error("Lỗi định dạng giá:", error);
+      return value.toString();
+    }
   };
 
 
@@ -980,6 +996,7 @@ export default function Product() {
                       {/* Trường nhập giá nhập */}
                       <NumberInput
                         min={0}
+                        max={9999999}
                         name={`input_price`}
                         isDisable={isModalReadOnly}
                         isRequire={true}

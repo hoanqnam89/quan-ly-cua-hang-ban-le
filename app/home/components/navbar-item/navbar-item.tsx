@@ -4,7 +4,10 @@ import { usePathname } from 'next/navigation';
 import { CNavbarItem } from '../../layout';
 import { IconContainer, Text } from '@/components';
 import styles from './style.module.css';
-import { chevronRightIcon, chevronLeftIcon } from '@/public';
+import chevronRightIcon from '@/public/chevron-right.svg?url';
+
+// Định nghĩa kiểu dữ liệu chính xác cho NavbarItem
+type NavItemLink = string | undefined | null;
 
 interface INavbarItemProps {
   setIsLoading?: Dispatch<SetStateAction<boolean>>
@@ -44,12 +47,14 @@ export default function NavbarItem({
     return path.endsWith('/') && path.length > 1 ? path.slice(0, -1) : path;
   }
 
-  const isActive = navbarItem.link && normalizePath(pathname) === normalizePath(navbarItem.link);
+  const normalizedPathname = normalizePath(pathname || '');
+  const normalizedNavLink = navbarItem.link ? normalizePath(String(navbarItem.link)) : '';
+  const isActive = navbarItem.link && normalizedPathname === normalizedNavLink;
 
   const renderMenuItem = () => (
     <>
       <div style={iconStyle}>
-        <IconContainer iconLink={navbarItem.icon} size={24} color="#222" />
+        <IconContainer iconLink={navbarItem.icon as string} size={24} color="#222" />
       </div>
       {isExpand && (
         <Text weight={600} isEllipsis={true}>{navbarItem.label}</Text>

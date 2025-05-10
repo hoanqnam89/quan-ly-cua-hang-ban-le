@@ -143,7 +143,7 @@ export const GET = async (
   req: NextRequest,
   context: { params: { id: string } }
 ): Promise<NextResponse> => {
-  const { id } = context.params;
+  const { id } = await (context.params);
   print(`${collectionName} API - GET ${collectionName} ID: ${id}`, ETerminal.FgGreen);
 
   try {

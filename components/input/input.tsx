@@ -3,34 +3,34 @@ import { IInputProps } from '../interfaces/input-props.interface';
 import styles from './style.module.css';
 
 function Input({
-  type = `text`, 
-  name = ``, 
+  type = `text`,
+  name = ``,
   value = ``,
-  isDisable = false, 
-  className = ``, 
-  style = {}, 
-  min = 0, 
-  max = 10, 
-  isRequire = false, 
-  pattern = `.{1,}`, 
-  onInputChange = () => {},
-  onInputBlur = () => {},
-  onInputKeyDown = () => {}, 
-  placeholder = ``, 
-  step = 1, 
-}: Readonly<IInputProps<string> & {type: HTMLInputTypeAttribute}>
+  isDisable = false,
+  className = ``,
+  style = {},
+  min = 0,
+  max = 9999999,
+  isRequire = false,
+  pattern = `.{1.}`,
+  onInputChange = () => { },
+  onInputBlur = () => { },
+  onInputKeyDown = () => { },
+  placeholder = ``,
+  step = 1,
+}: Readonly<IInputProps<string> & { type: HTMLInputTypeAttribute }>
 ): ReactElement {
   const inputStyle: CSSProperties = {
-    ...style, 
+    ...style,
   }
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => 
+  const handleChange = (e: ChangeEvent<HTMLInputElement>): void =>
     onInputChange(e);
 
-  const handleBlur = (e: ChangeEvent<HTMLInputElement>): void => 
+  const handleBlur = (e: ChangeEvent<HTMLInputElement>): void =>
     onInputBlur(e);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>): void => 
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>): void =>
     onInputKeyDown(e);
 
   return (
@@ -55,4 +55,4 @@ function Input({
   )
 }
 
-export default memo( Input );
+export default memo(Input);
