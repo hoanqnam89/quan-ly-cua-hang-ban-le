@@ -9,9 +9,15 @@ import { IProduct } from '@/interfaces/product.interface'
 import { ENotificationType } from '@/components/notify/notification/notification'
 import useNotificationsHook from '@/hooks/notifications-hook'
 
-export default function ProductDetail({ params }: { params: { id: string } }) {
+type ProductDetailParams = {
+  params: {
+    id: string;
+  }
+}
+
+export default function ProductDetail({ params }: ProductDetailParams) {
   const router = useRouter()
-  const { id } = params
+  const id = params.id
   const [isLoading, setIsLoading] = useState(true)
   const [productDetail, setProductDetail] = useState<IProductDetail | null>(null)
   const [product, setProduct] = useState<IProduct | null>(null)

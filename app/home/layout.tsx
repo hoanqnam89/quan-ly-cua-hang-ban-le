@@ -2,7 +2,13 @@
 
 import { CSSProperties, ReactElement, useState } from 'react';
 import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
-import { boxesIcon, boxIcon, chevronLeftIcon, chevronRightIcon, circleSmallIcon, circleUserRoundIcon, factoryIcon, homeIcon, scrollIcon, settingIcon, toyBrickIcon, userIcon } from '@/public';
+import chevronRightIcon from '@/public/chevron-right.svg?url';
+import chevronLeftIcon from '@/public/chevron-left.svg?url';
+import homeIcon from '@/public/home.svg?url';
+import boxesIcon from '@/public/boxes.svg?url';
+import scrollIcon from '@/public/scroll.svg?url';
+import settingIcon from '@/public/setting.svg?url';
+import { boxIcon, circleSmallIcon, circleUserRoundIcon, factoryIcon, toyBrickIcon, userIcon } from '@/public';
 import { IRootLayout } from '@/interfaces/root-layout.interface';
 import styles from './style.module.css';
 

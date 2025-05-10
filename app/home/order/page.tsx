@@ -33,7 +33,8 @@ const ImportOrderList = () => {
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [sortField, setSortField] = useState<'date' | 'price'>('date');
-  const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month'>('all');
+  const [dateFilter, setDateFilter] = useState<'today' | 'specific'>('today');
+  const [specificDate, setSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending'>('all');
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -99,25 +100,27 @@ const ImportOrderList = () => {
     }
   };
 
-  // Hàm lọc theo ngày
+  // Hàm lọc theo ngày được cập nhật
   const filterByDate = (order: Order) => {
     const orderDate = new Date(order.created_at);
-    const today = new Date();
-    const weekAgo = new Date();
-    const monthAgo = new Date();
-    weekAgo.setDate(today.getDate() - 7);
-    monthAgo.setMonth(today.getMonth() - 1);
 
-    switch (dateFilter) {
-      case 'today':
-        return orderDate.toDateString() === today.toDateString();
-      case 'week':
-        return orderDate >= weekAgo;
-      case 'month':
-        return orderDate >= monthAgo;
-      default:
-        return true;
+    if (dateFilter === 'today') {
+      // Lọc theo hôm nay
+      const today = new Date();
+      return orderDate.toDateString() === today.toDateString();
+    } else if (dateFilter === 'specific' && specificDate) {
+      // Lọc theo ngày được chọn
+      const selectedDate = new Date(specificDate);
+      return orderDate.toDateString() === selectedDate.toDateString();
     }
+
+    return true;
+  };
+
+  // Xử lý khi người dùng thay đổi ngày
+  const handleDateChange = (date: string) => {
+    setSpecificDate(date);
+    setDateFilter('specific'); // Chuyển sang chế độ lọc theo ngày cụ thể
   };
 
   // Hàm lọc theo trạng thái
@@ -146,9 +149,10 @@ const ImportOrderList = () => {
     });
   };
 
-  // Hàm đặt lại bộ lọc
+  // Cập nhật hàm handleReset
   const handleReset = () => {
-    setDateFilter('all');
+    setDateFilter('today');
+    setSpecificDate(new Date().toISOString().split('T')[0]);
     setStatusFilter('all');
     setSortOrder('desc');
     setSortField('date');
@@ -273,8 +277,6 @@ const ImportOrderList = () => {
           </div>
         </header>
 
-
-
         <div className="space-y-4 mb-8">
           <div className="w-full">
             <div className="relative">
@@ -297,21 +299,16 @@ const ImportOrderList = () => {
           </div>
 
           <div className="flex gap-4">
+            {/* Bộ lọc chọn ngày cụ thể */}
             <div className="relative group flex-1">
-              <Button
-                onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
-                  event?.stopPropagation();
-                  setDateFilter(prev => prev === 'all' ? 'today' : prev === 'today' ? 'week' : prev === 'week' ? 'month' : 'all');
-                }}
-                className={`w-full flex items-center gap-2 px-5 py-3 bg-white border ${dateFilter !== 'all' ? 'border-blue-500 text-blue-600' : 'border-slate-200 text-slate-700'} rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
-              >
+              <div className={`flex items-center gap-2 px-5 py-3 bg-white border ${dateFilter !== 'today' ? 'border-blue-500 text-blue-600' : 'border-blue-500 text-blue-600'} rounded-xl transition-all duration-200 font-medium`}>
                 <svg
                   width="18"
                   height="18"
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  className={dateFilter !== 'all' ? 'text-blue-500' : 'text-slate-500'}
+                  className="text-blue-500"
                 >
                   <path
                     d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z"
@@ -342,8 +339,13 @@ const ImportOrderList = () => {
                     strokeLinejoin="round"
                   />
                 </svg>
-                <span>{dateFilter === 'all' ? 'Thời gian' : dateFilter === 'today' ? 'Hôm nay' : dateFilter === 'week' ? '7 ngày qua' : '30 ngày qua'}</span>
-              </Button>
+                <input
+                  type="date"
+                  value={specificDate}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  className="flex-1 border-0 bg-transparent focus:outline-none focus:ring-0 text-blue-600 font-medium"
+                />
+              </div>
             </div>
 
             <div className="relative group flex-1">
@@ -449,7 +451,7 @@ const ImportOrderList = () => {
                 </svg>
                 <span>
                   {sortField === 'date'
-                    ? `Sắp xếp theo ngày ${sortOrder === 'asc' ? '↑' : '↓'}`
+                    ? `Sắp xếp theo thời gian ${sortOrder === 'asc' ? '↑' : '↓'}`
                     : `Sắp xếp theo giá ${sortOrder === 'asc' ? '↑' : '↓'}`
                   }
                 </span>

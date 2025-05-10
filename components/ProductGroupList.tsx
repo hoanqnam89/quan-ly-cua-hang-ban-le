@@ -3,13 +3,11 @@
 import { IProduct } from '../interfaces/product.interface';
 import { formatCurrency } from '@/utils/format-currency';
 import { useState, useEffect } from 'react';
-import { ChevronDownIcon, ChevronUpIcon, PencilIcon, TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { IProductDetail } from '../interfaces/product-detail.interface';
 
 interface ProductGroupListProps {
     products: IProduct[];
-    onEdit?: (product: IProduct) => void;
-    onDelete?: (product: IProduct) => void;
     onViewDetail?: (product: IProduct) => void;
     productStockInfo?: Record<string, number>;
 }
@@ -28,13 +26,12 @@ interface ProductGroup {
 
 export default function ProductGroupList({
     products,
-    onEdit,
-    onDelete,
     onViewDetail,
     productStockInfo = {}
 }: ProductGroupListProps) {
-    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
     const [productDetails, setProductDetails] = useState<IProductDetail[]>([]);
+    const [selectedGroup, setSelectedGroup] = useState<ProductGroup | null>(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchProductDetails = async () => {
@@ -43,7 +40,7 @@ export default function ProductGroupList({
                 const data = await response.json();
                 setProductDetails(data);
             } catch (error) {
-                console.error('Error fetching product details:', error);
+                console.error('Lỗi khi tải dữ liệu chi tiết sản phẩm:', error);
             }
         };
 
@@ -83,134 +80,178 @@ export default function ProductGroupList({
     // Sắp xếp các nhóm theo tên
     const sortedGroups = Object.values(groupedProducts).sort((a, b) => a.name.localeCompare(b.name));
 
-    const toggleGroup = (groupName: string) => {
-        setExpandedGroups(prev => ({
-            ...prev,
-            [groupName]: !prev[groupName]
-        }));
+    const handleViewDetails = (group: ProductGroup) => {
+        setSelectedGroup(group);
+        setIsDetailModalOpen(true);
+    };
+
+    const closeDetailModal = () => {
+        setIsDetailModalOpen(false);
+        setSelectedGroup(null);
     };
 
     return (
         <div className="space-y-4">
-            {sortedGroups
-                .filter(group => group.details.length > 0)
-                .map((group) => (
-                    <div key={group.name} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                        {/* Header của nhóm */}
-                        <div
-                            className="p-4 cursor-pointer hover:bg-slate-50 flex justify-between items-center"
-                            onClick={() => toggleGroup(group.name)}
-                        >
-                            <div className="flex-1">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="font-medium text-slate-900">{group.name}</h3>
-                                    <span className="px-2 py-1 text-xs font-medium bg-slate-100 text-slate-600 rounded-full">
-                                        {group.details.length} sản phẩm
-                                    </span>
-                                </div>
-                                <div className="flex gap-4 mt-2 text-sm text-slate-600">
-                                    <span>Tồn kho: {group.totalStock}</span>
-                                    <span>Nhập: {group.totalImport}</span>
-                                    <span>Xuất: {group.totalExport}</span>
-                                </div>
-                            </div>
-                            <div className="p-2">
-                                {expandedGroups[group.name] ? (
-                                    <ChevronUpIcon className="w-5 h-5 text-slate-400" />
-                                ) : (
-                                    <ChevronDownIcon className="w-5 h-5 text-slate-400" />
-                                )}
-                            </div>
-                        </div>
+            <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                Sản phẩm
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                Tồn kho
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                SL nhập
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                SL xuất
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                Thao tác
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {sortedGroups
+                            .filter(group => group.details.length > 0)
+                            .map((group, idx) => (
+                                <tr key={`${group.name}-${idx}`} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="flex items-center">
+                                            <div>
+                                                <div className="text-sm font-medium text-gray-900">{group.name}</div>
+                                                <div className="text-xs text-gray-500">{group.details.length} sản phẩm</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                        <div className="text-sm text-gray-900">{group.totalStock}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                        <div className="text-sm text-gray-900">{group.totalImport}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                                        <div className="text-sm text-gray-900">{group.totalExport}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                        <button
+                                            onClick={() => handleViewDetails(group)}
+                                            className="inline-flex items-center px-3 py-2 border border-blue-600 text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50"
+                                        >
+                                            <EyeIcon className="w-4 h-4 mr-1" />
+                                            Xem chi tiết
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                    </tbody>
+                </table>
+            </div>
 
-                        {/* Danh sách sản phẩm trong nhóm */}
-                        {expandedGroups[group.name] && (
-                            <div className="border-t border-slate-200">
+            {/* Modal xem chi tiết */}
+            {isDetailModalOpen && selectedGroup && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    <div className="flex min-h-screen items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-black opacity-40" onClick={closeDetailModal}></div>
+                        <div className="relative bg-white rounded-lg shadow-xl w-11/12 max-w-4xl">
+                            <button
+                                onClick={closeDetailModal}
+                                className="absolute right-4 top-4 text-gray-400 hover:text-gray-500"
+                            >
+                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                            <div className="p-6">
+                                <div className="mb-6">
+                                    <h2 className="text-base font-medium text-gray-900">{selectedGroup.name}</h2>
+                                    <div className="flex gap-4 mt-2 bg-gray-50 p-3 rounded-lg">
+                                        <div className="px-3 py-1 bg-blue-50 rounded-lg">
+                                            <span className="text-sm text-gray-900">Tổng tồn kho: {selectedGroup.totalStock}</span>
+                                        </div>
+                                        <div className="px-3 py-1 bg-green-50 rounded-lg">
+                                            <span className="text-sm text-gray-900">Tổng nhập: {selectedGroup.totalImport}</span>
+                                        </div>
+                                        <div className="px-3 py-1 bg-orange-50 rounded-lg">
+                                            <span className="text-sm text-gray-900">Tổng xuất: {selectedGroup.totalExport}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                             <tr>
-                                                {/* <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Mã sản phẩm
-                                                </th> */}
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Giá bán
-                                                </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
                                                     Tồn kho
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Đã nhập
+                                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                                    SL nhập
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Đã xuất
+                                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                                    SL xuất
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    NSX
+                                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                                    Ngày SX
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    HSD
-                                                </th>
-                                                <th scope="col" className="px-8 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Thao tác
+                                                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">
+                                                    Hạn SD
                                                 </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {group.details.map((detail) => (
-                                                <tr key={detail._id} className="hover:bg-gray-50">
-                                                    {/* <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        {detail.product._id}
-                                                    </td> */}
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {formatCurrency(detail.product.output_price)}
-                                                    </td>
-                                                    <td className="px-10 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {detail.input_quantity - detail.output_quantity}
-                                                    </td>
-                                                    <td className="px-10 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {detail.input_quantity}
-                                                    </td>
-                                                    <td className="px-10 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {detail.output_quantity}
-                                                    </td>
-                                                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {new Date(detail.date_of_manufacture).toLocaleDateString('vi-VN')}
-                                                    </td>
-                                                    <td className="px-2 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {new Date(detail.expiry_date).toLocaleDateString('vi-VN')}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                        <div className="flex justify-end gap-2">
-                                                            <button
-                                                                onClick={() => onViewDetail?.(detail.product)}
-                                                                className="text-blue-600 hover:text-blue-900"
-                                                            >
-                                                                <EyeIcon className="w-5 h-5" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => onEdit?.(detail.product)}
-                                                                className="text-amber-600 hover:text-amber-900"
-                                                            >
-                                                                <PencilIcon className="w-5 h-5" />
-                                                            </button>
-                                                            <button
-                                                                onClick={() => onDelete?.(detail.product)}
-                                                                className="text-red-600 hover:text-red-900"
-                                                            >
-                                                                <TrashIcon className="w-5 h-5" />
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            {selectedGroup.details.map((detail) => {
+                                                const date = new Date(detail.expiry_date);
+                                                const now = new Date();
+                                                now.setHours(0, 0, 0, 0);
+                                                const isExpired = date < now;
+                                                const isExpiringSoon = date > now && Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) <= 30;
+
+                                                let rowClass = "hover:bg-gray-50";
+                                                if (isExpired) {
+                                                    rowClass += " bg-red-50";
+                                                } else if (isExpiringSoon) {
+                                                    rowClass += " bg-yellow-50";
+                                                }
+
+                                                return (
+                                                    <tr key={detail._id} className={rowClass}>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                                                            {detail.input_quantity - detail.output_quantity}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                                                            {detail.input_quantity}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                                                            {detail.output_quantity}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-900">
+                                                            {new Date(detail.date_of_manufacture).toLocaleDateString('vi-VN')}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                            <div className="text-sm text-gray-900">
+                                                                {new Date(detail.expiry_date).toLocaleDateString('vi-VN')}
+                                                                {isExpired && (
+                                                                    <span className="text-xs text-red-600 block">Đã hết hạn</span>
+                                                                )}
+                                                                {isExpiringSoon && !isExpired && (
+                                                                    <span className="text-xs text-yellow-600 block">Sắp hết hạn</span>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </div>
-                ))}
+                </div>
+            )}
         </div>
     );
 } 

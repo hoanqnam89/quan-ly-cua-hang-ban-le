@@ -22,7 +22,7 @@ export const translateCollectionName = (
         case ECollectionNames.PRODUCT:
           return 'sản phẩm';
         case ECollectionNames.PRODUCT_DETAIL:
-          return 'chi tiết sản phẩm';
+          return 'báo cáo tồn kho';
         case ECollectionNames.BUSINESS:
           return 'nhà cung cấp';
         case ECollectionNames.UNIT:
