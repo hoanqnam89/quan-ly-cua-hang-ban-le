@@ -1,41 +1,22 @@
 'use client';
 
-import { Button, IconContainer, SelectDropdown, Text } from '@/components'
+import { Button, Text } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
-import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState, ReactNode, Dispatch, SetStateAction } from 'react'
-import InputSection from '../components/input-section/input-section';
-import { infoIcon, trashIcon, externalLinkIcon } from '@/public';
-import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
-import TabItem from '@/components/tabs/components/tab-item/tab-item';
-import Tabs from '@/components/tabs/tabs';
+import React, { ReactElement, useCallback, useEffect, useRef, useState, ReactNode, Dispatch, SetStateAction } from 'react'
 import { IProduct } from '@/interfaces/product.interface';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
-import { fetchGetCollections } from '@/utils/fetch-get-collections';
-import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
-import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { DEFAULT_PROCDUCT_DETAIL } from '@/constants/product-detail.constant';
-import DateInput from '@/components/date-input/date-input';
 import { ENotificationType } from '@/components/notify/notification/notification';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { deleteCollectionById } from '@/services/api-service';
-import { differenceInDays } from 'date-fns';
-import styles from './style.module.css';
-import { EButtonType } from '@/components/button/interfaces/button-type.interface';
-import { EyeIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { formatCurrency } from '@/utils/format-currency';
-import Image from 'next/image';
-import { generateBatchNumber } from '@/utils/batch-number';
-import dynamic from 'next/dynamic';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Tạo QueryClient instance
 const queryClient = new QueryClient();
 
-// Import Barcode component
-const ReactBarcode = dynamic(() => import('react-barcode'), { ssr: false });
 
 // Component wrapper với QueryClientProvider 
 function ProductDetailWithQueryClientProvider() {
@@ -101,164 +82,6 @@ function Modal({ isOpen, onClose, children, className = '' }: Omit<ModalProps, '
   );
 }
 
-interface ProductWithDetails extends IProduct {
-  details: IProductDetail[];
-}
-
-interface ExpirationModalProps {
-  isOpen: boolean;
-  setIsOpen: Dispatch<SetStateAction<boolean>>;
-  onDeleteSuccess?: (deletedDetailId: string) => void;
-}
-
-function ExpirationModal({ isOpen, setIsOpen, onDeleteSuccess }: ExpirationModalProps) {
-  const [loading, setLoading] = useState(false);
-  const [expired, setExpired] = useState<Array<{ product: IProduct, detail: IProductDetail, daysExpired: number }>>([]);
-  const [expiring, setExpiring] = useState<Array<{ product: IProduct, detail: IProductDetail, daysLeft: number }>>([]);
-
-  // Title màu đẹp hơn
-  const titleStyle = "text-xl font-bold mb-2 text-gray-800";
-  const sectionStyle = "bg-white rounded-lg shadow-md border border-gray-200 p-5 mb-6 overflow-hidden";
-
-  const onClose = () => setIsOpen(false);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    setLoading(true);
-    Promise.all([
-      fetch('/api/product').then(res => res.json()),
-      fetch('/api/product-detail').then(res => res.json())
-    ]).then(([products, details]: [IProduct[], IProductDetail[]]) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const expiredList: typeof expired = [];
-      const expiringList: typeof expiring = [];
-      for (const product of products) {
-        for (const detail of details.filter(d => d.product_id === product._id)) {
-          const expiry = new Date(detail.expiry_date);
-          expiry.setHours(0, 0, 0, 0);
-          if (expiry < today) {
-            expiredList.push({ product, detail, daysExpired: Math.ceil((today.getTime() - expiry.getTime()) / (1000 * 60 * 60 * 24)) });
-          } else if (expiry > today && (expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24) <= 30) {
-            expiringList.push({ product, detail, daysLeft: Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)) });
-          }
-        }
-      }
-      setExpired(expiredList.sort((a, b) => b.daysExpired - a.daysExpired));
-      setExpiring(expiringList.sort((a, b) => a.daysLeft - b.daysLeft));
-      setLoading(false);
-    });
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black opacity-40" onClick={onClose}></div>
-        <div className="relative bg-white rounded-lg shadow-xl w-11/12 max-w-4xl">
-          <button onClick={onClose} className="absolute right-4 top-4 text-gray-400 hover:text-gray-500">
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-8">
-              <Text size={24} className={titleStyle}>Kiểm tra hạn sử dụng sản phẩm</Text>
-            </div>
-            {loading ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <span className="ml-2">Đang tải...</span>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className={sectionStyle}>
-                  <div className="flex items-center mb-4">
-                    <div className="flex-shrink-0 mr-3 bg-red-100 rounded-full p-2">
-                      <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <Text size={16} className="font-semibold text-gray-900">Sản phẩm hết hạn</Text>
-                      <Text size={12} className="text-gray-500">Có {expired.length} sản phẩm đã hết hạn</Text>
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto max-h-[300px]">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50 sticky top-0 z-10">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Sản phẩm</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hạn sử dụng</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tổng kho</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {expired.length === 0 ? (
-                          <tr><td colSpan={3} className="px-4 py-2 text-center text-gray-500">Không có sản phẩm nào hết hạn</td></tr>
-                        ) : expired.map(({ product, detail, daysExpired }, idx) => (
-                          <tr key={product._id + detail._id + idx} className="hover:bg-gray-50">
-                            <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{product.name}</td>
-                            <td className="px-4 py-2 whitespace-nowrap">
-                              <div className="flex flex-col">
-                                <span className="text-sm text-red-600 font-medium">{new Date(detail.expiry_date).toLocaleDateString('vi-VN')}</span>
-                                <span className="text-xs text-red-500">({daysExpired} ngày trước)</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{detail.input_quantity}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className={sectionStyle}>
-                  <div className="flex items-center mb-4">
-                    <div className="flex-shrink-0 mr-3 bg-yellow-100 rounded-full p-2">
-                      <svg className="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <Text size={16} className="font-semibold text-gray-900">Sản phẩm sắp hết hạn</Text>
-                      <Text size={12} className="text-gray-500">Có {expiring.length} sản phẩm sắp hết hạn trong vòng 30 ngày tới</Text>
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto max-h-[300px]">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50 sticky top-0 z-10">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Sản phẩm</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Hạn sử dụng</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tổng kho</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {expiring.length === 0 ? (
-                          <tr><td colSpan={3} className="px-4 py-2 text-center text-gray-500">Không có sản phẩm nào sắp hết hạn</td></tr>
-                        ) : expiring.map(({ product, detail, daysLeft }, idx) => (
-                          <tr key={product._id + detail._id + idx} className="hover:bg-gray-50">
-                            <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">{product.name}</td>
-                            <td className="px-4 py-2 whitespace-nowrap">
-                              <div className="flex flex-col">
-                                <span className="text-sm text-yellow-600 font-medium">{new Date(detail.expiry_date).toLocaleDateString('vi-VN')}</span>
-                                <span className="text-xs text-yellow-500">({daysLeft} ngày nữa)</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{detail.input_quantity}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
@@ -270,7 +93,7 @@ function ProductDetail() {
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [productOptions, setProductOptions] = useState<ISelectOption[]>([]);
-  const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({ id: '', isClicked: false });
+  const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({});
   const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({ id: '', isClicked: false });
   const [isExpirationModalOpen, setIsExpirationModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -418,7 +241,7 @@ function ProductDetail() {
     {
       key: `product_id`,
       ref: useRef(null),
-      title: `Sản phẩm`,
+      title: `Tên sản phẩm`,
       size: `4fr`,
       render: (collection: collectionType): ReactElement => {
         const productOption = productOptions.find(
@@ -436,7 +259,7 @@ function ProductDetail() {
     {
       key: `inventory`,
       ref: useRef(null),
-      title: `Tồn kho`,
+      title: `Số lượng tồn kho`,
       size: `1fr`,
       render: (collection: collectionType): ReactElement => {
         return (
@@ -449,7 +272,7 @@ function ProductDetail() {
     {
       key: `input_quantity`,
       ref: useRef(null),
-      title: `SL nhập`,
+      title: `Số lượng nhập`,
       size: `1fr`,
       render: (collection: collectionType): ReactElement => {
         return (
@@ -462,7 +285,7 @@ function ProductDetail() {
     {
       key: `output_quantity`,
       ref: useRef(null),
-      title: `SL xuất`,
+      title: `Số lượng xuất`,
       size: `1fr`,
       render: (collection: collectionType): ReactElement => {
         return (
@@ -497,33 +320,7 @@ function ProductDetail() {
     },
   ];
 
-  const handleChangeProductDetail = (e: ChangeEvent<HTMLInputElement>): void => {
-    setProductDetail({
-      ...productDetail,
-      [e.target.name]: e.target.value,
-    });
-  }
 
-  const handleChangeProductId = (e: ChangeEvent<HTMLSelectElement>): void => {
-    const newProductId = e.target.value;
-    setProductDetail({
-      ...productDetail,
-      product_id: newProductId,
-      batch_number: generateBatchNumber(newProductId)
-    });
-  }
-
-  const handleDeleteClick = (collection: collectionType): void => {
-    const productOption = productOptions.find(
-      (option) => option.value === collection.product_id
-    );
-    const productName = productOption?.label || 'Không xác định';
-    setSelectedProductDetail({
-      id: collection._id,
-      name: productName
-    });
-    setDeleteModalOpen(true);
-  };
 
   const handleDeleteConfirm = async () => {
     if (!selectedProductDetail) return;
@@ -556,17 +353,7 @@ function ProductDetail() {
           <div className="flex items-center justify-between mb-4">
             <div className="text-2xl font-bold text-gray-800">Báo cáo tồn kho</div>
 
-            <div className="flex gap-4">
-              <Button
-                className="flex items-center gap-2 text-blue-600 bg-white border border-blue-600 rounded-md py-2 px-4 hover:bg-blue-50 min-w-[180px] justify-center"
-                onClick={() => setIsExpirationModalOpen(true)}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Kiểm tra hạn sử dụng</span>
-              </Button>
-            </div>
+
           </div>
 
           {notificationElements}
@@ -635,12 +422,6 @@ function ProductDetail() {
               </div>
             </div>
           </Modal>
-
-          <ExpirationModal
-            isOpen={isExpirationModalOpen}
-            setIsOpen={setIsExpirationModalOpen}
-            onDeleteSuccess={() => fetchAllData()}
-          />
         </div>
       </div>
     </>

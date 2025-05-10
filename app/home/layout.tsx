@@ -2,17 +2,13 @@
 
 import { CSSProperties, ReactElement, useState } from 'react';
 import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
-<<<<<<< HEAD
 import chevronRightIcon from '@/public/chevron-right.svg?url';
 import chevronLeftIcon from '@/public/chevron-left.svg?url';
 import homeIcon from '@/public/home.svg?url';
 import boxesIcon from '@/public/boxes.svg?url';
 import scrollIcon from '@/public/scroll.svg?url';
 import settingIcon from '@/public/setting.svg?url';
-import { boxIcon, circleSmallIcon, circleUserRoundIcon, factoryIcon, toyBrickIcon, userIcon } from '@/public';
-=======
-import { boxesIcon, boxIcon, chartBarIcon, chevronLeftIcon, chevronRightIcon, circleSmallIcon, circleUserRoundIcon, factoryIcon, homeIcon, scrollIcon, settingIcon, toyBrickIcon, userIcon } from '@/public';
->>>>>>> efb272c1d99af8214eeedfc62db662950ddfb3f0
+import { boxIcon, circleSmallIcon, circleUserRoundIcon, factoryIcon, toyBrickIcon, userIcon, chartBarIcon } from '@/public';
 import { IRootLayout } from '@/interfaces/root-layout.interface';
 import styles from './style.module.css';
 
@@ -92,11 +88,7 @@ export default function RootLayout({
         },
       ]
     },
-    {
-      link: `${currentPath}/product-detail`,
-      label: `Quản lý kho`,
-      icon: boxesIcon,
-    },
+
     {
       link: `${currentPath}/order-form`,
       label: `Quản lý đặt hàng`,
@@ -119,6 +111,11 @@ export default function RootLayout({
       isExpanded: expandedGroups['report'],
       onClick: () => toggleGroup('report'),
       children: [
+        {
+          link: `${currentPath}/product-detail`,
+          label: `Báo cáo tồn kho`,
+          icon: boxesIcon,
+        },
         {
           link: `${currentPath}/report-date`,
           label: `Thống kê hạn sử dụng`,
