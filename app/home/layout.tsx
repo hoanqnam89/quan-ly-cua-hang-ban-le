@@ -2,7 +2,7 @@
 
 import { CSSProperties, ReactElement, useState } from 'react';
 import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
-import { boxesIcon, boxIcon, chevronLeftIcon, chevronRightIcon, circleSmallIcon, circleUserRoundIcon, factoryIcon, homeIcon, scrollIcon, settingIcon, toyBrickIcon, userIcon } from '@/public';
+import { boxesIcon, boxIcon, chartBarIcon, chevronLeftIcon, chevronRightIcon, circleSmallIcon, circleUserRoundIcon, factoryIcon, homeIcon, scrollIcon, settingIcon, toyBrickIcon, userIcon } from '@/public';
 import { IRootLayout } from '@/interfaces/root-layout.interface';
 import styles from './style.module.css';
 
@@ -104,9 +104,18 @@ export default function RootLayout({
     },
 
     {
-      link: `${currentPath}/`,
       label: `Báo cáo thống kê`,
       icon: settingIcon,
+      isExpanded: expandedGroups['report'],
+      onClick: () => toggleGroup('report'),
+      children: [
+        {
+          link: `${currentPath}/report-date`,
+          label: `Thống kê hạn sử dụng`,
+          icon: chartBarIcon,
+        },
+
+      ]
     },
     {
       label: `Cài đặt`,
