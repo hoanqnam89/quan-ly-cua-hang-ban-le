@@ -3,7 +3,7 @@
 import { Button, LoadingScreen, Text } from '@/components';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 import { COMPANY } from '@/constants/company.constant';
-import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
+import { DEFAULT_WAREHOUSE_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import { ECollectionNames } from '@/enums';
 import { IBusiness } from '@/interfaces/business.interface';
 import { IOrderForm, IOrderFormProductDetail } from '@/interfaces/order-form.interface';
@@ -38,7 +38,7 @@ export default function PreviewOrderForm({
   const { id } = use(params);
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [warehouseReceipt, setWarehouseReceipt] = useState<collectionType>(
-    DEFAULT_WAREHOUST_RECEIPT
+    DEFAULT_WAREHOUSE_RECEIPT
   );
   const [products, setProducts] = useState<IProduct[]>([]);
   const [productDetails, setProductDetails] = useState<IProductDetail[]>([]);

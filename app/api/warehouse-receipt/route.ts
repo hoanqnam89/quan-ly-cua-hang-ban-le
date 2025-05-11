@@ -48,10 +48,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     if (!isValidObjectId(warehouseReceipt.supplier_id)) {
       return NextResponse.json(
         createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `The supplier ID '${warehouseReceipt.supplier_id}' is not valid.`,
+          `Tạo phiếu nhập kho thất bại.`,
+          `ID nhà cung cấp không hợp lệ: '${warehouseReceipt.supplier_id}'.`,
           path,
-          `Please check if the business ID is correct.`,
+          `Vui lòng kiểm tra lại ID nhà cung cấp.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
@@ -62,10 +62,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     if (!foundSupplier) {
       return NextResponse.json(
         createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `The business with ID '${warehouseReceipt.supplier_id}' does not exist.`,
+          `Tạo phiếu nhập kho thất bại.`,
+          `Không tìm thấy nhà cung cấp với ID '${warehouseReceipt.supplier_id}'.`,
           path,
-          `Please check if the business ID is correct.`
+          `Vui lòng kiểm tra lại ID nhà cung cấp.`
         ),
         { status: EStatusCode.NOT_FOUND }
       );
@@ -75,10 +75,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     if (!isValidObjectId(warehouseReceipt.supplier_receipt_id)) {
       return NextResponse.json(
         createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `The order form ID '${warehouseReceipt.supplier_receipt_id}' is not valid.`,
+          `Tạo phiếu nhập kho thất bại.`,
+          `ID phiếu đơn không hợp lệ: '${warehouseReceipt.supplier_receipt_id}'.`,
           path,
-          `Please check if the order form ID is correct.`,
+          `Vui lòng kiểm tra lại ID phiếu đơn.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
@@ -89,10 +89,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     if (!foundOrderForm) {
       return NextResponse.json(
         createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `The order form with ID '${warehouseReceipt.supplier_receipt_id}' does not exist.`,
+          `Tạo phiếu nhập kho thất bại.`,
+          `Không tìm thấy phiếu đơn với ID '${warehouseReceipt.supplier_receipt_id}'.`,
           path,
-          `Please check if the order form ID is correct.`
+          `Vui lòng kiểm tra lại ID phiếu đơn.`,
         ),
         { status: EStatusCode.NOT_FOUND }
       );
@@ -105,10 +105,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     if (existingReceipt) {
       return NextResponse.json(
         createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `This order form is already used in another warehouse receipt.`,
+          `Tạo phiếu nhập kho thất bại.`,
+          `Phiếu đơn này đã được sử dụng trong phiếu nhập kho khác.`,
           path,
-          `Please use a different order form.`
+          `Vui lòng sử dụng phiếu đơn khác.`
         ),
         { status: EStatusCode.CONFLICT }
       );
@@ -119,10 +119,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     if (!isIdsValid(productIds)) {
       return NextResponse.json(
         createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `Some product IDs are not valid.`,
+          `Tạo phiếu nhập kho thất bại.`,
+          `Một số ID sản phẩm không hợp lệ.`,
           path,
-          `Please check the product details.`,
+          `Vui lòng kiểm tra kho sản phẩm.`,
         ),
         { status: EStatusCode.UNPROCESSABLE_ENTITY }
       );
@@ -133,10 +133,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     if (!productsExist) {
       return NextResponse.json(
         createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `Some products do not exist in our records.`,
+          `Tạo phiếu nhập kho thất bại.`,
+          `Một số sản phẩm không tồn tại trong hệ thống.`,
           path,
-          `Please check the product details.`,
+          `Vui lòng kiểm tra kho sản phẩm.`,
         ),
         { status: EStatusCode.NOT_FOUND }
       );
@@ -149,6 +149,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       supplier_id: warehouseReceipt.supplier_id,
       supplier_receipt_id: warehouseReceipt.supplier_receipt_id,
       product_details: warehouseReceipt.product_details,
+      receipt_code: warehouseReceipt.receipt_code,
     });
 
     // Save warehouse receipt
@@ -156,14 +157,27 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     if (!savedWarehouseReceipt) {
       return NextResponse.json(
         createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          `Could not save the warehouse receipt.`,
+          `Tạo phiếu nhập kho thất bại.`,
+          `Không thể lưu phiếu nhập kho.`,
           path,
-          `Please try again later.`,
+          `Vui lòng thử lại sau.`,
         ),
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
     }
+
+    // Sau khi đã có _id, sinh mã receipt_code và cập nhật lại
+    const formatReceiptCode = (id: string, date: Date): string => {
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear().toString();
+      const dateStr = `${day}${month}${year}`;
+      const sequence = id.toString().slice(-4).padStart(4, '0');
+      return `NK-${dateStr}-${sequence}`;
+    };
+    const receiptCode = formatReceiptCode(savedWarehouseReceipt._id.toString(), savedWarehouseReceipt.created_at);
+    savedWarehouseReceipt.receipt_code = receiptCode;
+    await savedWarehouseReceipt.save();
 
     // Xử lý thêm chi tiết kho cho từng sản phẩm
     for (const detail of warehouseReceipt.product_details) {
@@ -272,6 +286,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
             updated_at: currentDate,
             product_id: product._id,
             batch_number: batchNumber,
+            barcode: batchNumber,
             input_quantity: additionalQuantity,
             output_quantity: 0,
             inventory: additionalQuantity,
@@ -285,10 +300,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
           console.error(`Lỗi khi tạo chi tiết kho mới:`, error);
           return NextResponse.json(
             createErrorMessage(
-              `Failed to create product detail.`,
-              error instanceof Error ? error.message : "Unknown error when creating product detail",
+              `Tạo chi tiết kho thất bại.`,
+              error instanceof Error ? error.message : "Lỗi khi tạo chi tiết kho",
               path,
-              `Please check your product details and try again.`,
+              `Vui lòng kiểm tra kho sản phẩm và thử lại.`,
             ),
             { status: EStatusCode.INTERNAL_SERVER_ERROR }
           );
@@ -299,7 +314,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       if (!productDetail.input_price || productDetail.input_price <= 0) {
         return NextResponse.json(
           createErrorMessage(
-            `Failed to create ${collectionName}.`,
+            `Tạo phiếu nhập kho thất bại.`,
             `Giá nhập của sản phẩm "${product.name}" không hợp lệ.`,
             path,
             `Vui lòng nhập giá sản phẩm lớn hơn 0.`,
@@ -373,10 +388,10 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     console.error("Error creating warehouse receipt:", error);
     return NextResponse.json(
       createErrorMessage(
-        `Failed to create ${collectionName}.`,
+        `Tạo phiếu nhập kho thất bại.`,
         error instanceof Error ? error.message : "Unknown error",
         path,
-        `Please try again later.`,
+        `Vui lòng thử lại sau.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );

@@ -12,7 +12,7 @@ import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-toolt
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
 import { IWarehouseReceipt, IWarehouseProductDetail } from '@/interfaces/warehouse-receipt.interface';
-import { DEFAULT_WAREHOUST_RECEIPT } from '@/constants/warehouse-receipt.constant';
+import { DEFAULT_WAREHOUSE_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IOrderForm, IOrderFormProductDetail, OrderFormStatus } from '@/interfaces/order-form.interface';
@@ -144,7 +144,7 @@ function WarehouseReceipt() {
   const queryClient = useQueryClient();
 
   // States
-  const [warehouseReceipt, setWarehouseReceipt] = useState<collectionType>(DEFAULT_WAREHOUST_RECEIPT);
+  const [warehouseReceipt, setWarehouseReceipt] = useState<collectionType>(DEFAULT_WAREHOUSE_RECEIPT);
   const [orderForm, setOrderForm] = useState<IOrderForm>(DEFAULT_ORDER_FORM);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({ id: ``, isClicked: false });
@@ -313,7 +313,7 @@ function WarehouseReceipt() {
       // Chỉ reset khi có dữ liệu cần reset
       setOrderFormOptions([]);
       setOrderForm(DEFAULT_ORDER_FORM);
-      setWarehouseReceipt(DEFAULT_WAREHOUST_RECEIPT);
+      setWarehouseReceipt(DEFAULT_WAREHOUSE_RECEIPT);
     }
   }, [orderForms]);
 
@@ -438,7 +438,7 @@ function WarehouseReceipt() {
       if (typeof detail.input_price === 'number') {
         inputPrice = detail.input_price;
       } else if (typeof detail.input_price === 'string') {
-        const numericString = detail.input_price.replace(/[^\d]/g, '');
+        const numericString = String(detail.input_price).replace(/[^\d]/g, '');
         inputPrice = numericString ? parseInt(numericString) : 0;
       }
 
@@ -540,13 +540,17 @@ function WarehouseReceipt() {
           try {
             // Tạo đối tượng product detail mới
             const productDetail: IProductDetail = {
+              _id: '', // ID sẽ được tạo tự động bởi server
               product_id: detail._id,
               input_quantity: detail.quantity,
               output_quantity: 0,
-              date_of_manufacture: detail.date_of_manufacture,
-              expiry_date: detail.expiry_date,
+              date_of_manufacture: new Date(detail.date_of_manufacture || ''),
+              expiry_date: new Date(detail.expiry_date || ''),
               batch_number: detail.batch_number,
-              barcode: detail.batch_number // Sử dụng batch_number làm barcode
+              barcode: detail.batch_number,
+              created_at: new Date(),
+              updated_at: new Date(),
+              inventory: detail.quantity // Số lượng tồn kho ban đầu bằng số lượng nhập
             };
 
             // Gọi API để thêm product detail mới
@@ -575,7 +579,7 @@ function WarehouseReceipt() {
 
         // Reset form
         setOrderForm(DEFAULT_ORDER_FORM);
-        setWarehouseReceipt(DEFAULT_WAREHOUST_RECEIPT);
+        setWarehouseReceipt(DEFAULT_WAREHOUSE_RECEIPT);
       } else {
         // Xử lý phản hồi lỗi từ API
         let errorMessage = 'Không thể lưu phiếu nhập kho';
@@ -1148,7 +1152,7 @@ function WarehouseReceipt() {
     <ManagerPage
       columns={columns}
       collectionName={collectionName}
-      defaultCollection={DEFAULT_WAREHOUST_RECEIPT}
+      defaultCollection={DEFAULT_WAREHOUSE_RECEIPT}
       collection={warehouseReceipt}
       setCollection={setWarehouseReceipt}
       isModalReadonly={isModalReadOnly}

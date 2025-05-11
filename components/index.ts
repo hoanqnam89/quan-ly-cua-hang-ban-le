@@ -16,7 +16,6 @@ import Barcode from "./barcode/index";
 import BarcodeComponent from "./barcode/barcode";
 import PaymentModal from "./PaymentModal";
 import ProductList from "./ProductList";
-import ProductGroupList from "./ProductGroupList";
 
 export {
   Barcode,
@@ -31,7 +30,6 @@ export {
   Modal,
   NumberInput,
   PaymentModal,
-  ProductGroupList,
   ProductList,
   SelectDropdown,
   Tag,

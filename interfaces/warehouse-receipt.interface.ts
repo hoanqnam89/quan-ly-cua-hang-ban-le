@@ -21,6 +21,6 @@ export interface IWarehouseReceipt {
     supplier_receipt_id: string;
     created_at: Date;
     updated_at: Date;
-
     product_details: IWarehouseProductDetail[];
+    receipt_code: string;
 } 

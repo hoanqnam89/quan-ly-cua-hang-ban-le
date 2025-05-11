@@ -258,10 +258,14 @@ export default function Table<T extends { _id: string, index?: number }>({
                   return (
                     <td
                       key={column.title + '-' + rowIndex}
-                      className={`border border-gray-300 px-4 py-2 text-center items-center justify-center ${column.key === 'index' || column.title === '#' ? 'w-[50px] min-w-[50px]' : ''}`}
+                      className={`border border-gray-300 px-4 py-2 
+                        ${['productName', 'name', 'supplier', 'supplierName', 'code', 'productCode'].includes(column.key as string) ? 'text-left' : 'text-center'} 
+                        items-center justify-center 
+                        ${column.key === 'index' || column.title === '#' ? 'w-[50px] min-w-[50px]' : ''}`}
                       style={{ minWidth: column.key === 'index' || column.title === '#' ? 50 : columnWidths[colIdx], width: column.key === 'index' || column.title === '#' ? 50 : columnWidths[colIdx], verticalAlign: 'middle' }}
                     >
-                      <div className="w-full h-full flex items-center justify-center text-center">
+                      <div className={`w-full h-full flex items-center 
+                        ${['productName', 'name', 'supplier', 'supplierName', 'code', 'productCode'].includes(column.key as string) ? 'justify-start text-left' : 'justify-center text-center'}`}>
                         {cellContent}
                       </div>
                     </td>

@@ -14,6 +14,10 @@ const WarehouseReceiptSchema = new Schema({
     default: () => Date.now(),
     type: Date,
   },
+  receipt_code: {
+    type: String,
+    required: [false],
+  },
 
   product_details: [
     {

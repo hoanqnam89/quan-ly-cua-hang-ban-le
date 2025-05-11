@@ -104,6 +104,11 @@ export default function RootLayout({
       label: `Quản lý bán hàng`,
       icon: scrollIcon,
     },
+    {
+      link: `${currentPath}/return-exchange`,
+      label: `Quản lý đổi trả`,
+      icon: scrollIcon,
+    },
 
     {
       label: `Báo cáo thống kê`,

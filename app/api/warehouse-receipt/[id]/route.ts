@@ -13,20 +13,20 @@ const path: string = `${ROOT}/${collectionName.toLowerCase()}/[id]`;
 
 export const GET = async (
   _req: NextRequest, query: IQueryString
-): Promise<NextResponse> => 
+): Promise<NextResponse> =>
   await getCollectionByIdApi<collectionType>(
-    collectionModel, 
-    collectionName, 
-    path, 
+    collectionModel,
+    collectionName,
+    path,
     query
   );
 
 export const DELETE = async (
   _req: NextRequest, query: IQueryString
-): Promise<NextResponse> => 
+): Promise<NextResponse> =>
   await deleteCollectionByIdApi<collectionType>(
-    collectionModel, 
-    collectionName, 
-    path, 
+    collectionModel,
+    collectionName,
+    path,
     query
   );
