@@ -169,8 +169,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     for (const detail of warehouseReceipt.product_details) {
       const productDetail = detail as WarehouseProductDetail;
 
-      console.log('Đang xử lý chi tiết sản phẩm:', JSON.stringify(productDetail));
-
       // Tìm Product và Unit tương ứng trực tiếp từ ProductModel
       const product = await ProductModel.findById(productDetail._id);
       if (!product) {
