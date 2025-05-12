@@ -100,9 +100,22 @@ export default function RootLayout({
       icon: scrollIcon,
     },
     {
-      link: `${currentPath}/order`,
       label: `Quản lý bán hàng`,
       icon: scrollIcon,
+      isExpanded: expandedGroups['sales'],
+      onClick: () => toggleGroup('sales'),
+      children: [
+        {
+          link: `${currentPath}/order`,
+          label: `Danh sách đơn hàng`,
+          icon: scrollIcon,
+        },
+        {
+          link: `${currentPath}/order/create`,
+          label: `Thêm đơn hàng`,
+          icon: boxesIcon,
+        },
+      ]
     },
     {
       link: `${currentPath}/return-exchange`,

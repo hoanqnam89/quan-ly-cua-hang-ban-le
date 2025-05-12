@@ -7,7 +7,6 @@ import { ECollectionNames } from '@/enums'
 import React, { ChangeEvent, ReactElement, useCallback, useEffect, useRef, useState } from 'react'
 import InputSection from '../components/input-section/input-section';
 import { infoIcon, trashIcon } from '@/public';
-import printIcon from '@/public/icons/print.svg';
 import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-tooltip';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
@@ -19,24 +18,19 @@ import { IOrderForm, IOrderFormProductDetail, OrderFormStatus } from '@/interfac
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
 import { DEFAULT_ORDER_FORM } from '@/constants/order-form.constant';
-import styles from './style.module.css';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { IProduct } from '@/interfaces/product.interface';
 import { IBusiness } from '@/interfaces/business.interface';
 import { EBusinessType } from '@/enums/business-type.enum';
 import { IUnit } from '@/interfaces/unit.interface';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
-import Textarea from '@/components/textarea/Textarea';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '@/components/notify/notification/notification';
 import { addCollection, fetchCollection, updateOrderStatus } from '@/services/api-service';
 import { EStatusCode } from '@/enums/status-code.enum';
-import { ROOT } from '@/constants/root.constant';
-import { nameToHyphenAndLowercase } from '@/utils/name-to-hyphen-and-lowercase';
 import { useQuery, QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { generateBatchNumber } from '@/utils/batch-number';
 import BarcodeComponent from '@/components/barcode/barcode';
-import ReactBarcode from 'react-barcode';
 import dynamic from 'next/dynamic';
 
 // Import Barcode component với dynamic import

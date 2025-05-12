@@ -358,7 +358,7 @@ export default function ReturnExchangePage(): React.ReactElement {
             <div className="mb-6">
 
                 <div className="mb-4 flex items-center">
-                    <div className="bg-[#fffdae] px-3 py-2 rounded-md font-medium">Thanh tìm kiếm:</div>
+                    <div className="bg-[#fffdae] px-3 py-2 rounded-md font-medium">Tìm kiếm:</div>
                     <input
                         type="text"
                         placeholder="Nhập mã phiếu nhập kho (receipt_code) để tìm kiếm"

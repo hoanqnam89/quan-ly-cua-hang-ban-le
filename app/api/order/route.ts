@@ -95,6 +95,8 @@ export async function GET(request: NextRequest) {
         // Phân tích URL để lấy các query parameters
         const url = new URL(request.url);
         const limit = parseInt(url.searchParams.get('limit') || '1000'); // Mặc định lấy tối đa 1000 đơn hàng
+        const status = url.searchParams.get('status');
+        const date = url.searchParams.get('date');
 
         // Projection để chỉ lấy các trường cần thiết
         const projection = {
@@ -110,8 +112,21 @@ export async function GET(request: NextRequest) {
             updated_at: 1
         };
 
-        // Thực hiện truy vấn với các tối ưu
-        const orders = await OrderModel.find({}, projection)
+        // Xây dựng điều kiện filter
+        let filter: any = {};
+        if (status === 'pending') filter.payment_status = false;
+        else if (status === 'completed') filter.payment_status = true;
+        // Nếu status là 'all' hoặc không có thì lấy tất cả
+        if (date) {
+            // Lọc theo ngày tạo (created_at)
+            const start = new Date(date);
+            start.setHours(0, 0, 0, 0);
+            const end = new Date(date);
+            end.setHours(23, 59, 59, 999);
+            filter.created_at = { $gte: start, $lte: end };
+        }
+
+        const orders = await OrderModel.find(filter, projection)
             .sort({ created_at: -1 })
             .limit(limit)
             .lean()

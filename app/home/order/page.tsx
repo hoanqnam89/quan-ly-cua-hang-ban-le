@@ -31,37 +31,38 @@ const ImportOrderList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [sortField, setSortField] = useState<'date' | 'price'>('date');
   const [dateFilter, setDateFilter] = useState<'today' | 'specific'>('today');
   const [specificDate, setSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending'>('pending');
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [selectedOrderAmount, setSelectedOrderAmount] = useState<number>(0);
   const [selectedOrderItems, setSelectedOrderItems] = useState<any[]>([]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (status: 'all' | 'completed' | 'pending' = statusFilter) => {
+    setLoading(true);
     try {
-      const res = await fetch(`/api/order?limit=500&t=${Date.now()}`, {
-        cache: 'no-store'
-      });
+      let url = `/api/order?limit=500&t=${Date.now()}`;
+      if (status !== 'all') {
+        url += `&status=${status}`;
+      }
+      const res = await fetch(url, { cache: 'no-store' });
       const data = await res.json();
-
       if (Array.isArray(data)) {
         setOrders(data);
-        setLoading(false);
       }
     } catch (error) {
       console.error('Error fetching orders:', error);
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    fetchOrders(statusFilter);
+  }, [statusFilter]);
 
   const handleCreateOrder = () => {
     router.push('/home/order/create');
@@ -153,8 +154,8 @@ const ImportOrderList = () => {
   const handleReset = () => {
     setDateFilter('today');
     setSpecificDate(new Date().toISOString().split('T')[0]);
-    setStatusFilter('all');
-    setSortOrder('desc');
+    setStatusFilter('pending');
+    setSortOrder('asc');
     setSortField('date');
     setSearchTerm('');
   };
@@ -242,7 +243,7 @@ const ImportOrderList = () => {
 
   const handlePaymentComplete = () => {
     // Refresh danh sách đơn hàng
-    fetchOrders();
+    fetchOrders(statusFilter);
     setIsModalOpen(false);
     alert('Thanh toán thành công!');
   };
@@ -352,7 +353,7 @@ const ImportOrderList = () => {
               <Button
                 onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
                   event?.stopPropagation();
-                  setStatusFilter(prev => prev === 'all' ? 'completed' : prev === 'completed' ? 'pending' : 'all');
+                  setStatusFilter(prev => prev === 'pending' ? 'completed' : prev === 'completed' ? 'all' : 'pending');
                 }}
                 className={`w-full flex items-center gap-2 px-5 py-3 bg-white border ${statusFilter !== 'all' ? 'border-blue-500 text-blue-600' : 'border-slate-200 text-slate-700'} rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
               >
@@ -379,24 +380,68 @@ const ImportOrderList = () => {
                     strokeLinejoin="round"
                   />
                 </svg>
-                <span>{statusFilter === 'all' ? 'Trạng thái' : statusFilter === 'completed' ? 'Hoàn thành' : 'Chưa hoàn thành'}</span>
+                <span>{statusFilter === 'pending' ? 'Chưa hoàn thành' : statusFilter === 'completed' ? 'Hoàn thành' : 'Trạng thái'}</span>
               </Button>
             </div>
 
+            {/* Button sắp xếp theo thời gian: chỉ hiện khi sortField là 'date' */}
+            {sortField === 'date' && (
+              <div className="relative group flex-1">
+                <Button
+                  onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
+                    event?.stopPropagation();
+                    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+                  }}
+                  className={`w-full flex items-center gap-2 px-5 py-3 bg-white border border-blue-500 text-blue-600 rounded-xl hover:border-blue-600 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className={'text-blue-500'}
+                  >
+                    <path
+                      d="M4 17L8 21L12 17"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M4 7L8 3L12 7"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M8 3V21"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span>Sắp xếp theo thời gian {sortOrder === 'asc' ? '↑' : '↓'}</span>
+                </Button>
+              </div>
+            )}
+
+            {/* Button sắp xếp theo giá */}
             <div className="relative group flex-1">
               <Button
                 onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
                   event?.stopPropagation();
-                  if (sortField === 'date') {
-                    // Nếu đang sắp xếp theo ngày, chuyển sang sắp xếp theo giá
+                  if (sortField === 'price') {
+                    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
+                  } else {
                     setSortField('price');
                     setSortOrder('desc');
-                  } else {
-                    // Nếu đang sắp xếp theo giá, đảo chiều sắp xếp
-                    setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
                   }
                 }}
-                className={`w-full flex items-center gap-2 px-5 py-3 bg-white border ${sortOrder === 'asc' || sortField === 'price' ? 'border-blue-500 text-blue-600' : 'border-slate-200 text-slate-700'} rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
+                className={`w-full flex items-center gap-2 px-5 py-3 bg-white border ${sortField === 'price' ? 'border-blue-500 text-blue-600' : 'border-slate-200 text-slate-700'} rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
               >
                 <svg
                   width="18"
@@ -404,7 +449,7 @@ const ImportOrderList = () => {
                   viewBox="0 0 24 24"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
-                  className={sortOrder === 'asc' || sortField === 'price' ? 'text-blue-500' : 'text-slate-500'}
+                  className={sortField === 'price' ? 'text-blue-500' : 'text-slate-500'}
                 >
                   <path
                     d="M4 17L8 21L12 17"
@@ -450,46 +495,8 @@ const ImportOrderList = () => {
                   />
                 </svg>
                 <span>
-                  {sortField === 'date'
-                    ? `Sắp xếp theo thời gian ${sortOrder === 'asc' ? '↑' : '↓'}`
-                    : `Sắp xếp theo giá ${sortOrder === 'asc' ? '↑' : '↓'}`
-                  }
+                  Sắp xếp theo giá {sortField === 'price' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
                 </span>
-              </Button>
-            </div>
-
-            <div className="relative group flex-1">
-              <Button
-                onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
-                  event?.stopPropagation();
-                  handleReset();
-                }}
-                className="w-full flex items-center gap-2 px-5 py-3 bg-slate-100 border border-slate-200 rounded-xl hover:bg-slate-200 transition-all duration-200 font-medium text-slate-600 justify-center"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="text-slate-500"
-                >
-                  <path
-                    d="M1 4V10H7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M3.51 15C4.15839 16.8404 5.38734 18.4202 7.01166 19.5014C8.63598 20.5826 10.5677 21.1066 12.5157 20.9945C14.4637 20.8824 16.3226 20.1402 17.8121 18.8798C19.3017 17.6194 20.3413 15.909 20.7742 14.0064C21.2072 12.1037 21.0101 10.112 20.2126 8.33111C19.4152 6.55025 18.0605 5.0768 16.3528 4.13277C14.6451 3.18874 12.6769 2.82527 10.7447 3.09712C8.81245 3.36897 7.02091 4.26142 5.64 5.64L1 10"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span>Đặt lại</span>
               </Button>
             </div>
           </div>
