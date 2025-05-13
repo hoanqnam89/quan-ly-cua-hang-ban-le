@@ -9,6 +9,9 @@ interface OrderItem {
         output_price: number;
     };
     quantity: number;
+    batchDetails?: {
+        expiryDate: string;
+    };
 }
 
 interface OrderData {
@@ -56,17 +59,38 @@ const createReceiptHTML = (orderData: OrderData) => {
 
             <div style="border-top: 1px dashed #000; margin: 4px 0;"></div>
 
-            ${orderData.items.map(item => `
-                <div style="margin-bottom: 8px;">
-                    <div>${item.product.name}</div>
-                    <div style="display: flex; justify-content: space-between;">
-                        <span>${item.quantity}</span>
-                        <span style="margin-left: 12px;">${formatCurrency(item.product.output_price).replace(' ₫', '')}</span>
-                        <span style="margin-left: 20px;">0</span>
-                        <span>${formatCurrency(item.product.output_price * item.quantity).replace(' ₫', '')}</span>
+            ${orderData.items.map(item => {
+        let isDiscount = false;
+        let discountText = '0';
+        let price = item.product.output_price;
+        let total = price * item.quantity;
+        if (item.batchDetails && item.batchDetails.expiryDate) {
+            const now = new Date();
+            const expiry = new Date(item.batchDetails.expiryDate);
+            const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays <= 30) {
+                isDiscount = true;
+                discountText = '50%';
+                price = price * 0.5;
+                total = price * item.quantity;
+            }
+        }
+        return `
+                    <div style="margin-bottom: 8px;">
+                        <div>${item.product.name}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>${item.quantity}</span>
+                            <span style="margin-left: 12px; display: flex; align-items: center; gap: 3px;">
+                              ${isDiscount
+                ? `<span style='text-decoration:line-through;color:#bbb;font-size:9px;line-height:1.2;vertical-align:baseline;margin-right:4px;display:inline-block;'>${formatCurrency(item.product.output_price).replace(' ₫', '')}</span><span style='color:#e11d48;font-weight:bold;font-size:10px;vertical-align:baseline;display:inline-block;'>${formatCurrency(price).replace(' ₫', '')}</span>`
+                : `<span style='font-size:10px;'>${formatCurrency(item.product.output_price).replace(' ₫', '')}</span>`}
+                            </span>
+                            <span style="margin-left: 20px;">${discountText}</span>
+                            <span>${formatCurrency(total).replace(' ₫', '')}</span>
+                        </div>
                     </div>
-                </div>
-            `).join('')}
+                `;
+    }).join('')}
 
             <div style="border-top: 1px dashed #000; margin: 4px 0;"></div>
 

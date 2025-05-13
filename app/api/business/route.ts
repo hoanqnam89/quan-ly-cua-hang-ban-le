@@ -48,6 +48,7 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       updated_at: new Date(),
       name: business.name,
       logo: business.logo,
+      logo_links: business.logo ? [business.logo] : [],
       address: business.address,
       email: business.email,
       type: business.type,

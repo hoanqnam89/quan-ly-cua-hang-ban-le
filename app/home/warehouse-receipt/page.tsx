@@ -21,7 +21,6 @@ import { DEFAULT_ORDER_FORM } from '@/constants/order-form.constant';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { IProduct } from '@/interfaces/product.interface';
 import { IBusiness } from '@/interfaces/business.interface';
-import { EBusinessType } from '@/enums/business-type.enum';
 import { IUnit } from '@/interfaces/unit.interface';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 import useNotificationsHook from '@/hooks/notifications-hook';
@@ -358,7 +357,7 @@ function WarehouseReceipt() {
 
   const supplierOptions = React.useMemo(() =>
     businesses
-      .filter(b => b.type === EBusinessType.SUPPLIER)
+      .filter(b => b.type === 'SUPPLIER')
       .map(supplier => ({
         label: supplier.name,
         value: supplier._id

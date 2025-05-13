@@ -124,20 +124,20 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
         <div className="min-h-screen bg-white pb-24">
             <div className="bg-white border-b border-slate-200 sticky top-0 z-40">
                 <div className="max-w-[1400px] mx-auto">
-                    <div className="flex items-center h-14 px-5">
+                    <div className="h-14 px-5 flex items-center w-fit gap-2">
                         <Button
                             onClick={() => router.push('/home/order')}
-                            className="flex items-center justify-center h-10 rounded-md bg-white border border-slate-200 hover:bg-slate-50 transition-all duration-200 shadow-sm w-[220px] p-10 "
+                            className="flex items-center p-1 bg-white border border-slate-200 rounded hover:bg-slate-50 transition-all duration-200 shadow-sm min-w-0 w-7 h-7 justify-center"
                         >
                             <Image
                                 src="/icons/chevron-left.svg"
-                                alt="Back"
+                                alt="Quay lại"
                                 width={16}
                                 height={16}
                                 className="text-slate-600"
                             />
                         </Button>
-                        <span className=" flex ml-5 text-lg font-medium text-slate-900 w-[200px] ">Chi tiết đơn hàng</span>
+                        <span className="text-lg font-semibold text-slate-900 whitespace-nowrap">Chi tiết đơn hàng</span>
                     </div>
                 </div>
             </div>

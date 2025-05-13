@@ -1,3 +1,4 @@
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
   /* config options here */
@@ -28,6 +29,9 @@ const nextConfig = {
 
     return config
   },
+  images: {
+    domains: ['res.cloudinary.com'],
+  },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

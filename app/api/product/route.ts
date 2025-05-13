@@ -128,7 +128,7 @@ export const GET = async (req: NextRequest): Promise<NextResponse> => {
     return NextResponse.json(cachedProducts.data, {
       status: EStatusCode.OK,
       headers: {
-        'Cache-Control': 'public, max-age=300', // Cache 5 phút ở client
+        'Cache-Control': 'public, max-age=0', // Cache 5 phút ở client
         'X-Cached-Response': 'true'
       }
     });
@@ -140,7 +140,7 @@ export const GET = async (req: NextRequest): Promise<NextResponse> => {
 
     // Phân tích URL để lấy các query parameters
     const url = new URL(req.url);
-    const limit = parseInt(url.searchParams.get('limit') || '1000'); // Mặc định lấy tối đa 1000 sản phẩm
+    const limit = parseInt(url.searchParams.get('limit') || '100'); // Mặc định lấy tối đa 1000 sản phẩm
     const fields = url.searchParams.get('fields'); // Cho phép chỉ định các trường cần lấy
 
     // Xây dựng projection để chỉ lấy các trường cần thiết

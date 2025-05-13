@@ -380,56 +380,61 @@ const ImportOrderList = () => {
                     strokeLinejoin="round"
                   />
                 </svg>
-                <span>{statusFilter === 'pending' ? 'Chưa hoàn thành' : statusFilter === 'completed' ? 'Hoàn thành' : 'Trạng thái'}</span>
+                <span>{statusFilter === 'pending' ? 'Chưa hoàn thành' : statusFilter === 'completed' ? 'Hoàn thành' : 'Tất cả'}</span>
               </Button>
             </div>
 
-            {/* Button sắp xếp theo thời gian: chỉ hiện khi sortField là 'date' */}
-            {sortField === 'date' && (
-              <div className="relative group flex-1">
-                <Button
-                  onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
-                    event?.stopPropagation();
+            {/* Button sắp xếp theo thời gian: luôn hiển thị */}
+            <div className="relative group flex-1">
+              <Button
+                onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
+                  event?.stopPropagation();
+                  if (sortField === 'date') {
                     setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc');
-                  }}
-                  className={`w-full flex items-center gap-2 px-5 py-3 bg-white border border-blue-500 text-blue-600 rounded-xl hover:border-blue-600 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
+                  } else {
+                    setSortField('date');
+                    setSortOrder('desc');
+                  }
+                }}
+                className={`w-full flex items-center gap-2 px-5 py-3 bg-white border ${sortField === 'date' ? 'border-blue-500 text-blue-600' : 'border-slate-200 text-slate-700'} rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 font-medium justify-center`}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={sortField === 'date' ? 'text-blue-500' : 'text-slate-500'}
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                    className={'text-blue-500'}
-                  >
-                    <path
-                      d="M4 17L8 21L12 17"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M4 7L8 3L12 7"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M8 3V21"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span>Sắp xếp theo thời gian {sortOrder === 'asc' ? '↑' : '↓'}</span>
-                </Button>
-              </div>
-            )}
+                  <path
+                    d="M4 17L8 21L12 17"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M4 7L8 3L12 7"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M8 3V21"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span>
+                  Sắp xếp theo thời gian {sortField === 'date' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
+                </span>
+              </Button>
+            </div>
 
-            {/* Button sắp xếp theo giá */}
+            {/* Button sắp xếp theo giá: luôn hiển thị */}
             <div className="relative group flex-1">
               <Button
                 onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
@@ -654,7 +659,7 @@ const ImportOrderList = () => {
 
             <div className="px-8 py-5 border-t-2 border-slate-100 bg-slate-50">
               <div className="text-sm text-slate-600">
-                Tổng đơn hàng: {orders.length}
+                Tổng đơn hàng: {searchedOrders.length}
               </div>
             </div>
           </div>

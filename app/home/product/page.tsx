@@ -16,7 +16,6 @@ import { ISelectOption } from '@/components/select-dropdown/interfaces/select-op
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
 import { IBusiness } from '@/interfaces/business.interface';
-import { EBusinessType } from '@/enums/business-type.enum';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { formatCurrency } from '@/utils/format-currency';
 import useNotificationsHook from '@/hooks/notifications-hook';
@@ -78,7 +77,7 @@ export default function Product() {
 
         // Xử lý suppliers
         const newSuppliers = newBusinesses.filter(
-          (business: IBusiness): boolean => business.type !== EBusinessType.SUPPLIER
+          (business: IBusiness): boolean => business.type !== 'SUPPLIER'
         );
         setSupplier(newSuppliers);
 

@@ -9,7 +9,7 @@ export async function GET(
 ) {
     try {
         await connectToDatabase();
-        const code = params.code;
+        const code = (await params).code;
 
         // Tìm chi tiết sản phẩm dựa trên batch_number hoặc barcode
         const productDetail = await ProductDetailModel.findOne({

@@ -1,8 +1,9 @@
 export const getCookie = (key: string): string | undefined => {
-  const results: RegExpMatchArray | null = 
+  if (typeof document === 'undefined') return undefined;
+  const results: RegExpMatchArray | null =
     document.cookie.match("(^|;)\\s*" + key + "\\s*=\\s*([^;]+)");
 
-  if ( !results )
+  if (!results)
     return undefined;
 
   return results.pop();

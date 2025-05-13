@@ -14,57 +14,45 @@ const collectionName: ECollectionNames = ECollectionNames.BUSINESS;
 const collectionModel = BusinessModel;
 const path: string = `${ROOT}/${collectionName.toLowerCase()}/[id]`;
 
-export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
+export const PATCH = async (
+  req: NextRequest,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> => {
   print(`${collectionName} API - PATCH ${collectionName}`, ETerminal.FgMagenta);
 
-  // const cookieStore: ReadonlyRequestCookies = await cookies();
-  // const isUserAdmin = await isAdmin(
-  //   cookieStore, 
-  //   ERoleAction.UPDATE, 
-  //   collectionName
-  // );
-
-  // if ( !isUserAdmin )
-  //   return NextResponse.json(
-  //     createErrorMessage(
-  //       `Failed to create ${collectionName}.`,
-  //       `You dont have privilage to do this action.`,
-  //       path, 
-  //       `Please check if the account had privilage to do this action.`, 
-  //     ),
-  //     { status: EStatusCode.UNAUTHORIZED }
-  //   );
-
-  const business: collectionType = await req.json();
+  const body = await req.json();
+  const id = (await params).id;
 
   try {
     connectToDatabase();
 
-    const foundBusiness: collectionType | null = 
-      await collectionModel.findById(business._id);
+    const foundBusiness: collectionType | null =
+      await collectionModel.findById(id);
 
-    if (!foundBusiness) 
+    if (!foundBusiness)
       return NextResponse.json(
         createErrorMessage(
           `Failed to update ${collectionName}.`,
-          `The ${collectionName} with the ID '${business._id}' does not exist in our records.`,
-          path, 
+          `The ${collectionName} with the ID '${id}' does not exist in our records.`,
+          path,
           `Please check if the ${collectionName} ID is correct.`
-        ),          
+        ),
         { status: EStatusCode.NOT_FOUND }
       );
-    
+
     const updatedBusiness = await collectionModel.findOneAndUpdate(
-      { _id: business._id }, 
+      { _id: id },
       {
         $set: {
-          name: business.name,
-          logo: business.logo ? business.logo : ``,
-          address: business.address,
-          email: business.email,
-          updated_at: new Date(), 
+          name: body.name,
+          logo: body.logo ? body.logo : ``,
+          logo_links: body.logo_links || [],
+          address: body.address,
+          email: body.email,
+          updated_at: new Date(),
         }
-      }
+      },
+      { new: true }
     );
 
     if (!updatedBusiness)
@@ -72,8 +60,8 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
         createErrorMessage(
           `Failed to update ${collectionName}.`,
           ``,
-          path, 
-          `Please contact for more information.`, 
+          path,
+          `Please contact for more information.`,
         ),
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
@@ -86,8 +74,8 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
       createErrorMessage(
         `Failed to update ${collectionName}.`,
         error as string,
-        path, 
-        `Please contact for more information.`, 
+        path,
+        `Please contact for more information.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );
@@ -96,20 +84,20 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
 
 export const GET = async (
   _req: NextRequest, query: IQueryString
-): Promise<NextResponse> => 
+): Promise<NextResponse> =>
   await getCollectionByIdApi<collectionType>(
-    collectionModel, 
-    collectionName, 
-    path, 
+    collectionModel,
+    collectionName,
+    path,
     query
   );
 
 export const DELETE = async (
   _req: NextRequest, query: IQueryString
-): Promise<NextResponse> => 
+): Promise<NextResponse> =>
   await deleteCollectionByIdApi<collectionType>(
-    collectionModel, 
-    collectionName, 
-    path, 
+    collectionModel,
+    collectionName,
+    path,
     query
   );

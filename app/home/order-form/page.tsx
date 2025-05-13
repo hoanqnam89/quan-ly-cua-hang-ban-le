@@ -185,7 +185,6 @@ export default function Product() {
     if (currentSupplierId) {
       getProductsForBusiness(currentSupplierId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderForm.supplier_id]); // Chỉ phụ thuộc vào supplier_id, không phụ thuộc vào getProductsForBusiness
 
   // Cập nhật hàm handleChangeBusinessId

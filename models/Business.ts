@@ -1,42 +1,35 @@
-import { EBusinessType } from '@/enums/business-type.enum';
-import { enumToArray } from '@/utils/enum-to-array';
 import { ObjectId } from 'mongodb';
 import { models, model, Schema } from 'mongoose';
 
 const BusinessSchema = new Schema({
-  id: { type: ObjectId, }, 
-  created_at: { 
-    type: Date, 
+  id: { type: ObjectId },
+  created_at: {
+    type: Date,
     default: () => Date.now(),
     immutable: true,
-  }, 
-  updated_at: { 
+  },
+  updated_at: {
     default: () => Date.now(),
-    type: Date, 
-  }, 
-
+    type: Date,
+  },
   name: {
-    type: String, 
-    required: [true, `Name is required!`], 
-  }, 
+    type: String,
+    required: [true, 'Name is required!'],
+  },
   logo: {
-    type: String, 
-    required: [false], 
-  }, 
+    type: String,
+    required: [false],
+  },
+  logo_links: {
+    type: [String],
+    default: [],
+  },
   address: {
-    number: { type: String, }, 
-    street: { type: String, }, 
-    city: { type: String, }, 
-    ward: { type: String, }, 
-    district: { type: String, }, 
-    country: { type: String, }
-  }, 
-  email: { type: String, }, 
-  type: {
-    type: String, 
-    enum: enumToArray(EBusinessType), 
-  }, 
+    type: String,
+    required: [true, 'Address is required!'],
+  },
+  email: { type: String },
 });
 
-export const BusinessModel = 
-  models.Business || model(`Business`, BusinessSchema);
+export const BusinessModel =
+  models.Business || model('Business', BusinessSchema);
