@@ -25,8 +25,9 @@ import { DEFAULT_PROCDUCT } from '@/constants/product.constant';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 import { IUnit } from '@/interfaces/unit.interface';
 import { EStatusCode } from '@/enums/status-code.enum';
-import { addCollection } from '@/services/api-service';
+import { addCollection, updateCollectionById } from '@/services/api-service';
 import { ENotificationType } from '@/components/notify/notification/notification';
+import { compressImage } from '@/components/compressImage';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -34,13 +35,10 @@ const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
 export default function Product() {
   const { createNotification, notificationElements } = useNotificationsHook();
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [product, setProduct] = useState<collectionType>(DEFAULT_PROCDUCT);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
-    id: ``,
-    isClicked: false
-  });
-  const [isClickDelete, setIsClickDelete] = useState<ICollectionIdNotify>({
     id: ``,
     isClicked: false
   });
@@ -52,6 +50,7 @@ export default function Product() {
   const [currentPage, setCurrentPage] = useState(1);
   const [products, setProducts] = useState<collectionType[]>([]);
   const [units, setUnits] = useState<IUnit[]>([]);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Dùng ref để đảm bảo chỉ gọi API khi cần thiết
   const dataFetched = useRef(false);
@@ -187,70 +186,6 @@ export default function Product() {
     }
   }, [categories, supplier]);
 
-  // Thêm xử lý riêng cho product page khi xóa
-  const handleProductDelete = useCallback((productId: string) => {
-    // Cập nhật UI ngay lập tức
-    setProducts(prevProducts => prevProducts.filter(product => product._id !== productId));
-
-    // Đánh dấu để xóa
-    setIsClickDelete({
-      id: productId,
-      isClicked: true
-    });
-  }, []);
-
-  const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
-    const { files } = e.target;
-    const validImageFiles: File[] = [];
-    if (!files)
-      return;
-
-    for (let i = 0; i < files.length; i++) {
-      const file: File = files[i];
-      if (file) {
-        validImageFiles.push(file);
-      }
-    }
-
-    setImageFiles([...validImageFiles]);
-  }
-
-  useEffect(() => {
-    const images: string[] = [];
-    const fileReaders: FileReader[] = [];
-    let isCancel = false;
-
-    if (imageFiles.length) {
-      imageFiles.forEach((file: File) => {
-        const fileReader: FileReader = new FileReader();
-        fileReaders.push(fileReader);
-        fileReader.onload = (e: ProgressEvent<FileReader>) => {
-          const result = e.target?.result;
-          if (result) {
-            images.push(result.toString());
-          }
-
-          if (images.length === imageFiles.length && !isCancel) {
-            setProduct({
-              ...product,
-              image_links: images,
-            });
-          }
-        }
-        fileReader.readAsDataURL(file);
-      });
-    }
-
-    return () => {
-      isCancel = true;
-      fileReaders.forEach((fileReader: FileReader) => {
-        if (fileReader.readyState === 1) {
-          fileReader.abort();
-        }
-      });
-    }
-  }, [imageFiles, product]);
-
   const columns: Array<IColumnProps<collectionType>> = [
     {
       key: `index`,
@@ -281,7 +216,7 @@ export default function Product() {
                 >
                   <Image
                     className="object-contain max-h-[56px] max-w-[56px]"
-                    src={image}
+                    src={getCloudinaryUrl(image)}
                     alt={``}
                     width={56}
                     height={56}
@@ -393,13 +328,18 @@ export default function Product() {
             </Button>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', borderRadius: 8, padding: 6, transition: 'background 0.2s', cursor: 'pointer' }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f3f4f6')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#f3f4f6')}
+          >
+            {createCollectionDetailLink(collectionName, collection._id)}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', borderRadius: 8, padding: 6, transition: 'background 0.2s', cursor: 'pointer' }}
             onMouseEnter={e => (e.currentTarget.style.background = '#fde8e8')}
             onMouseLeave={e => (e.currentTarget.style.background = '#f3f4f6')}
           >
             <Button
               title={createDeleteTooltip(collectionName)}
               onClick={(): void => {
-                // Gọi hàm xử lý xóa sản phẩm cụ thể
                 handleProductDelete(collection._id);
               }}
               style={{
@@ -421,12 +361,6 @@ export default function Product() {
               />
             </Button>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f3f4f6', borderRadius: 8, padding: 6, transition: 'background 0.2s', cursor: 'pointer' }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#e0e7ef')}
-            onMouseLeave={e => (e.currentTarget.style.background = '#f3f4f6')}
-          >
-            {createCollectionDetailLink(collectionName, collection._id)}
-          </div>
         </div>
       )
     },
@@ -446,20 +380,6 @@ export default function Product() {
     });
   }
 
-  const handleDeleteImage = (index: number): void => {
-    const newImages: string[] = product.image_links?.filter(
-      (_image: string, imageIndex: number) => imageIndex !== index
-    ) || [];
-    const newImageFiles: File[] = imageFiles.filter(
-      (_imageFile: File, imageFileIndex: number) => imageFileIndex !== index
-    );
-    setProduct({
-      ...product,
-      image_links: newImages,
-    });
-    setImageFiles([...newImageFiles]);
-  }
-
   const gridColumns: string = `200px 1fr`;
 
   const handleOpenModal = (prev: boolean): boolean => {
@@ -477,196 +397,405 @@ export default function Product() {
   // Custom handle add collection
   const customHandleAddCollection = async (): Promise<void> => {
     try {
-      console.log("Đang thêm sản phẩm mới...");
-      const response = await addCollection<IProduct>(product, collectionName);
-
+      // 1. Lưu sản phẩm trước, chưa có image_links
+      const productToSave = { ...product, image_links: [] };
+      const response = await addCollection<IProduct>(productToSave, collectionName);
       if (response.status === EStatusCode.CREATED || response.status === EStatusCode.OK) {
-        console.log("Thêm sản phẩm thành công, đang cập nhật lại danh sách...");
-
-        // Cập nhật lại danh sách sản phẩm trực tiếp
+        // Lấy id sản phẩm vừa tạo
+        const savedProduct = await response.json();
+        const productId = savedProduct._id;
+        // 2. Nếu có ảnh, upload lên cloudinary
+        let imageLinks: string[] = [];
+        if (imageFiles.length > 0) {
+          for (const file of imageFiles) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('folder', 'product');
+            const res = await fetch('/api/upload-image', {
+              method: 'POST',
+              body: formData,
+            });
+            const data = await res.json();
+            if (data.url) imageLinks.push(data.url);
+          }
+          // 3. Cập nhật lại sản phẩm với image_links
+          const updateRes = await updateCollectionById<IProduct>({ ...savedProduct, image_links: imageLinks }, productId, collectionName);
+          if (updateRes.status === EStatusCode.CREATED || updateRes.status === EStatusCode.OK) {
+            createNotification({
+              id: Date.now(),
+              children: `Lưu sản phẩm ${product.name} thành công!`,
+              type: ENotificationType.SUCCESS,
+              isAutoClose: true,
+              title: 'Thành công',
+            });
+          } else {
+            createNotification({
+              id: Date.now(),
+              children: 'Lưu sản phẩm thành công nhưng cập nhật ảnh thất bại!',
+              type: ENotificationType.WARNING,
+              isAutoClose: true,
+              title: 'Cảnh báo',
+            });
+          }
+        } else {
+          // Không có ảnh, chỉ thông báo thành công
+          createNotification({
+            id: Date.now(),
+            children: `Lưu sản phẩm ${product.name} thành công!`,
+            type: ENotificationType.SUCCESS,
+            isAutoClose: true,
+            title: 'Thành công',
+          });
+        }
+        // Reset form
+        setProduct(DEFAULT_PROCDUCT);
+        setImageFiles([]);
+        setImagePreviews([]);
+        // Reload danh sách sản phẩm
         const fetchedProducts = await fetchGetCollections<IProduct>(ECollectionNames.PRODUCT);
-        // Sắp xếp sản phẩm theo thời gian tạo mới nhất
         fetchedProducts.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
         const newProducts = fetchedProducts.map((product) => {
           const newProduct = { ...product } as any;
           const foundCategory = categories.find((category) => category._id === product.category_id);
           newProduct.category = foundCategory?.name;
-
           const foundSupplier = supplier.find((supplier2) => supplier2._id === product.supplier_id);
           newProduct.supplier = foundSupplier?.name;
           return newProduct;
         });
-
-        // Cập nhật danh sách sản phẩm trực tiếp
         setProducts(newProducts);
-
-        // Hiển thị thông báo thành công
-        createNotification({
-          id: Date.now(),
-          children: `Lưu sản phẩm ${product.name} thành công!`,
-          type: ENotificationType.SUCCESS,
-          isAutoClose: true,
-          title: 'Thành công'
-        });
-
-        // Reset form
-        setProduct(DEFAULT_PROCDUCT);
-        setImageFiles([]);
       } else {
         // Hiển thị thông báo lỗi
-        let errorMessage = "Lưu sản phẩm thất bại!";
+        let errorMessage = 'Lưu sản phẩm thất bại!';
         try {
           const errorData = await response.json();
           if (errorData && errorData.message) {
             errorMessage += ' ' + errorData.message;
           }
         } catch { }
-
         createNotification({
           id: Date.now(),
           children: errorMessage,
           type: ENotificationType.ERROR,
           isAutoClose: true,
-          title: 'Lỗi'
+          title: 'Lỗi',
         });
       }
-
-      return;
     } catch (error) {
-      console.error("Lỗi khi thêm sản phẩm:", error);
-
-      // Hiển thị thông báo lỗi
+      console.error('Lỗi khi thêm sản phẩm:', error);
       createNotification({
         id: Date.now(),
         children: `Lỗi khi lưu sản phẩm: ${error instanceof Error ? error.message : 'Lỗi không xác định'}`,
         type: ENotificationType.ERROR,
         isAutoClose: true,
-        title: 'Lỗi'
+        title: 'Lỗi',
       });
     }
   };
 
+  // Hàm xóa ảnh khỏi preview hoặc Cloudinary (nếu đã upload)
+  const handleDeleteImage = async (index: number): Promise<void> => {
+    const newImageFiles: File[] = imageFiles.filter((_imageFile: File, imageFileIndex: number) => imageFileIndex !== index);
+    const newImagePreviews: string[] = imagePreviews.filter((_url: string, imageIndex: number) => imageIndex !== index);
+    setImageFiles([...newImageFiles]);
+    setImagePreviews([...newImagePreviews]);
+  };
+
+  // Hàm thêm transformation vào link Cloudinary
+  function getCloudinaryUrl(url: string, options = { width: 800, quality: 70 }) {
+    if (!url.includes('/upload/')) return url;
+    const { width, quality } = options;
+    return url.replace(
+      '/upload/',
+      `/upload/w_${width},q_${quality},f_auto/`
+    );
+  }
+
+  // Sửa hàm cập nhật sản phẩm (giả sử có hàm handleUpdateProduct)
+  async function handleUpdateProduct(updatedProduct: IProduct, newImageFiles: File[]): Promise<void> {
+    // 1. Nếu có ảnh mới, upload lên Cloudinary
+    let imageLinks: string[] = [];
+    if (newImageFiles && newImageFiles.length > 0) {
+      // Upload ảnh mới
+      for (const file of newImageFiles) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'product');
+        const res = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+        if (data.url) imageLinks.push(data.url);
+      }
+    } else {
+      imageLinks = updatedProduct.image_links || [];
+    }
+    // 2. Cập nhật lại sản phẩm với image_links mới
+    await updateCollectionById<IProduct>({ ...updatedProduct, image_links: imageLinks }, updatedProduct._id, collectionName);
+  }
+
+  // Thêm lại hàm handleChangeImage nếu đã bị xóa nhầm
+  const handleChangeImage = async (e: ChangeEvent<HTMLInputElement>) => {
+    const { files } = e.target;
+    if (!files) return;
+    const fileArr = Array.from(files);
+    // Nén ảnh trước khi lưu vào state
+    const compressedFiles = await Promise.all(
+      fileArr.map(file => compressImage(file, 800, 800, 0.7))
+    );
+    setImageFiles(compressedFiles);
+    // Tạo url preview cho từng file đã nén
+    const previews = compressedFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(previews);
+  };
+
+  const handleProductDelete = useCallback((productId: string) => {
+    const productToDelete = products.find(product => product._id === productId);
+    if (!productToDelete) return;
+    if ((productToDelete.input_price && productToDelete.input_price > 0) || (productToDelete.output_price && productToDelete.output_price > 0)) {
+      createNotification({
+        id: Date.now(),
+        children: 'Không thể xóa sản phẩm vì sản phẩm đã được tạo trong một lô hàng!',
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+        title: 'Lỗi',
+      });
+    } else {
+      setConfirmDeleteId(productId);
+    }
+  }, [products, createNotification]);
+
+  const confirmDeleteProduct = async () => {
+    if (!confirmDeleteId) return;
+    try {
+      const res = await fetch(`/api/product/${confirmDeleteId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Lỗi không xác định');
+      }
+      setProducts(prev => prev.filter(product => product._id !== confirmDeleteId));
+      createNotification({
+        id: Date.now(),
+        children: 'Đã xóa sản phẩm thành công!',
+        type: ENotificationType.SUCCESS,
+        isAutoClose: true,
+        title: 'Thành công',
+      });
+    } catch (error: any) {
+      createNotification({
+        id: Date.now(),
+        children: `Lỗi khi xóa sản phẩm: ${error.message}`,
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+        title: 'Lỗi',
+      });
+    } finally {
+      setConfirmDeleteId(null);
+    }
+  };
+
   return (
-    <ManagerPage
-      columns={columns}
-      collectionName={collectionName}
-      defaultCollection={DEFAULT_PROCDUCT}
-      collection={product}
-      setCollection={setProduct}
-      isModalReadonly={isModalReadOnly}
-      setIsModalReadonly={setIsModalReadOnly}
-      isClickShowMore={isClickShowMore}
-      isClickDelete={isClickDelete}
-      isLoaded={isLoading}
-      handleOpenModal={handleOpenModal}
-      displayedItems={products}
-      currentPage={currentPage}
-      setCurrentPage={setCurrentPage}
-      totalItems={products.length}
-      customHandleAddCollection={customHandleAddCollection}
-    >
-      <>
-        <Tabs>
-          <TabItem label={`${translateCollectionName(collectionName)}`}>
-            <InputSection label={`Nhà cung cấp`}>
-              <SelectDropdown
-                name={`business_id`}
-                isLoading={isLoading}
-                isDisable={isModalReadOnly}
-                options={supplierOptions}
-                defaultOptionIndex={getSelectedOptionIndex(
-                  supplierOptions, product.supplier_id
-                )}
-                onInputChange={handleChangeBusinessId}
-              >
-              </SelectDropdown>
-            </InputSection>
+    <>
+      <ManagerPage
+        columns={columns}
+        collectionName={collectionName}
+        defaultCollection={DEFAULT_PROCDUCT}
+        collection={product}
+        setCollection={setProduct}
+        isModalReadonly={isModalReadOnly}
+        setIsModalReadonly={setIsModalReadOnly}
+        isClickShowMore={isClickShowMore}
+        isClickDelete={{ id: '', isClicked: false }}
+        isLoaded={isLoading}
+        handleOpenModal={handleOpenModal}
+        displayedItems={products}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        totalItems={products.length}
+        customHandleAddCollection={customHandleAddCollection}
+      >
+        <>
+          <Tabs>
+            <TabItem label={`${translateCollectionName(collectionName)}`}>
+              <div className="bg-white rounded-xl shadow p-8 overflow-hidden">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Cột trái: Tên sản phẩm, Nhà cung cấp, Loại sản phẩm */}
+                  <div className="flex flex-col gap-6">
+                    {/* Tên sản phẩm */}
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        Tên sản phẩm <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        name="name"
+                        disabled={isModalReadOnly}
+                        value={product.name}
+                        onChange={handleChangeProduct}
+                        className="w-full border-2 border-gray-200 focus:border-blue-500 rounded-lg py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
+                        placeholder="Nhập tên sản phẩm"
+                      />
+                    </div>
+                    {/* Nhà cung cấp */}
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        Nhà cung cấp <span className="text-red-500">*</span>
+                      </label>
+                      <SelectDropdown
+                        name={`business_id`}
+                        isLoading={isLoading}
+                        isDisable={isModalReadOnly}
+                        options={supplierOptions}
+                        defaultOptionIndex={getSelectedOptionIndex(
+                          supplierOptions, product.supplier_id
+                        )}
+                        onInputChange={handleChangeBusinessId}
+                        className="w-full border-2 border-gray-200 focus:border-blue-500 rounded-lg py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
+                      />
+                    </div>
+                    {/* Loại sản phẩm */}
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                        </svg>
+                        Loại sản phẩm <span className="text-red-500">*</span>
+                      </label>
+                      <SelectDropdown
+                        name={`category_id`}
+                        isLoading={isLoading}
+                        isDisable={isModalReadOnly}
+                        options={categoryOptions}
+                        defaultOptionIndex={getSelectedOptionIndex(
+                          categoryOptions, product.category_id
+                        )}
+                        onInputChange={handleChangeCategoryId}
+                        className="w-full border-2 border-gray-200 focus:border-blue-500 rounded-lg py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
+                      />
+                    </div>
+                  </div>
+                  {/* Cột phải: Mô tả và Hình ảnh sản phẩm */}
+                  <div className="flex flex-col gap-6">
+                    {/* Mô tả */}
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Mô tả
+                      </label>
+                      <textarea
+                        name="description"
+                        disabled={isModalReadOnly}
+                        value={product.description}
+                        onChange={(e) => setProduct(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full border-2 border-gray-200 focus:border-blue-500 rounded-lg py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-200 transition-all"
+                        placeholder="Nhập mô tả sản phẩm"
+                        rows={3}
+                      ></textarea>
+                    </div>
+                    {/* Hình ảnh sản phẩm */}
+                    <div>
+                      <label className="block text-gray-700 font-medium mb-2 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Hình ảnh sản phẩm
+                      </label>
 
-            <InputSection label={`Loại sản phẩm`}>
-              <SelectDropdown
-                name={`category_id`}
-                isLoading={isLoading}
-                isDisable={isModalReadOnly}
-                options={categoryOptions}
-                defaultOptionIndex={getSelectedOptionIndex(
-                  categoryOptions, product.category_id
-                )}
-                onInputChange={handleChangeCategoryId}
-              >
-              </SelectDropdown>
-            </InputSection>
-
-            <InputSection label={`Tên sản phẩm`} gridColumns={gridColumns}>
-              <TextInput
-                name={`name`}
-                isDisable={isModalReadOnly}
-                value={product.name}
-                onInputChange={handleChangeProduct}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Mô tả`} gridColumns={gridColumns}>
-              <TextInput
-                name={`description`}
-                isDisable={isModalReadOnly}
-                value={product.description}
-                onInputChange={handleChangeProduct}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Hình ảnh sản phẩm`} gridColumns={gridColumns}>
-              <div>
-                {!isModalReadOnly ? <input
-                  type={`file`}
-                  accept={`image/*`}
-                  multiple={true}
-                  onChange={handleChangeImage}
-                  disabled={isModalReadOnly}
-                >
-                </input> : null}
-
-                <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
-                  {
-                    product.image_links?.map((image: string, index: number) => (
-                      <div
-                        key={index}
-                        className={`relative ${styles[`image-container`]}`}
-                      >
-                        <Image
-                          className={`w-full max-w-full max-h-full`}
-                          src={image}
-                          alt={``}
-                          width={0}
-                          height={0}
-                          quality={10}
-                        >
-                        </Image>
-
-                        {!isModalReadOnly ? (
-                          <div className={`absolute top-0 right-0`}>
-                            <Button
-                              className={`absolute top-0 right-0`}
-                              onClick={() => handleDeleteImage(index)}
-                            >
-                              <IconContainer iconLink={trashIcon}>
-                              </IconContainer>
-                            </Button>
+                      <div className="flex flex-wrap gap-3 items-center">
+                        {/* Nút chọn ảnh */}
+                        {!isModalReadOnly && (
+                          <div className="border border-dashed border-blue-200 rounded-lg p-2 bg-white hover:bg-blue-50 transition-all" style={{ width: 120, height: 120 }}>
+                            <label className="flex flex-col items-center justify-center h-full w-full cursor-pointer">
+                              <svg className="w-8 h-8 text-blue-500 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                              </svg>
+                              <span className="text-xs text-blue-600 text-center font-medium">Chọn ảnh sản phẩm</span>
+                              <input
+                                type="file"
+                                className="hidden"
+                                accept="image/*"
+                                multiple={true}
+                                onChange={handleChangeImage}
+                                disabled={isModalReadOnly}
+                              />
+                            </label>
                           </div>
-                        ) : null}
+                        )}
+
+                        {/* Ảnh đã chọn */}
+                        {imagePreviews && imagePreviews.map((url, index) => (
+                          <div
+                            key={index}
+                            className="relative border border-gray-200 rounded-lg overflow-hidden shadow-sm bg-white flex items-center justify-center"
+                            style={{ width: 120, height: 120 }}
+                          >
+                            <img
+                              src={url.startsWith('http') ? getCloudinaryUrl(url) : url}
+                              alt={`Preview ${index + 1}`}
+                              className="max-w-full max-h-full object-contain p-1"
+                            />
+                            {!isModalReadOnly && (
+                              <button
+                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity"
+                                onClick={() => handleDeleteImage(index)}
+                                title="Xóa ảnh"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    )) || []
-                  }
+                    </div>
+                  </div>
                 </div>
               </div>
-            </InputSection>
-          </TabItem>
-        </Tabs>
-
-        {notificationElements}
-      </>
-    </ManagerPage>
+            </TabItem>
+          </Tabs>
+          {notificationElements}
+        </>
+      </ManagerPage>
+      {/* Modal xác nhận xóa sản phẩm - Đặt ngoài ManagerPage */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-xl shadow-2xl p-6 min-w-[320px] max-w-[90vw] mt-20 flex flex-col items-center animate-fade-in">
+            <div className="flex flex-col items-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
+              </svg>
+              <h3 className="text-xl font-bold text-gray-800 mb-2">Xác nhận xóa sản phẩm</h3>
+              <p className="text-gray-600 text-center text-base mb-1">Bạn có chắc chắn muốn xóa sản phẩm này không?</p>
+              <p className="text-gray-500 text-center text-sm">Hành động này không thể hoàn tác.</p>
+            </div>
+            <div className="flex justify-center gap-4 mt-2 w-full">
+              <button
+                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold min-w-[100px] transition-colors"
+                onClick={() => setConfirmDeleteId(null)}
+              >
+                Hủy
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold min-w-[100px] shadow-lg transition-colors"
+                onClick={confirmDeleteProduct}
+              >
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

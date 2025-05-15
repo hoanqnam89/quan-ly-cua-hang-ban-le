@@ -52,9 +52,8 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
       const day = String(today.getDate()).padStart(2, '0');
       const month = String(today.getMonth() + 1).padStart(2, '0');
       const year = today.getFullYear();
-      const formattedDate = `${day}${month}${year}`;
       const timestamp = Date.now();
-      product.code = `SP-${formattedDate}-${timestamp}`;
+      product.code = `SP-${timestamp}`;
     } else {
       // Đảm bảo code không có dấu tiếng Việt
       product.code = nameToHyphenAndLowercase(product.code);

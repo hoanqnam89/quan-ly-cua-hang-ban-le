@@ -50,6 +50,7 @@ export const PATCH = async (
           address: body.address,
           email: body.email,
           updated_at: new Date(),
+          phone: body.phone,
         }
       },
       { new: true }

@@ -17,30 +17,30 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   await connectToDatabase();
 
   const foundAccounts = await AccountModel.find({
-    username: username, 
+    username: username,
   });
 
-  if ( foundAccounts.length === 0 )
+  if (foundAccounts.length === 0)
     return NextResponse.json(
       createErrorMessage(
         `Failed to login.`,
         `The username or password is incorrect`,
-        path, 
-        `Please check if username or password is corrected.`, 
+        path,
+        `Please check if username or password is corrected.`,
       ),
       { status: EStatusCode.UNAUTHORIZED }
     );
 
-  const isPasswordMatch: boolean = 
+  const isPasswordMatch: boolean =
     await foundAccounts[0].comparePassword(password);
 
-  if ( !isPasswordMatch )
+  if (!isPasswordMatch)
     return NextResponse.json(
       createErrorMessage(
         `Failed to login.`,
         `The password is incorrect`,
-        path, 
-        `Please check if username or password is corrected.`, 
+        path,
+        `Please check if username or password is corrected.`,
       ),
       { status: EStatusCode.UNAUTHORIZED }
     );
@@ -57,25 +57,26 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   //   );
 
   const accountPayload: IAccountPayload = {
-    _id: foundAccounts[0]._id.toString(), 
-    username: foundAccounts[0].username, 
+    _id: foundAccounts[0]._id.toString(),
+    username: foundAccounts[0].username,
+    is_admin: foundAccounts[0].is_admin,
   }
 
-  const payload: string = await encrypt({...accountPayload});
+  const payload: string = await encrypt({ ...accountPayload });
   const cookie: string = serialize(COOKIE_NAME, payload, {
-    httpOnly: true, 
-    sameSite: `strict`, 
-    maxAge: COOKIE_MAX_AGE, 
-    path: `/`, 
+    httpOnly: true,
+    sameSite: `strict`,
+    maxAge: COOKIE_MAX_AGE,
+    path: `/`,
   });
 
   return NextResponse.json({
-    message: `Authenticated!`, 
+    message: `Authenticated!`,
     cookie: cookie
-  }, { 
-    status: EStatusCode.OK, 
-    headers:{
-      "Set-Cookie": cookie, 
+  }, {
+    status: EStatusCode.OK,
+    headers: {
+      "Set-Cookie": cookie,
     }
   });
 }

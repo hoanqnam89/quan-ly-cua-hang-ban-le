@@ -6,26 +6,17 @@ import { IPageParams } from '@/interfaces/page-params.interface'
 import { getCollectionById } from '@/services/api-service';
 import React, { ReactElement, use, useEffect, useState } from 'react'
 import InputSection from '../../components/input-section/input-section';
-import { TextInput, Text, SelectDropdown, LoadingScreen } from '@/components';
+import { TextInput, Text, LoadingScreen } from '@/components';
 import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { IBusiness } from '@/interfaces/business.interface';
 import { DEFAULT_BUSINESS } from '@/constants/business.constant';
-import { getSelectedOptionIndex } from '@/components/select-dropdown/utils/get-selected-option-index';
-import { EBusinessType } from '@/enums/business-type.enum';
 import styles from '../style.module.css'
-import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
-import { enumToKeyValueArray } from '@/utils/enum-to-array';
 
 type collectionType = IBusiness;
 const collectionName: ECollectionNames = ECollectionNames.BUSINESS;
 const defaultCollection: collectionType = DEFAULT_BUSINESS;
 const gridColumns: string = `200px 1fr`;
-const businessTypeOptions: ISelectOption[] = enumToKeyValueArray(EBusinessType)
-  .map((array: string[]): ISelectOption => ({
-    label: array[0],
-    value: array[1],
-  }));
 
 export default function Detail({
   params
@@ -69,19 +60,22 @@ export default function Detail({
         </TextInput>
       </InputSection>
 
-      <InputSection label={`Loại`}>
-        <SelectDropdown
+      <InputSection label={`Số điện thoại`} gridColumns={gridColumns}>
+        <TextInput
+          name={`phone`}
           isDisable={true}
-          options={businessTypeOptions}
-          defaultOptionIndex={getSelectedOptionIndex(
-            businessTypeOptions,
-            (collection.type
-              ? collection.type
-              : EBusinessType.MANUFACTURER
-            ) as unknown as string
-          )}
+          value={collection.phone}
         >
-        </SelectDropdown>
+        </TextInput>
+      </InputSection>
+
+      <InputSection label={`Địa chỉ`} gridColumns={gridColumns}>
+        <TextInput
+          name={`address`}
+          isDisable={true}
+          value={collection.address}
+        >
+        </TextInput>
       </InputSection>
 
       <InputSection label={`Hình ảnh`} gridColumns={gridColumns}>
@@ -104,60 +98,6 @@ export default function Detail({
             }
           </div>
         </div>
-      </InputSection>
-
-      <InputSection label={`Số nhà`}>
-        <TextInput
-          name={`number`}
-          isDisable={true}
-          value={collection.address.number}
-        >
-        </TextInput>
-      </InputSection>
-
-      <InputSection label={`Đường`}>
-        <TextInput
-          name={`street`}
-          isDisable={true}
-          value={collection.address.street}
-        >
-        </TextInput>
-      </InputSection>
-
-      <InputSection label={`Phường`}>
-        <TextInput
-          name={`ward`}
-          isDisable={true}
-          value={collection.address.ward}
-        >
-        </TextInput>
-      </InputSection>
-
-      <InputSection label={`Quận`}>
-        <TextInput
-          name={`district`}
-          isDisable={true}
-          value={collection.address.district}
-        >
-        </TextInput>
-      </InputSection>
-
-      <InputSection label={`Thành phố`}>
-        <TextInput
-          name={`city`}
-          isDisable={true}
-          value={collection.address.city}
-        >
-        </TextInput>
-      </InputSection>
-
-      <InputSection label={`Quốc gia`}>
-        <TextInput
-          name={`country`}
-          isDisable={true}
-          value={collection.address.country}
-        >
-        </TextInput>
       </InputSection>
 
       <TimestampTabItem<collectionType> collection={collection}>

@@ -2,11 +2,11 @@ import { IAccountPayload } from "@/app/api/interfaces/account-payload.interface"
 import { connectToDatabase } from "./database";
 
 export const isAuthenticated = async (
-  account: IAccountPayload, 
+  account: IAccountPayload,
   // action: ERoleAction, 
   // collectionName: ECollectionNames, 
 ) => {
-  if ( account.username === `admin` )
+  if (account.is_admin === true)
     return true;
 
   const result = false;
@@ -40,6 +40,6 @@ export const isAuthenticated = async (
   } catch (error) {
     console.error(`Error`, error);
   }
-  
+
   return result;
 }

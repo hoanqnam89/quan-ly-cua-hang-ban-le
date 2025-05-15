@@ -20,7 +20,7 @@ export const translateCollectionName = (
         case ECollectionNames.SUPPLIER_RECEIPT:
           return 'phiếu nhập kho của nhà cung cấp';
         case ECollectionNames.PRODUCT:
-          return 'sản phẩm';
+          return 'Thông tin sản phẩm';
         case ECollectionNames.PRODUCT_DETAIL:
           return 'báo cáo tồn kho';
         case ECollectionNames.BUSINESS:

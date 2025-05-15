@@ -4,44 +4,33 @@ import { ObjectId } from 'mongodb';
 import { models, model, Schema } from 'mongoose';
 
 const UserSchema = new Schema({
-  id: { type: ObjectId, }, 
-  created_at: { 
-    type: Date, 
+  id: { type: ObjectId, },
+  created_at: {
+    type: Date,
     default: () => Date.now(),
     immutable: true,
-  }, 
-  updated_at: { 
+  },
+  updated_at: {
     default: () => Date.now(),
-    type: Date, 
-  }, 
+    type: Date,
+  },
 
-  account_id: { type: ObjectId, }, 
+  account_id: { type: ObjectId, },
   name: {
-    first: { 
-      type: String, 
-      required: [true, `First Name is required!`], 
-    }, 
-    middle: { type: String, }, 
-    last: { 
-      type: String, 
-      required: [true, `Last Name is required!`], 
-    }, 
-  }, 
+    type: String,
+    required: [true, `Name is required!`],
+  },
   address: {
-    number: { type: String, }, 
-    street: { type: String, }, 
-    city: { type: String, }, 
-    ward: { type: String, }, 
-    district: { type: String, }, 
-    country: { type: String, }
-  }, 
-  email: { type: String, }, 
-  birthday: { type: Date, }, 
+    type: String,
+    required: [true, `Address is required!`],
+  },
+  email: { type: String, },
+  birthday: { type: Date, },
   gender: {
-    type: String, 
-    enum: enumToArray(EUserGender), 
-  }, 
-  avatar: { type: String }, 
+    type: String,
+    enum: enumToArray(EUserGender),
+  },
+  avatar: { type: String },
 });
 
 export const UserModel = models.User || model(`User`, UserSchema);

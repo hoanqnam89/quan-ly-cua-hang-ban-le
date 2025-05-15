@@ -38,45 +38,57 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
   //     { status: EStatusCode.UNAUTHORIZED }
   //   );
 
-  const business: collectionType = await req.json();
-
   try {
-    connectToDatabase();
+    const business: collectionType = await req.json();
+
+    // Log dữ liệu nhận được
+    console.log('Received business data:', business);
+
+    // Validate dữ liệu đầu vào
+    const name = business?.name?.trim();
+    const address = business?.address?.trim();
+
+    if (!name || !address) {
+      return NextResponse.json(
+        createErrorMessage(
+          `Thiếu thông tin bắt buộc.`,
+          `Vui lòng nhập đầy đủ tên doanh nghiệp và địa chỉ.`,
+          path,
+          `Kiểm tra lại dữ liệu gửi lên từ client.`,
+        ),
+        { status: EStatusCode.BAD_REQUEST }
+      );
+    }
+
+    await connectToDatabase();
 
     const newBusiness = new collectionModel({
       created_at: new Date(),
       updated_at: new Date(),
-      name: business.name,
+      name: name,
+      address: address,
+      email: business.email?.trim(),
       logo: business.logo,
       logo_links: business.logo ? [business.logo] : [],
-      address: business.address,
-      email: business.email,
-      type: business.type,
+      phone: business.phone,
     });
 
     const savedBusiness: collectionType = await newBusiness.save();
 
-    if (!savedBusiness)
-      return NextResponse.json(
-        createErrorMessage(
-          `Failed to create ${collectionName}.`,
-          ``,
-          path,
-          `Please contact for more information.`,
-        ),
-        { status: EStatusCode.INTERNAL_SERVER_ERROR }
-      );
+    if (!savedBusiness) {
+      throw new Error('Không thể lưu doanh nghiệp');
+    }
 
     return NextResponse.json(savedBusiness, { status: EStatusCode.CREATED });
   } catch (error: unknown) {
-    console.error(error);
+    console.error('Server error:', error);
 
     return NextResponse.json(
       createErrorMessage(
-        `Failed to create ${collectionName}.`,
-        error as string,
+        `Lỗi khi tạo ${collectionName}.`,
+        error instanceof Error ? error.message : 'Unknown error',
         path,
-        `Please contact for more information.`,
+        `Vui lòng liên hệ admin để được hỗ trợ.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );

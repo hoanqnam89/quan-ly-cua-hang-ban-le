@@ -284,27 +284,27 @@ export default function Table<T extends { _id: string, index?: number }>({
   }
 
   const headerButtons: IHeaderButtons[] = [
-    {
-      className: ``,
-      onClick: handleResetColumns,
-      iconLink: listRestartIcon,
-      size: 32,
-      tooltip: `Khôi phục toàn bộ chiều dài cột`,
-    },
-    {
-      className: ``,
-      onClick: handleShowToggleColumns,
-      iconLink: listCollapseIcon,
-      size: 32,
-      tooltip: `Hiển thị hiện/ẩn các cột`,
-    },
-    ...canDeleteCollection ? [{
-      className: ``,
-      onClick: onClickDelete,
-      iconLink: trashIcon,
-      size: 32,
-      tooltip: `Xóa tất cả ${name}s`,
-    }] : [],
+    // {
+    //   className: ``,
+    //   onClick: handleResetColumns,
+    //   iconLink: listRestartIcon,
+    //   size: 32,
+    //   tooltip: `Khôi phục toàn bộ chiều dài cột`,
+    // },
+    // {
+    //   className: ``,
+    //   onClick: handleShowToggleColumns,
+    //   iconLink: listCollapseIcon,
+    //   size: 32,
+    //   tooltip: `Hiển thị hiện/ẩn các cột`,
+    // },
+    // ...canDeleteCollection ? [{
+    //   className: ``,
+    //   onClick: onClickDelete,
+    //   iconLink: trashIcon,
+    //   size: 32,
+    //   tooltip: `Xóa tất cả ${name}s`,
+    // }] : [],
     ...canCreateCollection ? [{
       className: ``,
       onClick: onClickAdd,

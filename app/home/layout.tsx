@@ -1,6 +1,6 @@
 'use client';
 
-import { CSSProperties, ReactElement, useState } from 'react';
+import { CSSProperties, ReactElement, useState, useEffect } from 'react';
 import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
 import chevronRightIcon from '@/public/chevron-right.svg?url';
 import chevronLeftIcon from '@/public/chevron-left.svg?url';
@@ -19,6 +19,7 @@ export interface CNavbarItem {
   onClick?: () => void
   children?: CNavbarItem[]
   isExpanded?: boolean
+  requiredAdmin?: boolean
 }
 
 export default function RootLayout({
@@ -26,6 +27,41 @@ export default function RootLayout({
 }: Readonly<IRootLayout>): ReactElement {
   const [isExpand, setIsExpand] = useState<boolean>(false);
   const [expandedGroups, setExpandedGroups] = useState<{ [key: string]: boolean }>({});
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Kiểm tra quyền admin khi component được tải
+    const checkAdminStatus = async () => {
+      try {
+        const meResponse = await fetch('/api/auth/me');
+        if (!meResponse.ok) {
+          window.location.href = '/';
+          return;
+        }
+
+        const userData = await meResponse.json();
+        console.log('userData:', userData); // Debug: Xem thông tin người dùng
+
+        const authResponse = await fetch('/api/auth', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({})
+        });
+
+        if (authResponse.ok) {
+          const authData = await authResponse.json();
+          console.log('authData:', authData); // Debug: Xem thông tin phản hồi từ API
+          setIsAdmin(authData.isAccountHadPrivilage === true);
+        }
+      } catch (error) {
+        console.error('Lỗi khi kiểm tra quyền:', error);
+      }
+    };
+
+    checkAdminStatus();
+  }, []);
 
   const toggleNavbar = (): void => {
     setIsExpand((prev: boolean): boolean => !prev);
@@ -39,7 +75,9 @@ export default function RootLayout({
   }
 
   const currentPath: string = `/home`;
-  const navbarItems: CNavbarItem[] = [
+
+  // Xác định các mục menu dựa trên quyền admin
+  let navbarItems: CNavbarItem[] = [
     {
       label: isExpand ? `Thu gọn` : `Mở rộng`,
       icon: isExpand ? chevronLeftIcon : chevronRightIcon,
@@ -49,56 +87,72 @@ export default function RootLayout({
       link: `${currentPath}/`,
       label: `Trang chủ`,
       icon: homeIcon,
-    },
-    {
-      label: `Quản lý danh mục`,
-      icon: boxesIcon,
-      isExpanded: expandedGroups['warehouse'],
-      onClick: () => toggleGroup('warehouse'),
-      children: [
-        {
-          link: `${currentPath}/account`,
-          label: `Tài khoản`,
-          icon: circleUserRoundIcon,
-        },
-        {
-          link: `${currentPath}/user`,
-          label: `Nhân viên`,
-          icon: userIcon,
-        },
-        {
-          link: `${currentPath}/business`,
-          label: `Nhà cung cấp`,
-          icon: factoryIcon,
-        },
-        {
-          link: `${currentPath}/unit`,
-          label: `Đơn vị tính`,
-          icon: circleSmallIcon,
-        },
-        {
-          link: `${currentPath}/category`,
-          label: `Loại sản phẩm`,
-          icon: toyBrickIcon,
-        },
-        {
-          link: `${currentPath}/product`,
-          label: `Sản phẩm`,
-          icon: boxIcon,
-        },
-      ]
-    },
+    }
+  ];
 
-    {
-      link: `${currentPath}/order-form`,
-      label: `Quản lý đặt hàng`,
-      icon: scrollIcon,
-    },
-    {
-      link: `${currentPath}/warehouse-receipt`,
-      label: `Quản lý nhập kho`,
-      icon: scrollIcon,
-    },
+  // Menu cho người dùng admin
+  if (isAdmin) {
+    navbarItems = [
+      ...navbarItems,
+      {
+        label: `Quản lý danh mục`,
+        icon: boxesIcon,
+        isExpanded: expandedGroups['warehouse'],
+        onClick: () => toggleGroup('warehouse'),
+        children: [
+          {
+            link: `${currentPath}/account`,
+            label: `Tài khoản`,
+            icon: circleUserRoundIcon,
+          },
+          {
+            link: `${currentPath}/user`,
+            label: `Nhân viên`,
+            icon: userIcon,
+          },
+          {
+            link: `${currentPath}/business`,
+            label: `Nhà cung cấp`,
+            icon: factoryIcon,
+          },
+          {
+            link: `${currentPath}/unit`,
+            label: `Đơn vị tính`,
+            icon: circleSmallIcon,
+          },
+          {
+            link: `${currentPath}/category`,
+            label: `Loại sản phẩm`,
+            icon: toyBrickIcon,
+          },
+          {
+            link: `${currentPath}/product`,
+            label: `Sản phẩm`,
+            icon: boxIcon,
+          },
+        ]
+      },
+      {
+        link: `${currentPath}/order-form`,
+        label: `Quản lý đặt hàng`,
+        icon: scrollIcon,
+      },
+      {
+        link: `${currentPath}/warehouse-receipt`,
+        label: `Quản lý nhập kho`,
+        icon: scrollIcon,
+      },
+      {
+        link: `${currentPath}/return-exchange`,
+        label: `Quản lý đổi trả`,
+        icon: scrollIcon,
+      },
+    ];
+  }
+
+  // Thêm các mục luôn hiển thị cho mọi người dùng
+  navbarItems = [
+    ...navbarItems,
     {
       label: `Quản lý bán hàng`,
       icon: scrollIcon,
@@ -118,12 +172,6 @@ export default function RootLayout({
       ]
     },
     {
-      link: `${currentPath}/return-exchange`,
-      label: `Quản lý đổi trả`,
-      icon: scrollIcon,
-    },
-
-    {
       label: `Báo cáo thống kê`,
       icon: settingIcon,
       isExpanded: expandedGroups['report'],
@@ -139,7 +187,6 @@ export default function RootLayout({
           label: `Thống kê hạn sử dụng`,
           icon: chartBarIcon,
         },
-
       ]
     },
     {
@@ -153,7 +200,6 @@ export default function RootLayout({
           label: `Thông tin cá nhân`,
           icon: circleUserRoundIcon,
         },
-
       ]
     },
   ];
@@ -168,7 +214,7 @@ export default function RootLayout({
   return (
     <div className={`h-lvh grid`} style={pageStyle}>
       <nav className={`h-lvh overflow-y-scroll flex flex-col gap-4 no-scrollbar p-4 ${styles.nav}`}>
-        {navbarItems.map((navbarItem: CNavbarItem, index: number) =>
+        {navbarItems.map((navbarItem: CNavbarItem, index: number) => (
           <NavbarItem
             navbarItem={navbarItem}
             key={index}
@@ -176,7 +222,7 @@ export default function RootLayout({
             setIsExpand={setIsExpand}
           >
           </NavbarItem>
-        )}
+        ))}
       </nav>
 
       <main className={`h-lvh p-4 tab-color flex flex-col gap-4 ${styles.main}`}>

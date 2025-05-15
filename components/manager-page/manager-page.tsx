@@ -429,11 +429,8 @@ export default function ManagerPage<T extends { _id: string }>({
 
       setLastDeletedId(idToDelete);
 
-      const confirmResult = confirm(`Bạn có muốn xóa ${translatedCollectionName} này?`);
-
-      if (confirmResult) {
-        handleDeleteCollectionById(idToDelete);
-      }
+      // Thực hiện xóa luôn, không hỏi lại confirm popup trình duyệt
+      handleDeleteCollectionById(idToDelete);
 
       if (setIsClickDelete) {
         setIsClickDelete({

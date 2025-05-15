@@ -8,7 +8,7 @@ import { createErrorMessage } from "@/utils/create-error-message";
 import { ROOT } from "@/constants/root.constant";
 import { IProduct } from "@/interfaces/product.interface";
 import { ProductModel } from "@/models/Product";
-import { isValidObjectId } from "mongoose";
+import mongoose from 'mongoose';
 
 type collectionType = IProduct;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT;
@@ -80,26 +80,15 @@ export const PATCH = async (req: NextRequest): Promise<NextResponse> => {
   }
 }
 
-export const DELETE = async (
-  _req: NextRequest, query: IQueryString
-): Promise<NextResponse> =>
-  await deleteCollectionByIdApi<collectionType>(
-    collectionModel,
-    collectionName,
-    path,
-    query
-  );
-
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: { params: { id: string } }
 ) {
   try {
     await connectToDatabase();
-    const resolvedParams = await params;
-    const id = resolvedParams.id;
+    const { id } = context.params;
 
-    if (!isValidObjectId(id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: 'ID sản phẩm không hợp lệ' },
         { status: 400 }
@@ -123,4 +112,28 @@ export async function GET(
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
+  await connectToDatabase();
+  const { id } = (await context).params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return NextResponse.json(
+      { error: 'ID sản phẩm không hợp lệ' },
+      { status: 400 }
+    );
+  }
+
+  const deleted = await ProductModel.findByIdAndDelete(id);
+  if (!deleted) {
+    return NextResponse.json(
+      { error: 'Không tìm thấy sản phẩm để xóa!' },
+      { status: 404 }
+    );
+  }
+  return NextResponse.json({ success: true }, { status: 200 });
 }

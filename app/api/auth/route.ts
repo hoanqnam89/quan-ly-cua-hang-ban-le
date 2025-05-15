@@ -23,13 +23,13 @@ export const POST = async (): Promise<NextResponse> => {
 
     const token: RequestCookie | undefined = cookieStore.get(COOKIE_NAME);
 
-    if ( !token )
+    if (!token)
       return NextResponse.json(
         createErrorMessage(
           `Unauthorized.`,
           `Cannot find token`,
-          path, 
-          `Please check if token existed.`, 
+          path,
+          `Please check if token existed.`,
         ),
         { status: EStatusCode.UNAUTHORIZED }
       );
@@ -37,44 +37,44 @@ export const POST = async (): Promise<NextResponse> => {
     const { value } = token;
     const payload: JWTPayload | undefined = await decrypt(value);
 
-    if ( !payload )
+    if (!payload)
       return NextResponse.json(
         createErrorMessage(
           `Unauthorized.`,
           `Cannot find payload`,
-          path, 
-          `Please check if payload existed.`, 
+          path,
+          `Please check if payload existed.`,
         ),
         { status: EStatusCode.UNAUTHORIZED }
       );
 
-    const account: JWTPayload = {...payload};
+    const account: JWTPayload = { ...payload };
+    console.log('Account payload:', account); // Debug để xem thông tin payload
 
     const foundAccounts = await AccountModel.find({
-      username: account.username, 
+      username: account.username,
     });
 
-    if ( foundAccounts.length === 0 )
+    if (foundAccounts.length === 0)
       return NextResponse.json(
         createErrorMessage(
           `Unauthorized.`,
           `The username or password is incorrect`,
-          path, 
-          `Please check if username or password is corrected.`, 
+          path,
+          `Please check if username or password is corrected.`,
         ),
         { status: EStatusCode.UNAUTHORIZED }
       );
 
-    // const isAccountHadPrivilage: boolean = await isAuthenticated(
-    //   account, 
-      // action, 
-      // collectionName
-    // );
+    // Trả về quyền admin dựa vào payload
+    const isAccountHadPrivilage = account.is_admin === true;
+    console.log('is_admin value:', account.is_admin); // Debug giá trị is_admin
+    console.log('isAccountHadPrivilage:', isAccountHadPrivilage); // Debug kết quả cuối cùng
 
     return NextResponse.json({
-      isAccountHadPrivilage: true
-    }, { 
-      status: EStatusCode.OK, 
+      isAccountHadPrivilage: isAccountHadPrivilage
+    }, {
+      status: EStatusCode.OK,
     });
   } catch (error: unknown) {
     console.error(error);
@@ -83,8 +83,8 @@ export const POST = async (): Promise<NextResponse> => {
       createErrorMessage(
         `Unauthorized.`,
         error as string,
-        path, 
-        `Please contact for more information.`, 
+        path,
+        `Please contact for more information.`,
       ),
       { status: EStatusCode.INTERNAL_SERVER_ERROR }
     );

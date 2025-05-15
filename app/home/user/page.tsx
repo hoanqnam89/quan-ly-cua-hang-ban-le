@@ -25,13 +25,318 @@ import { MINIMUM_WORKING_AGE } from '@/constants/minimum-working-age.constant';
 import { MAXIMUM_WORKING_AGE } from '@/constants/maximum-working-age.constant';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';
 import useNotificationsHook from '@/hooks/notifications-hook';
+import { compressImage } from '@/components/compressImage';
+import { ENotificationType } from '@/components/notify/notification/notification';
+import Link from 'next/link';
+import { getCollectionById } from '@/services/api-service';
+
+// Thêm CSS cho tooltip
+const ActionButtonStyles = {
+  tooltipContainer: `relative inline-block`,
+  tooltipText: `invisible absolute z-50 bg-gray-800 text-white text-xs rounded py-1 px-2 bottom-full left-1/2 transform -translate-x-1/2 mb-1 whitespace-nowrap opacity-0 transition-opacity group-hover:visible group-hover:opacity-100`
+};
 
 type collectionType = IUser;
 const collectionName: ECollectionNames = ECollectionNames.USER;
 
+// Component Modal Chi tiết người dùng
+const UserDetailModal = ({
+  isOpen,
+  onClose,
+  userId
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  userId: string
+}) => {
+  const [user, setUser] = useState<IUser | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [accountInfo, setAccountInfo] = useState<IAccount | null>(null);
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      if (!isOpen || !userId) return;
+
+      try {
+        setLoading(true);
+        const response = await getCollectionById(userId, ECollectionNames.USER);
+        const userData = await response.json();
+        setUser(userData);
+
+        // Lấy thông tin tài khoản
+        if (userData.account_id) {
+          const accountResponse = await getCollectionById(userData.account_id, ECollectionNames.ACCOUNT);
+          const accountData = await accountResponse.json();
+          setAccountInfo(accountData);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin chi tiết:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchUserDetails();
+  }, [isOpen, userId]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto animate-fade-in-up">
+        <div className="px-6 py-4 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-800">Thông tin chi tiết nhân viên</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:bg-gray-100 p-1 rounded-full transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="p-8 flex justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : user ? (
+          <div className="p-6">
+            {user.avatar && (
+              <div className="flex justify-center mb-6">
+                <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-gray-100 shadow-md">
+                  <Image
+                    src={user.avatar}
+                    alt="Avatar"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500">Tài khoản</h3>
+                  <p className="mt-1 text-lg font-medium text-gray-900">{accountInfo?.username || 'N/A'}</p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500">Họ và tên</h3>
+                  <p className="mt-1 text-lg font-medium text-gray-900">
+                    {`${user.name.first} ${user.name.middle || ''} ${user.name.last || ''}`}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500">Email</h3>
+                  <p className="mt-1 text-lg font-medium text-gray-900">{user.email || 'Chưa cập nhật'}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500">Giới tính</h3>
+                  <p className="mt-1 text-lg font-medium text-gray-900">
+                    {user.gender === EUserGender.MALE
+                      ? 'Nam'
+                      : user.gender === EUserGender.FEMALE
+                        ? 'Nữ'
+                        : 'Khác'}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500">Ngày sinh</h3>
+                  <p className="mt-1 text-lg font-medium text-gray-900">
+                    {user.birthday
+                      ? new Date(user.birthday).toLocaleDateString('vi-VN')
+                      : 'Chưa cập nhật'}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500">Địa chỉ</h3>
+                  <p className="mt-1 text-lg font-medium text-gray-900">
+                    {typeof user.address.number === 'string' && user.address.number.includes(',')
+                      ? user.address.number
+                      : `${user.address.number || ''} ${user.address.street || ''}, ${user.address.ward || ''}, ${user.address.district || ''}, ${user.address.city || ''}, ${user.address.country || ''}`}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 border-t border-gray-200 pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500">Ngày tạo</h3>
+                  <p className="mt-1 text-lg font-medium text-gray-900">
+                    {new Date(user.created_at).toLocaleDateString('vi-VN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-500">Cập nhật lần cuối</h3>
+                  <p className="mt-1 text-lg font-medium text-gray-900">
+                    {new Date(user.updated_at).toLocaleDateString('vi-VN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="p-8 text-center text-red-500">
+            Không thể tải thông tin người dùng
+          </div>
+        )}
+
+        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+          >
+            Đóng
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Component Modal Chi tiết tài khoản
+const AccountDetailModal = ({
+  isOpen,
+  onClose,
+  accountId
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  accountId: string
+}) => {
+  const [account, setAccount] = useState<IAccount | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchAccountDetails = async () => {
+      if (!isOpen || !accountId) return;
+
+      try {
+        setLoading(true);
+        const response = await getCollectionById(accountId, ECollectionNames.ACCOUNT);
+        const accountData = await response.json();
+        setAccount(accountData);
+        setLoading(false);
+      } catch (error) {
+        console.error("Lỗi khi lấy thông tin chi tiết tài khoản:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchAccountDetails();
+  }, [isOpen, accountId]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden">
+        <div className="px-6 py-4 bg-white">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Chi tiết tài khoản {accountId}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:bg-gray-100 p-1 rounded-full transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="p-8 flex justify-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : account ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-4 gap-4">
+                <div className="text-gray-600">Tên tài khoản</div>
+                <div className="col-span-3 bg-gray-200 rounded p-2">{account.username}</div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="text-gray-600">Mật khẩu</div>
+                <div className="col-span-3 bg-gray-200 rounded p-2">{'•'.repeat(16)}</div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="text-gray-600">Là quản trị viên</div>
+                <div className="col-span-3">
+                  <input
+                    type="checkbox"
+                    checked={account.is_admin}
+                    readOnly
+                    className="form-checkbox h-5 w-5 text-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="text-gray-600">Ngày tạo</div>
+                <div className="col-span-3 bg-gray-200 rounded p-2">
+                  {new Date(account.created_at).toLocaleDateString('vi-VN')} {new Date(account.created_at).toLocaleTimeString('vi-VN')} SA
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="text-gray-600">Ngày cập nhật</div>
+                <div className="col-span-3 bg-gray-200 rounded p-2">
+                  {new Date(account.updated_at).toLocaleDateString('vi-VN')} {new Date(account.updated_at).toLocaleTimeString('vi-VN')} SA
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-8 text-center text-red-500">
+              Không thể tải thông tin tài khoản
+            </div>
+          )}
+
+          <div className="mt-6 flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function User() {
-  const { notificationElements } = useNotificationsHook();
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const { createNotification, notificationElements } = useNotificationsHook();
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [user, setUser] = useState<IUser>(DEFAULT_USER);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
@@ -45,6 +350,10 @@ export default function User() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [accountOptions, setAccountOptions] = useState<ISelectOption[]>([]);
   const [account, setAccount] = useState<IAccount[]>([]);
+  const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [showAccountModal, setShowAccountModal] = useState<boolean>(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
 
   const getAccounts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
@@ -69,41 +378,108 @@ export default function User() {
     [user.account_id],
   );
 
-  const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files)
-      return;
+  const handleChangeAvatar = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const file: File = e.target.files[0];
-    if (!file)
-      return;
+    try {
+      if (file.size > 300 * 1024) {
+        createNotification({
+          id: Date.now(),
+          children: 'Kích thước file không được vượt quá 300KB',
+          type: ENotificationType.WARNING,
+          isAutoClose: true,
+          title: 'Cảnh báo',
+        });
+        return;
+      }
 
-    setImageFile(file);
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        createNotification({
+          id: Date.now(),
+          children: 'Chỉ chấp nhận file ảnh định dạng JPG, PNG hoặc GIF',
+          type: ENotificationType.WARNING,
+          isAutoClose: true,
+          title: 'Cảnh báo',
+        });
+        return;
+      }
+
+      const compressedFile = await compressImage(file, 800, 800, 0.7);
+      setAvatarFile(compressedFile);
+      setAvatarPreview(URL.createObjectURL(compressedFile));
+
+      setUser({
+        ...user,
+        avatar: URL.createObjectURL(compressedFile),
+      });
+
+      createNotification({
+        id: Date.now(),
+        children: 'Tải ảnh lên thành công',
+        type: ENotificationType.SUCCESS,
+        isAutoClose: true,
+        title: 'Thành công',
+      });
+    } catch (error) {
+      console.error('Lỗi khi xử lý ảnh:', error);
+      createNotification({
+        id: Date.now(),
+        children: 'Có lỗi xảy ra khi xử lý ảnh',
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+        title: 'Lỗi',
+      });
+    }
   }
 
-  useEffect(() => {
-    let isCancel = false;
-    const fileReader: FileReader = new FileReader();
-
-    if (imageFile) {
-      fileReader.onload = (e: ProgressEvent<FileReader>) => {
-        const result = e.target?.result;
-        if (result && !isCancel) {
-          setUser({
-            ...user,
-            avatar: result.toString(),
-          });
-        }
+  const uploadAvatar = async (file: File): Promise<string> => {
+    try {
+      if (!file) {
+        throw new Error('Không có file được chọn');
       }
-      fileReader.readAsDataURL(imageFile);
-    }
 
-    return () => {
-      isCancel = true;
-      if (fileReader.readyState === 1) {
-        fileReader.abort();
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('folder', 'user');
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Lỗi khi upload ảnh');
       }
+
+      const data = await response.json();
+      if (!data.url) {
+        throw new Error('Không nhận được URL ảnh từ server');
+      }
+
+      createNotification({
+        id: Date.now(),
+        children: 'Upload ảnh thành công',
+        type: ENotificationType.SUCCESS,
+        isAutoClose: true,
+        title: 'Thành công',
+      });
+
+      return data.url;
+    } catch (error) {
+      console.error('Lỗi trong quá trình upload:', error);
+      createNotification({
+        id: Date.now(),
+        children: error instanceof Error ? error.message : 'Lỗi không xác định khi upload ảnh',
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+        title: 'Lỗi',
+      });
+      throw error;
     }
-  }, [imageFile, user]);
+  };
 
   useEffect((): void => {
     getAccounts();
@@ -118,25 +494,14 @@ export default function User() {
       size: `1fr`,
     },
     {
-      key: `_id`,
-      ref: useRef(null),
-      title: `Mã`,
-      size: `3fr`,
-    },
-    {
       key: `account_id`,
       ref: useRef(null),
       title: `Tài khoản`,
       size: `3fr`,
-      // render: (collection: collectionType): ReactElement =>
-      //   createCollectionDetailLink(
-      //     ECollectionNames.ACCOUNT,
-      //     collection.account_id
-      //   )
       render: (collection: collectionType): ReactElement => {
-            const foundAccount = account.find((element) => element._id === collection.account_id)
-            return <p>{foundAccount?.username}</p>
-          }
+        const foundAccount = account.find((element) => element._id === collection.account_id)
+        return <p>{foundAccount?.username}</p>
+      }
     },
     {
       key: `name`,
@@ -148,16 +513,18 @@ export default function User() {
         return <Text isEllipsis={true} tooltip={name}>{name}</Text>
       }
     },
-    {
-      key: `address`,
-      ref: useRef(null),
-      title: `Địa chỉ`,
-      size: `3fr`,
-      render: (collection: collectionType): ReactElement => {
-        const address: string = `${collection.address.number} ${collection.address.street}, ${collection.address.ward}, ${collection.address.district}, ${collection.address.city}, ${collection.address.country}`;
-        return <Text isEllipsis={true} tooltip={address}>{address}</Text>
-      }
-    },
+    // {
+    //   key: `address`,
+    //   ref: useRef(null),
+    //   title: `Địa chỉ`,
+    //   size: `4fr`,
+    //   render: (collection: collectionType): ReactElement => {
+    //     const address: string = typeof collection.address.number === 'string' && collection.address.number.includes(',')
+    //       ? collection.address.number
+    //       : `${collection.address.number} ${collection.address.street}, ${collection.address.ward}, ${collection.address.district}, ${collection.address.city}, ${collection.address.country}`;
+    //     return <Text isEllipsis={true} tooltip={address}>{address}</Text>
+    //   }
+    // },
     {
       key: `email`,
       ref: useRef(null),
@@ -173,7 +540,7 @@ export default function User() {
         if (!collection.birthday)
           return <Text isEllipsis={true}>NaN</Text>
 
-        const date: string = new Date(collection.birthday).toLocaleString();
+        const date: string = new Date(collection.birthday).toLocaleDateString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
@@ -181,13 +548,13 @@ export default function User() {
       key: `gender`,
       ref: useRef(null),
       title: `Giới tính`,
-      size: `3fr`,
+      size: `2fr`,
       render: (collection: collectionType): ReactElement => {
         const gender: string = collection.gender === EUserGender.MALE
           ? `Nam`
           : collection.gender === EUserGender.FEMALE
             ? `Nữ`
-            : `Không rõ`;
+            : `Khác`;
         return <Text isEllipsis={true} tooltip={gender}>{gender}</Text>
       }
     },
@@ -195,90 +562,111 @@ export default function User() {
       key: `avatar`,
       ref: useRef(null),
       title: `Hình ảnh`,
-      size: `3fr`,
+      size: `2fr`,
       render: (collection: collectionType): ReactElement => collection.avatar
-        ? <div className={`relative ${styles[`image-container`]}`}>
+        ? <div className="relative">
           <Image
-            className={`w-full max-w-full max-h-full`}
             src={collection.avatar}
-            alt={``}
-            width={0}
-            height={0}
-            quality={10}
-          >
-          </Image>
+            alt="Avatar"
+            width={40}
+            height={40}
+            className="object-contain rounded border"
+          />
         </div>
-        : <Text isItalic={true}>Không có hình ảnh</Text>
+        : <Text isItalic={true}>Không có</Text>
     },
     {
       key: `created_at`,
       ref: useRef(null),
       title: `Ngày tạo`,
-      size: `4fr`,
+      size: `2fr`,
       render: (collection: collectionType): ReactElement => {
         const date: string = new Date(collection.created_at).toLocaleDateString();
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
-    // {
-    //   key: `updated_at`,
-    //   ref: useRef(null),
-    //   title: `Ngày cập nhật`,
-    //   size: `4fr`,
-    //   render: (collection: collectionType): ReactElement => {
-    //     const date: string = new Date(collection.updated_at).toLocaleString();
-    //     return <Text isEllipsis={true} tooltip={date}>{date}</Text>
-    //   }
-    // },
     {
-      title: `Xem thêm`,
+      title: `Thao tác`,
       ref: useRef(null),
       size: `2fr`,
-      render: (collection: collectionType): ReactElement => <Button
-        title={createMoreInfoTooltip(collectionName)}
-        onClick={(): void => {
-          setIsClickShowMore({
-            id: collection._id,
-            isClicked: !isClickShowMore.isClicked,
-          });
-        }}
-      >
-        <IconContainer
-          tooltip={createMoreInfoTooltip(collectionName)}
-          iconLink={pencilIcon}
-        >
-        </IconContainer>
-      </Button>
-    },
-    {
-      title: `Xem chi tiết`,
-      ref: useRef(null),
-      size: `2fr`,
-      render: (collection: collectionType): ReactElement =>
-        createCollectionDetailLink(
-          collectionName,
-          collection._id
-        )
-    },
-    {
-      title: `Xóa`,
-      ref: useRef(null),
-      size: `2fr`,
-      render: (collection: collectionType): ReactElement => <Button
-        title={createDeleteTooltip(collectionName)}
-        onClick={(): void => {
-          setIsClickDelete({
-            id: collection._id,
-            isClicked: !isClickDelete.isClicked,
-          });
-        }}
-      >
-        <IconContainer
-          tooltip={createDeleteTooltip(collectionName)}
-          iconLink={trashIcon}
-        >
-        </IconContainer>
-      </Button>
+      render: (collection: collectionType): ReactElement => (
+        <div className="flex items-center justify-center gap-4">
+          <button
+            onClick={(): void => {
+              setSelectedUserId(collection._id);
+              setIsModalReadOnly(true);
+              setShowDetailModal(true);
+            }}
+            className="group relative w-6 h-6 flex items-center justify-center"
+            title="Xem chi tiết nhân viên"
+          >
+            <IconContainer
+              iconLink={infoIcon}
+              style={{ width: 20, height: 20 }}
+              tooltip="Xem chi tiết nhân viên"
+            />
+            <span className={ActionButtonStyles.tooltipText}>Xem chi tiết nhân viên</span>
+          </button>
+
+          <button
+            onClick={(): void => {
+              // Tìm account_id dựa trên người dùng được chọn
+              const foundAccount = account.find((element) => element._id === collection.account_id);
+              if (foundAccount) {
+                setSelectedAccountId(foundAccount._id);
+                setShowAccountModal(true);
+              } else {
+                createNotification({
+                  id: Date.now(),
+                  children: 'Không tìm thấy thông tin tài khoản',
+                  type: ENotificationType.WARNING,
+                  isAutoClose: true,
+                  title: 'Cảnh báo',
+                });
+              }
+            }}
+            className="group relative w-6 h-6 flex items-center justify-center"
+            title="Xem chi tiết tài khoản"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+            </svg>
+            <span className={ActionButtonStyles.tooltipText}>Xem chi tiết tài khoản</span>
+          </button>
+
+          <Link
+            href={`/home/user/${collection._id}`}
+            className="group relative w-6 h-6 flex items-center justify-center"
+            title="Chỉnh sửa"
+          >
+            <IconContainer
+              iconLink={pencilIcon}
+              style={{ width: 20, height: 20 }}
+              tooltip="Chỉnh sửa"
+            />
+            <span className={ActionButtonStyles.tooltipText}>Chỉnh sửa</span>
+          </Link>
+
+          <button
+            onClick={(): void => {
+              setIsClickDelete({
+                id: collection._id,
+                isClicked: !isClickDelete.isClicked,
+              });
+            }}
+            className="group relative w-6 h-6 flex items-center justify-center"
+            title="Xóa"
+          >
+            <IconContainer
+              iconLink={trashIcon}
+              style={{ width: 20, height: 20 }}
+              tooltip={createDeleteTooltip('Người dùng')}
+            />
+            <span className={ActionButtonStyles.tooltipText}>{createDeleteTooltip('Người dùng')}</span>
+          </button>
+        </div>
+      )
     },
   ];
 
@@ -293,18 +681,25 @@ export default function User() {
     setUser({
       ...user,
       name: {
-        ...user.name,
-        [e.target.name]: e.target.value,
+        first: e.target.value,
+        middle: "",
+        last: ""
       }
     });
   }
 
   const handleChangeAddress = (e: ChangeEvent<HTMLInputElement>): void => {
+    const fullAddress = e.target.value;
     setUser({
       ...user,
       address: {
         ...user.address,
-        [e.target.name]: e.target.value,
+        number: fullAddress,
+        street: "",
+        ward: "",
+        district: "",
+        city: "",
+        country: "",
       }
     });
   }
@@ -335,29 +730,15 @@ export default function User() {
       ...user,
       avatar: undefined,
     });
-    setImageFile(null);
+    setAvatarFile(null);
+    setAvatarPreview(null);
   }
 
-  const genderOptions: ISelectOption[] = enumToKeyValueArray(EUserGender)
-    .map((array: string[]): ISelectOption => ({
-      label: array[0],
-      value: array[1],
-    }));
-
-  // const handleOpenModal = (prev: boolean): boolean => {
-  //   if (accountOptions.length === 0) {
-  //     createNotification({
-  //       id: 0,
-  //       children: <Text>Thêm tài khoản vào trước khi thêm người dùng!</Text>,
-  //       type: ENotificationType.ERROR,
-  //       isAutoClose: true,
-  //     });
-  //     return prev;
-  //   }
-
-  //   return !prev;
-  // }
-
+  const genderOptions: ISelectOption[] = [
+    { label: 'Nam', value: EUserGender.MALE },
+    { label: 'Nữ', value: EUserGender.FEMALE },
+    { label: 'Khác', value: EUserGender.UNKNOWN }
+  ];
 
   return (
     <ManagerPage<collectionType>
@@ -374,209 +755,250 @@ export default function User() {
     >
       <>
         <Tabs>
+          <TabItem label={`Thông tin nhân viên`}>
+            <div className="bg-white rounded-lg p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <div className="space-y-6">
+                  <div>
+                    <label className="flex items-center mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-blue-600 mr-2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <span className="text-sm font-medium">Tài khoản <span className="text-red-500">*</span></span>
+                    </label>
+                    <div className="relative">
+                      <SelectDropdown
+                        name={`account_id`}
+                        isLoading={isLoading}
+                        isDisable={isModalReadOnly}
+                        options={accountOptions}
+                        defaultOptionIndex={getSelectedOptionIndex(
+                          accountOptions, user.account_id
+                        )}
+                        onInputChange={handleChangeAccountId}
+                        className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
 
-          <TabItem label={`Tài khoản`}>
+                  <div>
+                    <label className="flex items-center mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-blue-600 mr-2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <span className="text-sm font-medium">Họ và tên <span className="text-red-500">*</span></span>
+                    </label>
+                    <TextInput
+                      name={`fullName`}
+                      isDisable={isModalReadOnly}
+                      value={`${user.name.first} ${user.name.middle} ${user.name.last}`.trim()}
+                      onInputChange={handleChangeName}
+                      className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Nhập họ và tên đầy đủ"
+                    />
+                  </div>
 
-            <InputSection label={`Cho tài khoản`}>
-              <SelectDropdown
-                name={`account_id`}
-                isLoading={isLoading}
-                isDisable={isModalReadOnly}
-                options={accountOptions}
-                defaultOptionIndex={getSelectedOptionIndex(
-                  accountOptions, user.account_id
-                )}
-                onInputChange={handleChangeAccountId}
-              >
-              </SelectDropdown>
-            </InputSection>
+                  <div>
+                    <label className="flex items-center mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-blue-600 mr-2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                      </svg>
+                      <span className="text-sm font-medium">Địa chỉ <span className="text-red-500">*</span></span>
+                    </label>
+                    <TextInput
+                      name={`address`}
+                      isDisable={isModalReadOnly}
+                      value={typeof user.address.number === 'string' && user.address.number.includes(',') ? user.address.number : `${user.address.number} ${user.address.street}, ${user.address.ward}, ${user.address.district}, ${user.address.city}, ${user.address.country}`}
+                      onInputChange={handleChangeAddress}
+                      placeholder="Nhập địa chỉ đầy đủ"
+                      className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
 
-            <InputSection label={`Họ`}>
-              <TextInput
-                name={`first`}
-                isDisable={isModalReadOnly}
-                value={user.name.first}
-                onInputChange={handleChangeName}
-              >
-              </TextInput>
-            </InputSection>
+                <div className="space-y-6">
+                  <div>
+                    <label className="flex items-center mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-blue-600 mr-2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                      </svg>
+                      <span className="text-sm font-medium">Email</span>
+                    </label>
+                    <TextInput
+                      textType={`email`}
+                      name={`email`}
+                      isDisable={isModalReadOnly}
+                      value={user.email}
+                      onInputChange={handleChangeEmail}
+                      placeholder="Nhập địa chỉ email"
+                      className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
 
-            <InputSection label={`Tên đệm`}>
-              <TextInput
-                name={`middle`}
-                isDisable={isModalReadOnly}
-                value={user.name.middle}
-                onInputChange={handleChangeName}
-              >
-              </TextInput>
-            </InputSection>
+                  <div>
+                    <label className="flex items-center mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-blue-600 mr-2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                      </svg>
+                      <span className="text-sm font-medium">Ngày sinh</span>
+                    </label>
+                    <div className="relative">
+                      <DateInput
+                        min={(() => {
+                          const date = new Date();
+                          date.setFullYear(date.getFullYear() - MAXIMUM_WORKING_AGE);
+                          return date.toISOString().split('T')[0];
+                        })()}
+                        max={(() => {
+                          const date = new Date();
+                          date.setFullYear(date.getFullYear() - MINIMUM_WORKING_AGE);
+                          return date.toISOString().split('T')[0];
+                        })()}
+                        name={`birthday`}
+                        isDisable={isModalReadOnly}
+                        value={user.birthday}
+                        onInputChange={handleChangeBirthday}
+                        className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
+                        placeholder="dd/mm/yyyy"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
 
-            <InputSection label={`Tên`}>
-              <TextInput
-                name={`last`}
-                isDisable={isModalReadOnly}
-                value={user.name.last}
-                onInputChange={handleChangeName}
-              >
-              </TextInput>
-            </InputSection>
+                  <div>
+                    <label className="flex items-center mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-blue-600 mr-2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      <span className="text-sm font-medium">Giới tính</span>
+                    </label>
+                    <div className="relative">
+                      <SelectDropdown
+                        isDisable={isModalReadOnly}
+                        options={genderOptions}
+                        defaultOptionIndex={getSelectedOptionIndex(
+                          genderOptions,
+                          (user.gender
+                            ? user.gender
+                            : EUserGender.FEMALE
+                          ) as unknown as string
+                        )}
+                        onInputChange={handleChangeGender}
+                        className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
+                      />
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"></path>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
 
-            <InputSection label={`Số nhà`}>
-              <TextInput
-                name={`number`}
-                isDisable={isModalReadOnly}
-                value={user.address.number}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Đường`}>
-              <TextInput
-                name={`street`}
-                isDisable={isModalReadOnly}
-                value={user.address.street}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Phường`}>
-              <TextInput
-                name={`ward`}
-                isDisable={isModalReadOnly}
-                value={user.address.ward}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Quận`}>
-              <TextInput
-                name={`district`}
-                isDisable={isModalReadOnly}
-                value={user.address.district}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Thành phố`}>
-              <TextInput
-                name={`city`}
-                isDisable={isModalReadOnly}
-                value={user.address.city}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Quốc gia`}>
-              <TextInput
-                name={`country`}
-                isDisable={isModalReadOnly}
-                value={user.address.country}
-                onInputChange={handleChangeAddress}
-              >
-              </TextInput>
-            </InputSection>
-
-            <InputSection label={`Email`}>
-              <TextInput
-                textType={`email`}
-                name={`email`}
-                isDisable={isModalReadOnly}
-                value={user.email}
-                onInputChange={handleChangeEmail}
-              >
-              </TextInput>
-            </InputSection>
-
-            {user.birthday ?
-              <InputSection label={`Ngày sinh`}>
-                <DateInput
-                  min={(() => {
-                    const date = new Date();
-                    date.setFullYear(date.getFullYear() - MAXIMUM_WORKING_AGE);
-                    return date.toISOString().split('T')[0];
-                  })()}
-                  max={(() => {
-                    const date = new Date();
-                    date.setFullYear(date.getFullYear() - MINIMUM_WORKING_AGE);
-                    return date.toISOString().split('T')[0];
-                  })()}
-                  name={`birthday`}
-                  isDisable={isModalReadOnly}
-                  value={user.birthday}
-                  onInputChange={handleChangeBirthday}
-                >
-                </DateInput>
-              </InputSection> : <Text>{user.birthday}</Text>
-            }
-
-            <InputSection label={`Giới tính`}>
-              <SelectDropdown
-                isDisable={isModalReadOnly}
-                options={genderOptions}
-                defaultOptionIndex={getSelectedOptionIndex(
-                  genderOptions,
-                  (user.gender
-                    ? user.gender
-                    : EUserGender.FEMALE
-                  ) as unknown as string
-                )}
-                onInputChange={handleChangeGender}
-              >
-              </SelectDropdown>
-            </InputSection>
-
-            <InputSection label={`Hình đại diện của nhân viên`}>
-              <div>
-                {!isModalReadOnly ? <input
-                  type={`file`}
-                  accept={`image/*`}
-                  multiple={true}
-                  onChange={handleChangeImage}
-                  disabled={isModalReadOnly}
-                >
-                </input> : null}
-
-                <div className={`relative flex flex-wrap gap-2 overflow-scroll no-scrollbar`}>
-                  {
-                    user.avatar ? <div
-                      className={`relative ${styles[`image-container`]}`}
-                    >
-                      <Image
-                        className={`w-full max-w-full max-h-full`}
-                        src={user.avatar}
-                        alt={``}
-                        width={0}
-                        height={0}
-                        quality={10}
+                  <div>
+                    <label className="flex items-center mb-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-blue-600 mr-2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                      </svg>
+                      <span className="text-sm font-medium">Hình đại diện</span>
+                    </label>
+                    <div className="flex justify-center">
+                      <div
+                        onClick={() => document.getElementById('avatar-input')?.click()}
+                        className="w-24 h-24 border border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 transition-colors"
                       >
-                      </Image>
-
-                      {!isModalReadOnly ? <div className={`absolute top-0 right-0`}>
-                        <Button
-                          className={`absolute top-0 right-0`}
-                          onClick={() => handleDeleteImage()}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleChangeAvatar}
+                          className="hidden"
+                          id="avatar-input"
+                          disabled={isModalReadOnly}
+                        />
+                        {!avatarPreview && !user.avatar ? (
+                          <>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-500 mb-1" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                            </svg>
+                            <span className="text-xs text-blue-500 text-center">Chọn ảnh avatar</span>
+                          </>
+                        ) : (
+                          <img
+                            src={avatarPreview || user.avatar}
+                            alt="Avatar"
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        )}
+                      </div>
+                      {(avatarPreview || user.avatar) && !isModalReadOnly && (
+                        <button
+                          type="button"
+                          onClick={handleDeleteImage}
+                          className="ml-2 p-1 bg-red-100 rounded-full text-red-500 hover:bg-red-200 transition-colors"
+                          title="Xóa ảnh"
                         >
-                          <IconContainer iconLink={trashIcon}>
-                          </IconContainer>
-                        </Button>
-                      </div> : null}
-                    </div> : <></>
-                  }
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </InputSection>
-          </TabItem>
 
-          <TabItem label={`Thời gian`} isDisable={!isModalReadOnly}>
-            <TimestampTabItem<collectionType> collection={user}>
-            </TimestampTabItem>
+              <div className="flex justify-end gap-3 mt-8">
+                <Button
+                  onClick={() => {
+                    setUser(DEFAULT_USER);
+                    setAvatarFile(null);
+                    setAvatarPreview(null);
+                  }}
+                  className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+                >
+                  Hủy bỏ
+                </Button>
+                <Button
+                  className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+                >
+                  Lưu nhân viên
+                </Button>
+              </div>
+            </div>
           </TabItem>
         </Tabs>
+
+        {/* Modal Xem Chi Tiết */}
+        <UserDetailModal
+          isOpen={showDetailModal}
+          onClose={() => setShowDetailModal(false)}
+          userId={selectedUserId}
+        />
+
+        {/* Modal Xem Chi Tiết Tài Khoản */}
+        <AccountDetailModal
+          isOpen={showAccountModal}
+          onClose={() => setShowAccountModal(false)}
+          accountId={selectedAccountId}
+        />
 
         {notificationElements}
       </>

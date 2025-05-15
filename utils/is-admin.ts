@@ -7,29 +7,30 @@ import { connectToDatabase } from "./database";
 
 declare module 'jose' {
   export interface JWTPayload {
-    username: string, 
+    username: string,
+    is_admin: boolean,
   }
 }
 
 export const isAdmin = async (
-  cookieStore: ReadonlyRequestCookies, 
+  cookieStore: ReadonlyRequestCookies,
   // action: ERoleAction, 
   // collectionName: ECollectionNames, 
 ): Promise<boolean> => {
   const token: RequestCookie | undefined = cookieStore.get(COOKIE_NAME);
 
-  if ( !token )
+  if (!token)
     return false;
 
   const { value } = token;
   const payload: JWTPayload | undefined = await decrypt(value);
 
-  if ( !payload )
+  if (!payload)
     return false;
 
-  const account: JWTPayload = {...payload};
+  const account: JWTPayload = { ...payload };
 
-  if ( account.username === `admin` )
+  if (account.is_admin === true)
     return true;
 
   const result = false;
@@ -63,6 +64,6 @@ export const isAdmin = async (
   } catch (error) {
     console.error(`Error`, error);
   }
-  
+
   return result;
 }

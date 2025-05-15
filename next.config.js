@@ -30,6 +30,7 @@ const nextConfig = {
         return config
     },
     images: {
+        domains: ['res.cloudinary.com'],
         remotePatterns: [
             {
                 protocol: 'https',

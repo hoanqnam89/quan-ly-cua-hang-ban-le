@@ -14,21 +14,42 @@ const BusinessSchema = new Schema({
   },
   name: {
     type: String,
-    required: [true, 'Name is required!'],
+    required: [true, 'Tên doanh nghiệp là bắt buộc!'],
+    trim: true,
+  },
+  address: {
+    type: String,
+    required: [true, 'Địa chỉ là bắt buộc!'],
+    trim: true,
+  },
+  email: {
+    type: String,
+    trim: true,
+    validate: {
+      validator: function (v: string) {
+        return !v || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+      },
+      message: 'Email không hợp lệ!'
+    }
   },
   logo: {
     type: String,
-    required: [false],
+    required: false,
   },
   logo_links: {
     type: [String],
     default: [],
   },
-  address: {
+  phone: {
     type: String,
-    required: [true, 'Address is required!'],
-  },
-  email: { type: String },
+    trim: true,
+  }
+});
+
+// Middleware tự động cập nhật updated_at
+BusinessSchema.pre('save', function (next) {
+  this.updated_at = new Date();
+  next();
 });
 
 export const BusinessModel =

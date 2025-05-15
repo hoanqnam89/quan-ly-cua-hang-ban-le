@@ -28,10 +28,13 @@ export async function POST(request: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    // Lấy folder từ formData nếu có, mặc định là 'other'
+    const folder = formData.get('folder')?.toString() || 'other';
+
     try {
         const uploadResult = await new Promise<any>((resolve, reject) => {
             cloudinary.uploader.upload_stream(
-                { folder: 'business_logos' }, // Đổi tên folder nếu muốn
+                { folder },
                 (error, result) => {
                     if (error) return reject(error);
                     resolve(result);
@@ -41,5 +44,24 @@ export async function POST(request: Request) {
         return NextResponse.json({ url: uploadResult.secure_url });
     } catch (error) {
         return NextResponse.json({ error: 'Upload failed', details: error }, { status: 500 });
+    }
+}
+
+export async function DELETE(request: Request) {
+    const { url } = await request.json();
+    if (!url) return NextResponse.json({ error: 'No url provided' }, { status: 400 });
+
+    // Lấy public_id từ url Cloudinary
+    // Ví dụ: https://res.cloudinary.com/xxx/image/upload/v1710000000/product/abcxyz.jpg
+    // public_id là: product/abcxyz
+    const matches = url.match(/upload\/v\d+\/(.+)\.[a-zA-Z]+$/);
+    const publicId = matches ? matches[1] : null;
+    if (!publicId) return NextResponse.json({ error: 'Invalid url' }, { status: 400 });
+
+    try {
+        await cloudinary.uploader.destroy(publicId);
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        return NextResponse.json({ error: 'Delete failed', details: error }, { status: 500 });
     }
 } 

@@ -11,8 +11,8 @@ interface ITabsProps {
 }
 
 export default function Tabs({
-  activeTabIndex = 0, 
-  children, 
+  activeTabIndex = 0,
+  children,
 }: Readonly<ITabsProps>): ReactElement {
   const [activeTab, setActiveTab] = useState<number>(activeTabIndex);
 
@@ -21,9 +21,9 @@ export default function Tabs({
       setActiveTab(0);
     }
   }, []);
-  
+
   const handleTabClick = (tab: ReactElement<ITabProps>, index: number) => {
-    if ( !tab.props.isDisable )
+    if (!tab.props.isDisable)
       setActiveTab(index);
   }
 
@@ -33,36 +33,38 @@ export default function Tabs({
   );
 
   return (
-    <div className={`flex flex-col gap-2`}>
-      <ul className={`tab-list flex overflow-x-scroll border-b-2 border-solid no-scrollbar ${styles[`tab-list`]}`}>
-        {tabs.map((
-          tab: ReactElement<ITabProps>, index: number
-        ): ReactElement => (
-          <li 
-            key={`tab-${index}`} 
-            className={`p-1 block border-b-2 border-solid ${
-              activeTab === index ? styles[`active-tab`] : `border-none`
-            }`
-          }>
-            <Button
-              onClick={(): void => handleTabClick(tab, index)}
-              className={`whitespace-nowrap`}
+    <div className="flex flex-col">
+      <div className="relative mb-4">
+        <ul className="flex flex-nowrap overflow-x-auto scrollbar-hide">
+          {tabs.map((
+            tab: ReactElement<ITabProps>, index: number
+          ): ReactElement => (
+            <li
+              key={`tab-${index}`}
+              className={`relative transition-all duration-300 ease-in-out`}
             >
-              <Text color={tab.props.isDisable ? {
-                light: `#777`, 
-                dark: `#777`
-              } : {
-                light: `#000`, 
-                dark: `#fff`, 
-              }}>
+              <Button
+                onClick={(): void => handleTabClick(tab, index)}
+                className={`relative whitespace-nowrap px-5 py-3 font-medium text-base transition-all duration-200 ${activeTab === index
+                  ? 'text-blue-600'
+                  : tab.props.isDisable
+                    ? 'text-gray-400 cursor-not-allowed'
+                    : 'text-gray-600 hover:text-blue-500'
+                  }`}
+              >
                 {tab.props.label}
-              </Text>
-            </Button>
-          </li>
-        ))}
-      </ul>
+                {activeTab === index && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform transition-transform duration-300 ease-out"></span>
+                )}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </div>
 
-      {tabs[activeTab]}
+      <div className="transition-all duration-300 ease-in-out min-h-[200px]">
+        {tabs[activeTab]}
+      </div>
     </div>
   )
 }

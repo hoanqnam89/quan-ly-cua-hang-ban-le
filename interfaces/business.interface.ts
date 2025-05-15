@@ -8,7 +8,7 @@ export interface IBusiness {
   name: string
   logo?: string
   logo_links?: string[]
-  address: IUserAddress
+  address: string
   email: string
-  type: string
+  phone?: string
 }
