@@ -133,14 +133,40 @@ export default function RootLayout({
         ]
       },
       {
-        link: `${currentPath}/order-form`,
         label: `Quản lý đặt hàng`,
         icon: scrollIcon,
+        isExpanded: expandedGroups['orderForm'],
+        onClick: () => toggleGroup('orderForm'),
+        children: [
+          {
+            link: `${currentPath}/order-form`,
+            label: `Danh sách phiếu đặt hàng`,
+            icon: scrollIcon,
+          },
+          {
+            link: `${currentPath}/order-form/create`,
+            label: `Thêm phiếu đặt hàng`,
+            icon: boxesIcon,
+          },
+        ]
       },
       {
-        link: `${currentPath}/warehouse-receipt`,
         label: `Quản lý nhập kho`,
         icon: scrollIcon,
+        isExpanded: expandedGroups['warehouseReceipt'],
+        onClick: () => toggleGroup('warehouseReceipt'),
+        children: [
+          {
+            link: `${currentPath}/warehouse-receipt`,
+            label: `Danh sách phiếu nhập kho`,
+            icon: scrollIcon,
+          },
+          {
+            link: `${currentPath}/warehouse-receipt/create`,
+            label: `Thêm phiếu nhập kho`,
+            icon: boxesIcon,
+          },
+        ]
       },
       {
         link: `${currentPath}/return-exchange`,
