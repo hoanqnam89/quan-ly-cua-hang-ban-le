@@ -6,6 +6,7 @@ import { createErrorMessage } from "@/utils/create-error-message";
 import { ROOT } from "@/constants/root.constant";
 import { IProductDetail } from "@/interfaces/product-detail.interface";
 import { ProductDetailModel } from "@/models/ProductDetail";
+import { StockHistoryModel } from '@/models/StockHistory';
 
 type collectionType = IProductDetail;
 const collectionName: ECollectionNames = ECollectionNames.PRODUCT_DETAIL;
@@ -72,6 +73,15 @@ export const PATCH = async (
     }
 
     // Xử lý input_quantity và output_quantity
+    let oldOutputQuantity = undefined;
+    if (productDetail.output_quantity !== undefined) {
+      // Lấy input_quantity hiện tại từ database để tính inventory
+      const currentDetail = await collectionModel.findById(id);
+      if (currentDetail) {
+        oldOutputQuantity = currentDetail.output_quantity;
+      }
+    }
+
     if (productDetail.input_quantity !== undefined && productDetail.output_quantity !== undefined) {
       // Nếu cả hai trường đều được cung cấp, sử dụng cả hai giá trị như nhận được
       updateData.input_quantity = productDetail.input_quantity;
@@ -121,6 +131,23 @@ export const PATCH = async (
         ),
         { status: EStatusCode.INTERNAL_SERVER_ERROR }
       );
+
+    // Sau khi cập nhật xong, nếu output_quantity thay đổi thì lưu lịch sử xuất kho
+    if (productDetail.output_quantity !== undefined && oldOutputQuantity !== undefined && productDetail.output_quantity > oldOutputQuantity) {
+      const exportQuantity = productDetail.output_quantity - oldOutputQuantity;
+      if (exportQuantity > 0) {
+        await StockHistoryModel.create({
+          product_id: updateData.product_id || (foundProductDetail && foundProductDetail.product_id),
+          batch_number: foundProductDetail.batch_number,
+          action: 'export',
+          quantity: exportQuantity,
+          related_receipt_id: null, // Có thể truyền id hóa đơn nếu có
+          note: 'Xuất kho khi bán hàng',
+          created_at: new Date(),
+          // user_id: null // Có thể lấy từ token nếu có
+        });
+      }
+    }
 
     console.log(`Đã cập nhật thành công product-detail/${id}`);
     return NextResponse.json(updatedProductDetail, { status: EStatusCode.OK });

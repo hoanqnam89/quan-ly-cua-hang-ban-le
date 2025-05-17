@@ -410,9 +410,9 @@ export default function CreateOrderForm() {
                 });
 
                 // Chuyển đến trang danh sách phiếu đặt hàng
-                setTimeout(() => {
-                    router.push('/home/order-form');
-                }, 1500);
+                // setTimeout(() => {
+                //     router.push('/home/order-form');
+                // }, 1500);
             } else {
                 const errorData = await response.json();
                 console.error('Error response:', errorData);

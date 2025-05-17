@@ -23,4 +23,5 @@ export interface IWarehouseReceipt {
     updated_at: Date;
     product_details: IWarehouseProductDetail[];
     receipt_code: string;
+    user_name?: string;
 } 

@@ -22,6 +22,8 @@ import { IProduct } from "@/interfaces/product.interface";
 import { CategoryModel } from "@/models/Category";
 import { ICategory } from "@/interfaces/category.interface";
 import { generateBatchNumber } from "@/utils/batch-number";
+import { StockHistoryModel } from '@/models/StockHistory';
+import { PriceHistoryModel } from '@/models/PriceHistory';
 
 // Local interface - same as IWarehouseProductDetail in warehouse-receipt.interface.ts
 interface WarehouseProductDetail extends IOrderFormProductDetail {
@@ -364,6 +366,32 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
             newOutputPrice: updatedProduct.output_price,
             discount: discount,
             updatedAt: updatedProduct.updated_at
+          });
+        }
+
+        // Lưu lịch sử nhập kho
+        await StockHistoryModel.create({
+          product_id: product._id,
+          batch_number: batchNumber,
+          action: 'import',
+          quantity: additionalQuantity,
+          related_receipt_id: savedWarehouseReceipt._id,
+          note: productDetail.note || '',
+          created_at: currentDate,
+          user_name: warehouseReceipt.user_name || 'Chưa xác định',
+        });
+
+        // Kiểm tra và lưu lịch sử cập nhật giá nếu có thay đổi
+        if (product.input_price !== productDetail.input_price) {
+          await PriceHistoryModel.create({
+            product_id: product._id,
+            old_input_price: product.input_price,
+            new_input_price: productDetail.input_price,
+            old_output_price: product.output_price,
+            new_output_price: outputPrice,
+            changed_at: currentDate,
+            user_name: warehouseReceipt.user_name || 'Chưa xác định',
+            note: `Cập nhật giá khi nhập kho (phiếu: ${savedWarehouseReceipt.receipt_code})`
           });
         }
       } catch (error) {

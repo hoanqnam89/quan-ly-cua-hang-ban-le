@@ -10,33 +10,33 @@ export const GET = async (): Promise<NextResponse> => {
   const cookieStore: ReadonlyRequestCookies = await cookies();
   const token: RequestCookie | undefined = cookieStore.get(COOKIE_NAME);
 
-  if ( !token )
+  if (!token)
     return NextResponse.json({
       message: `Unauthorized!`
-    }, { 
-      status: EStatusCode.UNAUTHORIZED, 
+    }, {
+      status: EStatusCode.UNAUTHORIZED,
     });
 
   const { value } = token;
-  
+
   try {
     const user = await decrypt(value);
 
-    if ( !user )
+    if (!user)
       return NextResponse.json({
         message: `Unauthorized!`
-      }, { 
-        status: EStatusCode.UNAUTHORIZED, 
+      }, {
+        status: EStatusCode.UNAUTHORIZED,
       });
-      
-    return NextResponse.json(user, { 
-      status: EStatusCode.OK, 
+
+    return NextResponse.json(user, {
+      status: EStatusCode.OK,
     });
   } catch (error) {
     return NextResponse.json({
-      message: error, 
-    }, { 
-      status: EStatusCode.INTERNAL_SERVER_ERROR, 
+      message: error,
+    }, {
+      status: EStatusCode.INTERNAL_SERVER_ERROR,
     });
   }
 }

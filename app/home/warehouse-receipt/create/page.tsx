@@ -277,10 +277,62 @@ function CreateWarehouseReceiptPage() {
             });
             return;
         }
+        // Lấy tên user đăng nhập
+        let userName = '';
+        try {
+            // Lấy accountId từ API auth/me
+            const res = await fetch('/api/auth/me');
+            if (res.ok) {
+                const data = await res.json();
+                const accountId = data._id;
+                // Lấy thông tin user từ accountId
+                const userRes = await fetch(`/api/user/account/${accountId}`);
+                if (userRes.ok) {
+                    const userData = await userRes.json();
+                    userName = userData.name || '';
+                }
+            }
+        } catch { }
+        if (!userName) {
+            createNotification({
+                children: 'Không xác định được người dùng, vui lòng đăng nhập lại!',
+                type: ENotificationType.ERROR,
+                isAutoClose: true,
+                id: Math.random(),
+            });
+            setIsSaving(false);
+            return;
+        }
         try {
             setIsSaving(true);
-            const response = await addCollection(warehouseReceipt, collectionName);
+            const response = await addCollection({
+                ...warehouseReceipt,
+                user_name: userName,
+            }, collectionName);
             if (response.status === EStatusCode.OK || response.status === EStatusCode.CREATED) {
+                // Sau khi nhập kho thành công, kiểm tra cập nhật giá và lưu lịch sử giá
+                // Lấy danh sách sản phẩm hiện tại
+                const productsRes = await fetch('/api/product');
+                const products = productsRes.ok ? await productsRes.json() : [];
+                for (const detail of warehouseReceipt.product_details) {
+                    const product = products.find((p: any) => p._id === detail._id);
+                    if (product && product.input_price !== detail.input_price) {
+                        await fetch('/api/price-history', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                product_id: detail._id,
+                                old_input_price: product.input_price,
+                                new_input_price: detail.input_price,
+                                old_output_price: product.output_price,
+                                new_output_price: product.output_price,
+                                changed_at: new Date(),
+                                user_name: userName,
+                                note: 'Cập nhật giá khi nhập kho',
+                            })
+                        });
+                    }
+                }
                 await updateOrderStatus(warehouseReceipt.supplier_receipt_id, OrderFormStatus.COMPLETED);
                 createNotification({
                     children: 'Tạo phiếu nhập kho thành công!',

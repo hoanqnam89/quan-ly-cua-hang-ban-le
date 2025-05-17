@@ -2,7 +2,7 @@
 
 import "./globals.css";
 import { Context, createContext, ReactElement, useMemo } from "react";
-import { IRootLayout } from "@/app/interfaces/root-layout.interface";
+import { IRootLayout } from "@/interfaces/root-layout.interface";
 
 const context: Context<{ name: string }> = createContext({ name: `default` });
 

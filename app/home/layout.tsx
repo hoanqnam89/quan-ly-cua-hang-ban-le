@@ -213,6 +213,16 @@ export default function RootLayout({
           label: `Thống kê hạn sử dụng`,
           icon: chartBarIcon,
         },
+        {
+          link: `${currentPath}/stock-history`,
+          label: `Lịch sử nhập/xuất kho`,
+          icon: scrollIcon,
+        },
+        {
+          link: `${currentPath}/price-history`,
+          label: `Lịch sử cập nhật giá`,
+          icon: chartBarIcon,
+        },
       ]
     },
     {

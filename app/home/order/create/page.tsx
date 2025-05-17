@@ -106,12 +106,8 @@ export default function CreateOrder() {
                 const userData = await userResponse.json();
                 console.log('User data:', userData);
 
-                // Tạo tên đầy đủ từ first, middle và last name
-                const fullName = [
-                    userData.name?.first || '',
-                    userData.name?.middle || '',
-                    userData.name?.last || ''
-                ].filter(Boolean).join(' ');
+                // Tạo tên đầy đủ chỉ từ trường name vì model User chỉ có name
+                const fullName = userData.name || '';
 
                 setEmployeeName(fullName || 'Chưa xác định');
             } catch (err) {
