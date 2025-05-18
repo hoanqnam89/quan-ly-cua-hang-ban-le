@@ -6,7 +6,7 @@ import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { ECollectionNames } from '@/enums';
 import { addCollection, deleteCollectionById, getCollectionById, updateCollectionById } from '@/services/api-service';
 import { LoadingScreen } from '@/components';
-import { boxIcon, infoIcon, pencilIcon, plusIcon, trashIcon, userIcon } from '@/public';
+import { boxIcon, infoIcon, pencilIcon, trashIcon, userIcon } from '@/public';
 import { ICategory } from '@/interfaces/category.interface';
 import { DEFAULT_CATEGORY } from '@/constants/category.constant';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';

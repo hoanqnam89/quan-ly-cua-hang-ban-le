@@ -1,6 +1,6 @@
-import { IUserAddress } from "./user-address.interface"
 
 export interface IBusiness {
+  type: string
   _id: string
   created_at: Date
   updated_at: Date

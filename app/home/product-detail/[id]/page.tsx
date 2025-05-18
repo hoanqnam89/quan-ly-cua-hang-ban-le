@@ -1,9 +1,9 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
 import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button, LoadingScreen, Text } from '@/components'
-import { IPageParams } from '@/interfaces/page-params.interface'
 import { IProductDetail } from '@/interfaces/product-detail.interface'
 import { IProduct } from '@/interfaces/product.interface'
 import { ENotificationType } from '@/components/notify/notification/notification'

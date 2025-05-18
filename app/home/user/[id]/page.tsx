@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client'
 
 import { ECollectionNames } from '@/enums';
@@ -57,13 +58,13 @@ export default function Detail({
       ]);
       setIsLoading(false);
     },
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+     
     [collection.account_id],
   );
 
   useEffect((): void => {
     getAccounts();
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+     
   }, []);
 
   useEffect((): void => {

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { IProduct, IProductDetail } from '@/interfaces';
-import { Text } from '@/components';
 
 interface ExpirationInfo {
   product: IProduct;
