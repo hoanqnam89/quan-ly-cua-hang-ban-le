@@ -12,7 +12,6 @@ import { createDeleteTooltip, createMoreInfoTooltip } from '@/utils/create-toolt
 import { DEFAULT_ACCOUNT } from '@/constants/account.constant';
 import TabItem from '@/components/tabs/components/tab-item/tab-item';
 import Tabs from '@/components/tabs/tabs';
-import TimestampTabItem from '@/components/timestamp-tab-item/timestamp-tab-item';
 import Checkbox from '@/components/checkbox/checkbox';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import { createCollectionDetailLink } from '@/utils/create-collection-detail-link';

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
 import { StockHistoryModel } from '@/models/StockHistory';

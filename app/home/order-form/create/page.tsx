@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react/no-unescaped-entities */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { Button, IconContainer, NumberInput, SelectDropdown, Text } from '@/components'

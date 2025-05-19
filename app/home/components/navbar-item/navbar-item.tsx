@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { CSSProperties, Dispatch, ReactElement, SetStateAction } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

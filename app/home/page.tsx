@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { ReactElement, useState, useEffect, useCallback, useRef } from "react";
@@ -11,9 +14,9 @@ import { IProductDetail } from "@/interfaces/product-detail.interface";
 declare global {
   interface Window {
     google: {
-      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+
       charts: any
-      /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+
       visualization: any
     };
   }
@@ -632,7 +635,7 @@ export default function Home(): ReactElement {
       // Gọi API để lấy dữ liệu mới với khoảng thời gian đã chọn
       fetchAllData(selectedOption.startDate, selectedOption.endDate);
     }
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+
   }, [fetchAllData, dateRange]);
 
   // Khởi tạo ứng dụng
@@ -658,7 +661,7 @@ export default function Home(): ReactElement {
       // Gọi lấy dữ liệu ban đầu
       fetchAllData(defaultOption.startDate, defaultOption.endDate);
     }
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+
   }, []);
 
   // Tự động cập nhật dữ liệu

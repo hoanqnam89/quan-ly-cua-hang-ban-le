@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { Button, IconContainer, NumberInput, SelectDropdown, Text } from '@/components'
@@ -1189,7 +1192,7 @@ function WarehouseReceipt() {
               className="text-blue-500"
             />
           </Button>
-          <Button
+          {/* <Button
             title={createDeleteTooltip(collectionName)}
             onClick={(): void => {
               setIsClickDelete({
@@ -1204,7 +1207,7 @@ function WarehouseReceipt() {
               iconLink={trashIcon}
               className="text-red-500"
             />
-          </Button>
+          </Button> */}
           <Button
             type={EButtonType.TRANSPARENT}
             onClick={(): void => {

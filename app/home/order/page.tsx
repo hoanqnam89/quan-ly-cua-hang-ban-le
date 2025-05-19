@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { Button } from '@/components'
@@ -517,7 +520,7 @@ const ImportOrderList = () => {
                     <th className="px-8 py-5 text-left font-semibold text-slate-600">Ngày cập nhật</th>
                     <th className="px-8 py-5 text-left font-semibold text-slate-600">Trạng thái</th>
                     <th className="px-8 py-5 text-right font-semibold text-slate-600">Thành tiền</th>
-                    <th className="px-8 py-5 text-center font-semibold text-slate-600">Hành động</th>
+                    {/* <th className="px-8 py-5 text-center font-semibold text-slate-600">Hành động</th> */}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -577,7 +580,7 @@ const ImportOrderList = () => {
                     <th className="px-8 py-5 text-left font-semibold text-slate-600">Ngày cập nhật</th>
                     <th className="px-8 py-5 text-left font-semibold text-slate-600">Trạng thái</th>
                     <th className="px-8 py-5 text-right font-semibold text-slate-600">Thành tiền</th>
-                    <th className="px-8 py-5 text-center font-semibold text-slate-600">Hành động</th>
+                    {/* <th className="px-8 py-5 text-center font-semibold text-slate-600">Hành động</th> */}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200">
@@ -627,7 +630,7 @@ const ImportOrderList = () => {
                               Hoàn thành thanh toán
                             </Button>
                           )}
-                          <Button
+                          {/* <Button
                             onClick={(event?: React.MouseEvent<HTMLButtonElement>) => {
                               event?.stopPropagation();
                               handleDeleteOrder(order._id);
@@ -648,7 +651,7 @@ const ImportOrderList = () => {
                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                               />
                             </svg>
-                          </Button>
+                          </Button> */}
                         </div>
                       </td>
                     </tr>

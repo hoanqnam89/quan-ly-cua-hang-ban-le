@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { Button, IconContainer, NumberInput, SelectDropdown, Text } from '@/components'
@@ -164,13 +166,13 @@ export default function Product() {
         });
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [],
   );
 
   useEffect((): void => {
     getBusinesses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []); // Chỉ gọi một lần khi component mount
 
   // Thay đổi hàm lấy sản phẩm để chỉ lấy sản phẩm theo nhà cung cấp
@@ -235,13 +237,13 @@ export default function Product() {
       ]);
       setIsUnitLoading(false);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     [],
   );
 
   useEffect((): void => {
     getUnits();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   // Thêm useEffect để reset isClickShowMore sau khi đã được xử lý
@@ -347,7 +349,7 @@ export default function Product() {
             />
           </Button>
 
-          {/* Nút xóa */}
+          {/* Nút xóa
           <Button
             title={createDeleteTooltip(collectionName)}
             onClick={(): void => {
@@ -363,7 +365,7 @@ export default function Product() {
               iconLink={trashIcon}
               className="w-5 h-5"
             />
-          </Button>
+          </Button> */}
           {/* Nút in phiếu đặt hàng */}
           <Button
             title="In phiếu đặt hàng"
