@@ -1,3 +1,5 @@
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { connectToDatabase } from "@/utils/database";
 import { NextRequest, NextResponse } from "next/server";
 import { OrderModel } from "@/models/Order";

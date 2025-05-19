@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/utils/database';
 import ReturnExchangeModel from '@/models/ReturnExchange';

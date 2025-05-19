@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { IProduct } from '@/interfaces/product.interface';
 import { ECollectionNames } from '@/enums';
-import * as XLSX from 'xlsx';
 
 interface IPriceHistory {
     _id: string;
@@ -32,7 +31,6 @@ export default function PriceHistoryPage() {
     const [pageSize, setPageSize] = useState(20);
     const [isLoading, setIsLoading] = useState(true);
 
-    const today = getToday();
 
     function getToday() {
         const d = new Date();
@@ -103,21 +101,6 @@ export default function PriceHistoryPage() {
     };
 
     // Xuất Excel
-    const handleExportExcel = () => {
-        const data = filtered.map(h => ({
-            'Thời gian': new Date(h.changed_at).toLocaleString('vi-VN'),
-            'Sản phẩm': getProductName(h.product_id),
-            'Giá nhập cũ': h.old_input_price,
-            'Giá nhập mới': h.new_input_price,
-            'Giá bán cũ': h.old_output_price,
-            'Giá bán mới': h.new_output_price,
-            'Ghi chú': h.note || ''
-        }));
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'LichSuGia');
-        XLSX.writeFile(wb, 'lich_su_gia.xlsx');
-    };
 
     return (
         <div className="max-w-8xl mx-auto p-6">

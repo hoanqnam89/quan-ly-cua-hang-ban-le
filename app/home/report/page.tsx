@@ -1,3 +1,5 @@
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -621,7 +623,7 @@ export default function ReportPage() {
                                                         key={idx}
                                                         className={`hover:bg-blue-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                                                     >
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-blue-800 font-bold">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-blue-800">
                                                             {idx + 1}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-gray-900">
@@ -674,7 +676,7 @@ export default function ReportPage() {
                                                         key={idx}
                                                         className={`hover:bg-blue-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                                                     >
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-blue-800 font-bold">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-blue-800">
                                                             {idx + 1}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-gray-900">
@@ -719,7 +721,7 @@ export default function ReportPage() {
                                                         key={idx}
                                                         className={`hover:bg-blue-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                                                     >
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-blue-800 font-bold">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-blue-800">
                                                             {idx + 1}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-gray-900">

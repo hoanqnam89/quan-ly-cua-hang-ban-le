@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/utils/database';
 import ReturnExchangeModel from '@/models/ReturnExchange';
 import { ProductDetailModel } from '@/models/ProductDetail';
 import { OrderModel } from '@/models/Order';
-import { ProductModel } from '@/models/Product';
 import { StockHistoryModel } from '@/models/StockHistory';
 
 export async function POST(req: NextRequest) {
@@ -24,7 +24,6 @@ export async function POST(req: NextRequest) {
             action,
             status,
             additional_payment,
-            inventory_updates,
             order_update,
             note,
             user_name

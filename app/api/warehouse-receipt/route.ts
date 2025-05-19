@@ -1,15 +1,14 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
-import { IBusiness } from "@/interfaces/business.interface";
-import { IOrderForm, IOrderFormProductDetail } from "@/interfaces/order-form.interface";
-import { IProductDetail } from "@/interfaces/product-detail.interface";
+import { IOrderFormProductDetail } from "@/interfaces/order-form.interface";
 import { IWarehouseReceipt } from "@/interfaces/warehouse-receipt.interface";
 import { BusinessModel } from "@/models/Business";
 import { OrderFormModel } from "@/models/OrderForm";
 import { ProductDetailModel } from "@/models/ProductDetail";
 import { UnitModel } from "@/models/Unit";
 import { WarehouseReceiptModel } from "@/models/WarehouseReceipt";
-import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
+import { deleteCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { isIdsExist } from "@/utils/is-ids-exist";
@@ -20,7 +19,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { ProductModel } from "@/models/Product";
 import { IProduct } from "@/interfaces/product.interface";
 import { CategoryModel } from "@/models/Category";
-import { ICategory } from "@/interfaces/category.interface";
 import { generateBatchNumber } from "@/utils/batch-number";
 import { StockHistoryModel } from '@/models/StockHistory';
 import { PriceHistoryModel } from '@/models/PriceHistory';

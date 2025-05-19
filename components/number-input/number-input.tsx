@@ -1,4 +1,4 @@
-import React, { memo, ReactElement, ChangeEvent } from 'react';
+import React, { memo, ReactElement } from 'react';
 import { IInputProps } from '../interfaces/input-props.interface';
 import Input from '../input/input';
 

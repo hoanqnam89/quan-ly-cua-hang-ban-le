@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { StockHistoryModel } from '@/models/StockHistory';
 import { connectToDatabase } from '@/utils/database';

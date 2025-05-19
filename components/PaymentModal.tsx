@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components';
-import Image from 'next/image';
 import { formatCurrency } from '@/utils/format';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 
