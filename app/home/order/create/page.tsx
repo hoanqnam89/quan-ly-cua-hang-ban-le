@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { Button } from '@/components';
@@ -30,8 +32,8 @@ export default function CreateOrder() {
     const router = useRouter();
     const { createNotification, notificationElements } = useNotificationsHook();
     const [products, setProducts] = useState<IProduct[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [, setLoading] = useState(true);
+    const [, setError] = useState<string | null>(null);
     const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
     const [employee, setEmployee] = useState<string>('');
     const [employeeName, setEmployeeName] = useState<string>('');
@@ -373,6 +375,7 @@ export default function CreateOrder() {
                     if (errorData && errorData.error) {
                         errorMsg = errorData.error;
                     }
+                 
                 } catch (e) { }
                 createNotification({
                     children: errorMsg,

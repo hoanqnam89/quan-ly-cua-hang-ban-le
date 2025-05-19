@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import React, { Dispatch, ReactElement, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
@@ -6,7 +7,7 @@ import Table from '@/components/table/table';
 import { ECollectionNames, EStatusCode } from '@/enums';
 import { deleteCollections, deleteCollectionById, addCollection, getCollectionById, updateCollectionById } from '@/services/api-service';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
-import { LoadingScreen, Text } from '@/components';
+import { LoadingScreen } from '@/components';
 import CollectionForm from './collection-form/collection-form';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '../notify/notification/notification';
@@ -119,11 +120,9 @@ export default function ManagerPage<T extends { _id: string }>({
   isClickDelete,
   setIsClickDelete,
   isLoaded = false,
-  handleOpenModal = (isOpen: boolean): boolean => !isOpen,
   onExitModalForm = () => { },
   currentPage: externalCurrentPage,
   setCurrentPage: externalSetCurrentPage,
-  totalItems,
   displayedItems,
   setAllItems,
   additionalProcessing,
@@ -131,8 +130,6 @@ export default function ManagerPage<T extends { _id: string }>({
   customHandleAddCollection,
   itemModalOpening,
   setItemModalOpening,
-  dateFilter,
-  statusFilter,
 }: Readonly<IManagerPageProps<T>>): ReactElement {
   const translatedCollectionName: string =
     translateCollectionName(collectionName);

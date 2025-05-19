@@ -1,5 +1,5 @@
-import React, { ChangeEvent, CSSProperties, HTMLInputTypeAttribute, memo, ReactElement } from 'react';
-import { IInputProps } from '../interfaces/input-props.interface';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import React, { ChangeEvent, CSSProperties, memo, ReactElement } from 'react';
 
 function Textarea({
   name = ``, 

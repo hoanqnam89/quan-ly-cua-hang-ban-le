@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
     try {
         await connectToDatabase();
         const { searchParams } = new URL(req.url);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const query: any = {};
         // Lọc theo product_id
         const product_id = searchParams.get('product_id');

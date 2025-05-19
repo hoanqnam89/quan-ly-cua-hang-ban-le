@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { IProduct, IProductDetail } from '@/interfaces';
-import { Text } from '@/components';
-import { useRouter } from 'next/navigation';
-import CustomNotification, { ENotificationType } from '@/components/notify/notification/notification';
+import { ENotificationType } from '@/components/notify/notification/notification';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import dynamic from 'next/dynamic';
 
@@ -22,43 +20,16 @@ export default function ExpirationPage() {
   const [loading, setLoading] = useState(false);
   const [expired, setExpired] = useState<ExpirationInfo[]>([]);
   const [expiring, setExpiring] = useState<ExpirationInfo[]>([]);
-  const router = useRouter();
-  const [isCancelling, setIsCancelling] = useState(false);
-  const [cancelSuccess, setCancelSuccess] = useState(false);
-  const [isCancellingExpiring, setIsCancellingExpiring] = useState(false);
-  const [cancelExpiringSuccess, setCancelExpiringSuccess] = useState(false);
+  const [] = useState(false);
+  const [cancelSuccess] = useState(false);
+  const [] = useState(false);
+  const [cancelExpiringSuccess] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null);
   const [employee, setEmployee] = useState<string>('');
   const [employeeName, setEmployeeName] = useState<string>('');
   const { createNotification, notificationElements } = useNotificationsHook();
 
-  const createZeroOrder = async () => {
-    try {
-      const res = await fetch('/api/order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employee_id: employee,
-          items: [],
-          total_amount: 0,
-          customer_payment: 0,
-          payment_method: 'cash',
-          payment_status: true,
-          note: 'Đơn hàng 0 đồng',
-          status: 'completed'
-        })
-      });
-      if (res.ok) {
-        alert('Tạo đơn hàng 0 đồng thành công!');
-        router.refresh();
-      } else {
-        alert('Có lỗi khi tạo đơn hàng!');
-      }
-    } catch (e) {
-      alert('Có lỗi khi tạo đơn hàng!');
-    }
-  };
 
   useEffect(() => {
     setLoading(true);
@@ -111,6 +82,7 @@ export default function ExpirationPage() {
         } catch (err) {
           console.error('Error fetching user details:', err);
         }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (err) {
         setEmployee('');
       }
@@ -119,6 +91,7 @@ export default function ExpirationPage() {
   }, []);
 
   // Hàm cập nhật chi tiết sản phẩm sau khi hủy
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const updateProductDetail = async (detailId: string, currentQuantity: number) => {
     try {
       // Lấy thông tin chi tiết hiện tại trước
@@ -250,6 +223,7 @@ export default function ExpirationPage() {
         });
         alert('Có lỗi khi hủy sản phẩm!');
       }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       createNotification({
         children: 'Có lỗi khi hủy sản phẩm!',
@@ -263,189 +237,7 @@ export default function ExpirationPage() {
     }
   };
 
-  const handleCancelExpired = async () => {
-    if (expired.length === 0) return;
-    setIsCancelling(true);
-    try {
-      // Hủy từng sản phẩm riêng lẻ thay vì tạo một đơn hàng chung
-      let successCount = 0;
-      for (const item of expired) {
-        const { product, detail } = item;
-        const cancelItems = [{
-          product_id: product._id,
-          quantity: detail.inventory,
-          price: 0
-        }];
 
-        // Tạo đơn hàng hủy cho sản phẩm này
-        const res = await fetch('/api/order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            employee_id: employee,
-            items: cancelItems,
-            total_amount: 0,
-            customer_payment: 0,
-            payment_method: 'cash',
-            payment_status: true,
-            note: `Hủy sản phẩm hết hạn: ${product.name}`,
-            status: 'cancelled'
-          })
-        });
-
-        if (res.ok) {
-          // Cập nhật chi tiết sản phẩm
-          await updateProductDetail(detail._id, detail.inventory);
-
-          // Tạo lịch sử xuất kho (stock history)
-          try {
-            await fetch('/api/stock-history', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                product_id: product._id,
-                batch_number: detail.batch_number,
-                action: 'export',
-                quantity: detail.inventory,
-                note: `Hủy hàng hết hạn: ${product.name}`,
-                user_id: employee,
-                user_name: employeeName
-              })
-            });
-          } catch (err) {
-            console.error('Lỗi khi tạo lịch sử xuất kho:', err);
-          }
-
-          successCount++;
-        }
-      }
-
-      // Hiển thị thông báo thành công tổng hợp
-      if (successCount > 0) {
-        createNotification({
-          children: `Đã hủy thành công ${successCount}/${expired.length} sản phẩm hết hạn!`,
-          type: ENotificationType.SUCCESS,
-          isAutoClose: true,
-          id: Math.random(),
-        });
-
-        setCancelSuccess(true);
-        setTimeout(() => {
-          setCancelSuccess(false);
-          router.refresh();
-        }, 1500);
-      } else {
-        createNotification({
-          children: 'Không có sản phẩm nào được hủy thành công',
-          type: ENotificationType.ERROR,
-          isAutoClose: true,
-          id: Math.random(),
-        });
-      }
-    } catch (e) {
-      createNotification({
-        children: 'Có lỗi khi hủy hàng hết hạn!',
-        type: ENotificationType.ERROR,
-        isAutoClose: true,
-        id: Math.random(),
-      });
-      alert('Có lỗi khi hủy hàng hết hạn!');
-    } finally {
-      setIsCancelling(false);
-    }
-  };
-
-  const handleCancelExpiring = async () => {
-    if (expiring.length === 0) return;
-    setIsCancellingExpiring(true);
-    try {
-      // Hủy từng sản phẩm riêng lẻ thay vì tạo một đơn hàng chung
-      let successCount = 0;
-      for (const item of expiring) {
-        const { product, detail } = item;
-        const cancelItems = [{
-          product_id: product._id,
-          quantity: detail.inventory,
-          price: 0
-        }];
-
-        // Tạo đơn hàng hủy cho sản phẩm này
-        const res = await fetch('/api/order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            employee_id: employee,
-            items: cancelItems,
-            total_amount: 0,
-            customer_payment: 0,
-            payment_method: 'cash',
-            payment_status: true,
-            note: `Hủy sản phẩm sắp hết hạn: ${product.name}`,
-            status: 'cancelled'
-          })
-        });
-
-        if (res.ok) {
-          // Cập nhật chi tiết sản phẩm
-          await updateProductDetail(detail._id, detail.inventory);
-
-          // Tạo lịch sử xuất kho (stock history)
-          try {
-            await fetch('/api/stock-history', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                product_id: product._id,
-                batch_number: detail.batch_number,
-                action: 'export',
-                quantity: detail.inventory,
-                note: `Hủy hàng sắp hết hạn: ${product.name}`,
-                user_id: employee,
-                user_name: employeeName
-              })
-            });
-          } catch (err) {
-            console.error('Lỗi khi tạo lịch sử xuất kho:', err);
-          }
-
-          successCount++;
-        }
-      }
-
-      // Hiển thị thông báo thành công tổng hợp
-      if (successCount > 0) {
-        createNotification({
-          children: `Đã hủy thành công ${successCount}/${expiring.length} sản phẩm sắp hết hạn!`,
-          type: ENotificationType.SUCCESS,
-          isAutoClose: true,
-          id: Math.random(),
-        });
-
-        setCancelExpiringSuccess(true);
-        setTimeout(() => {
-          setCancelExpiringSuccess(false);
-          router.refresh();
-        }, 1500);
-      } else {
-        createNotification({
-          children: 'Không có sản phẩm nào được hủy thành công',
-          type: ENotificationType.ERROR,
-          isAutoClose: true,
-          id: Math.random(),
-        });
-      }
-    } catch (e) {
-      createNotification({
-        children: 'Có lỗi khi hủy hàng sắp hết hạn!',
-        type: ENotificationType.ERROR,
-        isAutoClose: true,
-        id: Math.random(),
-      });
-      alert('Có lỗi khi hủy hàng sắp hết hạn!');
-    } finally {
-      setIsCancellingExpiring(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-white px-4 py-6">

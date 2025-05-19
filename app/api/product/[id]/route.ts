@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteCollectionByIdApi } from "@/utils/api-helper";
-import { IQueryString } from "../../interfaces/query-string.interface";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { print } from "@/utils/print";
 import { connectToDatabase } from "@/utils/database";

@@ -1,12 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { Button, LoadingScreen, Text } from '@/components';
+import { Button, LoadingScreen } from '@/components';
 import { EButtonType } from '@/components/button/interfaces/button-type.interface';
 import { COMPANY } from '@/constants/company.constant';
 import { DEFAULT_WAREHOUSE_RECEIPT } from '@/constants/warehouse-receipt.constant';
 import { ECollectionNames } from '@/enums';
 import { IBusiness } from '@/interfaces/business.interface';
-import { IOrderForm, IOrderFormProductDetail } from '@/interfaces/order-form.interface';
+import { IOrderFormProductDetail } from '@/interfaces/order-form.interface';
 import { IPageParams } from '@/interfaces/page-params.interface';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { IProduct } from '@/interfaces/product.interface';
@@ -17,12 +18,11 @@ import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { formatCurrency } from '@/utils/format-currency';
 import { toPdf } from '@/utils/to-pdf';
 import { translateCollectionName } from '@/utils/translate-collection-name';
-import React, { ReactElement, use, useEffect, useRef, useState } from 'react'
+import React, { ReactElement, useEffect, useRef, useState } from 'react'
 
 type collectionType = IWarehouseReceipt;
 const collectionName: ECollectionNames = ECollectionNames.WAREHOUSE_RECEIPT;
-const companyAddress: string = `${COMPANY.address.number} ${COMPANY.address.street} ${COMPANY.address.ward} ${COMPANY.address.district} ${COMPANY.address.city} ${COMPANY.address.country}`;
-const date: string = new Date().toLocaleString();
+const companyAddress: string = COMPANY.address;
 
 // Định nghĩa interface cho IWarehouseProductDetail để giải quyết lỗi
 interface IWarehouseProductDetail extends IOrderFormProductDetail {
@@ -35,7 +35,7 @@ interface IWarehouseProductDetail extends IOrderFormProductDetail {
 export default function PreviewOrderForm({
   params
 }: IPageParams): ReactElement {
-  const { id } = use(params);
+  const { id } = params;
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [warehouseReceipt, setWarehouseReceipt] = useState<collectionType>(
     DEFAULT_WAREHOUSE_RECEIPT
@@ -51,13 +51,6 @@ export default function PreviewOrderForm({
   const [isSupplierLoading, setIsSupplierLoading] = useState<boolean>(true);
 
   useEffect((): void => {
-    const getWarehouseReceiptById = async () => {
-      const getWarehouseReceiptApiResponse: Response =
-        await getCollectionById(id, collectionName);
-      const getWarehouseReceiptApiJson = await getWarehouseReceiptApiResponse.json();
-      setWarehouseReceipt(getWarehouseReceiptApiJson);
-      setIsOrderFormLoading(false);
-    }
     const getProducts = async () => {
       const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
         ECollectionNames.PRODUCT,
@@ -124,11 +117,6 @@ export default function PreviewOrderForm({
     );
   }
 
-  const getProductDetail = (id: string): IProductDetail | undefined => {
-    return productDetails.find((productDetail: IProductDetail): boolean =>
-      productDetail._id === id
-    );
-  }
 
   const getUnit = (id: string): IUnit | undefined => {
     return units.find((unit: IUnit): boolean => unit._id === id);
@@ -226,7 +214,20 @@ export default function PreviewOrderForm({
                     <p className="font-medium text-gray-800 text-lg">{supplier.name}</p>
                     {supplier.address && (
                       <p className="text-gray-700 mt-2">
-                        <span className="font-medium">Địa chỉ:</span> {supplier.address.number} {supplier.address.street}, {supplier.address.ward}, {supplier.address.district}, {supplier.address.city}
+                        <span className="font-medium">Địa chỉ:</span> {typeof supplier.address === 'string'
+                          ? supplier.address
+                          : (
+                              supplier.address &&
+                              typeof supplier.address === 'object' &&
+                              (supplier.address as any).number &&
+                              (supplier.address as any).street &&
+                              (supplier.address as any).ward &&
+                              (supplier.address as any).district &&
+                              (supplier.address as any).city
+                                ? `${(supplier.address as any).number} ${(supplier.address as any).street}, ${(supplier.address as any).ward}, ${(supplier.address as any).district}, ${(supplier.address as any).city}`
+                                : ''
+                            )
+                        }
                       </p>
                     )}
                     {supplier.email && <p className="text-gray-700 mt-1"><span className="font-medium">Email:</span> {supplier.email}</p>}
@@ -372,7 +373,12 @@ export default function PreviewOrderForm({
             </div>
 
             <div className="text-right text-gray-700 pt-4">
-              <p className="font-bold">{COMPANY.address.city}, {formatDate(new Date())}</p>
+              <p className="font-bold">
+                {typeof COMPANY.address === 'object' && 'city' in COMPANY.address
+                  ? (COMPANY.address as any).city
+                  : COMPANY.address
+                }, {formatDate(new Date())}
+              </p>
             </div>
           </div>
         </div>

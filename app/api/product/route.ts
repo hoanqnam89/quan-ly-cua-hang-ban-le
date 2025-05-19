@@ -48,10 +48,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
     // Đảm bảo có code hợp lệ và độc nhất
     if (!product.code || product.code.trim() === '') {
       // Tạo mã sản phẩm với format: SP-[ngày hiện tại dạng ddMMyyyy]-[timestamp]
-      const today = new Date();
-      const day = String(today.getDate()).padStart(2, '0');
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const year = today.getFullYear();
       const timestamp = Date.now();
       product.code = `SP-${timestamp}`;
     } else {

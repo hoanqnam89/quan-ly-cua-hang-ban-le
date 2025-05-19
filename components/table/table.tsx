@@ -3,7 +3,7 @@
 import React, { ChangeEvent, Fragment, MouseEvent, ReactElement, useCallback, useEffect, useState } from 'react';
 import { Button, Text, IconContainer, LoadingIcon, TextInput } from '@/components';
 import { IColumnProps } from './interfaces/column-props.interface';
-import { arrowDownWideNarrowIcon, arrowUpNarrowWideIcon, columns4Icon, listCollapseIcon, listRestartIcon, plusIcon, trashIcon } from '@/public';
+import { arrowDownWideNarrowIcon, arrowUpNarrowWideIcon, columns4Icon, plusIcon } from '@/public';
 
 import Checkboxes, { ICheckbox } from '../checkboxes/checkboxes';
 
@@ -36,24 +36,22 @@ export default function Table<T extends { _id: string, index?: number }>({
   name = ``,
   isGetDatasDone = true,
   onClickAdd = () => { },
-  onClickDelete = () => { },
   columns = [],
   datas = [],
   columnMinWidth = 20,
-  canDeleteCollection = false,
   canCreateCollection = true,
   currentPage = 1,
   setCurrentPage,
   itemsPerPage = 10,
   totalItems = datas.length
 }: Readonly<ITableProps<T>>): ReactElement {
-  const [isShowToggleColumns, setIsShowToggleColumns] = useState<boolean>(false);
+  const [isShowToggleColumns] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>(``);
   const [isVisibles, setIsVisibles] = useState<boolean[]>(
     new Array(datas.length).fill(true)
   );
   const [activeIndex, setActiveIndex] = useState<number>(-1);
-  const [gridColumns, setGridColumns] = useState<string[]>([]);
+  const [, setGridColumns] = useState<string[]>([]);
   const [visibleColumns, setVisibleColumns] = useState<ICheckbox[]>([
     ...columns.map((column: IColumnProps<T>): ICheckbox => ({
       label: column.title,
@@ -77,11 +75,6 @@ export default function Table<T extends { _id: string, index?: number }>({
     )]);
   }, [datas, columns, visibleColumns]);
 
-  const handleResetColumns = (): void => {
-    setGridColumns([...columns.map((column: IColumnProps<T>): string =>
-      column.size
-    )]);
-  }
 
   const handleShowAllTableColumns = (): void => {
     setVisibleColumns([
@@ -279,9 +272,6 @@ export default function Table<T extends { _id: string, index?: number }>({
     </div>
   );
 
-  const handleShowToggleColumns = (): void => {
-    setIsShowToggleColumns(!isShowToggleColumns);
-  }
 
   const headerButtons: IHeaderButtons[] = [
     // {

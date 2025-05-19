@@ -1,10 +1,10 @@
+/* eslint-disable prefer-const */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use server';
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/utils/database';
 import { OrderModel } from '@/models/Order';
 import { ProductModel } from '@/models/Product';
-import { CategoryModel } from '@/models/Category';
-import { ProductDetailModel } from '@/models/ProductDetail';
 
 // /api/report/revenue?type=day|month|year|product|category|hour|top_products&date=yyyy-mm-dd&month=yyyy-mm&year=yyyy
 export async function GET(req: NextRequest) {

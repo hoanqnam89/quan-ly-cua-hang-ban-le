@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ROOT } from "@/constants/root.constant";
 import { ECollectionNames, EStatusCode, ETerminal } from "@/enums";
 import { IBusiness } from "@/interfaces/business.interface";
@@ -8,7 +9,7 @@ import { BusinessModel } from "@/models/Business";
 import { OrderFormModel } from "@/models/OrderForm";
 import { ProductModel } from "@/models/Product";
 import { UnitModel } from "@/models/Unit";
-import { deleteCollectionsApi, getCollectionsApi } from "@/utils/api-helper";
+import { deleteCollectionsApi } from "@/utils/api-helper";
 import { createErrorMessage } from "@/utils/create-error-message";
 import { connectToDatabase } from "@/utils/database";
 import { isIdsExist } from "@/utils/is-ids-exist";
@@ -102,7 +103,6 @@ export const POST = async (req: NextRequest): Promise<NextResponse> => {
 
       if (productsWithZeroPrice.length > 0) {
         // Lấy ID sản phẩm đầu tiên có giá = 0 để thông báo
-        const productId = productsWithZeroPrice[0]._id;
 
         return NextResponse.json(
           createErrorMessage(

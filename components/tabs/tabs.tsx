@@ -2,8 +2,7 @@
 
 import React, { Children, isValidElement, ReactElement, useEffect, useState } from 'react'
 import TabItem, { ITabProps } from './components/tab-item/tab-item';
-import { Button, Text } from '..';
-import styles from './style.module.css';
+import { Button } from '..';
 
 interface ITabsProps {
   activeTabIndex?: number

@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useCallback, useEffect, useState, ChangeEvent } from "react";
@@ -5,7 +7,7 @@ import { Button, NumberInput, SelectDropdown, Text } from "@/components";
 import InputSection from "../../components/input-section/input-section";
 import { EButtonType } from "@/components/button/interfaces/button-type.interface";
 import { useQuery, QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { IWarehouseReceipt, IWarehouseProductDetail } from "@/interfaces/warehouse-receipt.interface";
+import { IWarehouseReceipt } from "@/interfaces/warehouse-receipt.interface";
 import { IOrderForm, IOrderFormProductDetail, OrderFormStatus } from "@/interfaces/order-form.interface";
 import { ISelectOption } from "@/components/select-dropdown/interfaces/select-option.interface";
 import { IProduct } from "@/interfaces/product.interface";
@@ -631,7 +633,7 @@ function CreateWarehouseReceiptPage() {
                                     </div>
                                     <div className="col-span-2 mt-2 grid grid-cols-2 gap-4">
                                         <div className="flex flex-col">
-                                            <label className="text-sm font-medium text-gray-700 mb-1 text-lg" style={{ paddingLeft: 35, paddingRight: 5 }}>Số lô</label>
+                                            <label className="text-sm font-medium text-gray-700 mb-1" style={{ paddingLeft: 35, paddingRight: 5 }}>Số lô</label>
                                             <div style={{ paddingLeft: 35, paddingRight: 5 }}>
                                                 <BarcodeComponent
                                                     productId={warehouseProductDetail?._id || ''}
