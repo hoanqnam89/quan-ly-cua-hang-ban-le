@@ -5,10 +5,23 @@ import NavbarItem from '@/app/home/components/navbar-item/navbar-item';
 import chevronRightIcon from '@/public/chevron-right.svg?url';
 import chevronLeftIcon from '@/public/chevron-left.svg?url';
 import homeIcon from '@/public/home.svg?url';
-import boxesIcon from '@/public/boxes.svg?url';
 import scrollIcon from '@/public/scroll.svg?url';
+import plusIcon from '@/public/plus.svg?url';
+import listRestartIcon from '@/public/list-restart.svg?url';
+import warehouseIcon from '@/public/warehouse.svg?url';
+import truckIcon from '@/public/truck.svg?url';
+import circleUserRoundIcon from '@/public/circle-user-round.svg?url';
+import userIcon from '@/public/user.svg?url';
+import factoryIcon from '@/public/factory.svg?url';
+import circleSmallIcon from '@/public/circle-small.svg?url';
+import toyBrickIcon from '@/public/toy-brick.svg?url';
+import boxIcon from '@/public/box.svg?url';
+import boxesIcon from '@/public/boxes.svg?url';
+import chartBarIcon from '@/public/chart-bar.svg?url';
+import dollarSignIcon from '@/public/dollar-sign.svg?url';
 import settingIcon from '@/public/setting.svg?url';
-import { boxIcon, circleSmallIcon, circleUserRoundIcon, factoryIcon, toyBrickIcon, userIcon, chartBarIcon } from '@/public';
+import newspaperIcon from '@/public/newspaper.svg?url';
+import logOutIcon from '@/public/log-out.svg?url';
 import { IRootLayout } from '@/interfaces/root-layout.interface';
 import styles from './style.module.css';
 
@@ -102,12 +115,12 @@ export default function RootLayout({
         {
           link: `${currentPath}/order/create`,
           label: `Thêm đơn hàng`,
-          icon: boxesIcon,
+          icon: plusIcon,
         },
         {
           link: `${currentPath}/return-exchange`,
           label: `Đổi đơn hàng`,
-          icon: scrollIcon,
+          icon: listRestartIcon,
         },
       ]
     },
@@ -131,25 +144,25 @@ export default function RootLayout({
           {
             link: `${currentPath}/order-form/create`,
             label: `Thêm phiếu đặt hàng`,
-            icon: boxesIcon,
+            icon: plusIcon,
           },
         ]
       },
       {
         label: `Quản lý nhập kho`,
-        icon: scrollIcon,
+        icon: warehouseIcon,
         isExpanded: expandedGroups['warehouseReceipt'],
         onClick: () => toggleGroup('warehouseReceipt'),
         children: [
           {
             link: `${currentPath}/warehouse-receipt`,
             label: `Danh sách phiếu nhập kho`,
-            icon: scrollIcon,
+            icon: warehouseIcon,
           },
           {
             link: `${currentPath}/warehouse-receipt/create`,
             label: `Thêm phiếu nhập kho`,
-            icon: boxesIcon,
+            icon: truckIcon,
           },
         ]
       },
@@ -199,11 +212,10 @@ export default function RootLayout({
     ...navbarItems,
     {
       label: `Báo cáo thống kê`,
-      icon: settingIcon,
+      icon: chartBarIcon,
       isExpanded: expandedGroups['report'],
       onClick: () => toggleGroup('report'),
       children: [
-
         {
           link: `${currentPath}/product-detail`,
           label: `Báo cáo tồn kho`,
@@ -212,12 +224,12 @@ export default function RootLayout({
         {
           link: `${currentPath}/report-date`,
           label: `Báo cáo hạn sử dụng`,
-          icon: chartBarIcon,
+          icon: newspaperIcon,
         },
         {
           link: `${currentPath}/stock-history`,
           label: `Lịch sử nhập/xuất kho`,
-          icon: scrollIcon,
+          icon: truckIcon,
         },
         {
           link: `${currentPath}/price-history`,
@@ -227,7 +239,7 @@ export default function RootLayout({
         {
           link: `${currentPath}/report`,
           label: `Thống kê doanh thu`,
-          icon: chartBarIcon,
+          icon: dollarSignIcon,
         },
       ]
     },
@@ -242,7 +254,16 @@ export default function RootLayout({
           label: `Thông tin cá nhân`,
           icon: circleUserRoundIcon,
         },
+
       ]
+    },
+    {
+      label: `Đăng xuất`,
+      icon: logOutIcon,
+      onClick: () => {
+        // Nếu có API logout thì gọi ở đây, tạm thời chuyển hướng về trang chủ
+        window.location.href = '/';
+      },
     },
   ];
 
