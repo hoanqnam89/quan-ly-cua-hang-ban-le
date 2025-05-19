@@ -373,7 +373,7 @@ export default function ReportPage() {
                     <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
                     <h1 className="text-4xl font-extrabold text-white text-center relative z-10 mb-2">
                         <FaChartLine className="inline-block mr-3 mb-1" />
-                        Báo Cáo Doanh Thu
+                        Thống Kê Doanh Thu
                     </h1>
                     <p className="text-center text-blue-100 text-lg">{totalSummary.periodLabel}</p>
                 </div>
