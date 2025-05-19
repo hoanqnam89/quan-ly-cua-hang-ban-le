@@ -626,7 +626,7 @@ export default function ReportPage() {
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-blue-800">
                                                             {idx + 1}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-gray-900">
                                                             {item?.name ?? 'Không rõ'}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-gray-900">
@@ -679,7 +679,7 @@ export default function ReportPage() {
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-blue-800">
                                                             {idx + 1}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-gray-900">
                                                             {item?.name ?? item?._id ?? 'Không rõ'}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-gray-900">
@@ -724,7 +724,7 @@ export default function ReportPage() {
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-blue-800">
                                                             {idx + 1}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-gray-900">
                                                             {item?._id ?? 'Không rõ'}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-center text-gray-900">
@@ -746,7 +746,7 @@ export default function ReportPage() {
 
                 {/* Footer */}
                 <div className="bg-gray-50 py-4 px-8 border-t border-gray-200 text-center text-gray-500 text-sm">
-                    © {new Date().getFullYear()} - Hệ thống Báo cáo Doanh thu
+                    © {new Date().getFullYear()} - Thống kê Doanh thu
                 </div>
             </div>
         </div>
