@@ -87,13 +87,72 @@ export default function RootLayout({
       link: `${currentPath}/`,
       label: `Trang chủ`,
       icon: homeIcon,
-    }
+    },
+    {
+      label: `Quản lý bán hàng`,
+      icon: scrollIcon,
+      isExpanded: expandedGroups['sales'],
+      onClick: () => toggleGroup('sales'),
+      children: [
+        {
+          link: `${currentPath}/order`,
+          label: `Danh sách đơn hàng`,
+          icon: scrollIcon,
+        },
+        {
+          link: `${currentPath}/order/create`,
+          label: `Thêm đơn hàng`,
+          icon: boxesIcon,
+        },
+        {
+          link: `${currentPath}/return-exchange`,
+          label: `Đổi đơn hàng`,
+          icon: scrollIcon,
+        },
+      ]
+    },
   ];
 
   // Menu cho người dùng admin
   if (isAdmin) {
     navbarItems = [
       ...navbarItems,
+      {
+        label: `Quản lý đặt hàng`,
+        icon: scrollIcon,
+        isExpanded: expandedGroups['orderForm'],
+        onClick: () => toggleGroup('orderForm'),
+        children: [
+          {
+            link: `${currentPath}/order-form`,
+            label: `Danh sách phiếu đặt hàng`,
+            icon: scrollIcon,
+          },
+          {
+            link: `${currentPath}/order-form/create`,
+            label: `Thêm phiếu đặt hàng`,
+            icon: boxesIcon,
+          },
+        ]
+      },
+      {
+        label: `Quản lý nhập kho`,
+        icon: scrollIcon,
+        isExpanded: expandedGroups['warehouseReceipt'],
+        onClick: () => toggleGroup('warehouseReceipt'),
+        children: [
+          {
+            link: `${currentPath}/warehouse-receipt`,
+            label: `Danh sách phiếu nhập kho`,
+            icon: scrollIcon,
+          },
+          {
+            link: `${currentPath}/warehouse-receipt/create`,
+            label: `Thêm phiếu nhập kho`,
+            icon: boxesIcon,
+          },
+        ]
+      },
       {
         label: `Quản lý danh mục`,
         icon: boxesIcon,
@@ -132,47 +191,6 @@ export default function RootLayout({
           },
         ]
       },
-      {
-        label: `Quản lý đặt hàng`,
-        icon: scrollIcon,
-        isExpanded: expandedGroups['orderForm'],
-        onClick: () => toggleGroup('orderForm'),
-        children: [
-          {
-            link: `${currentPath}/order-form`,
-            label: `Danh sách phiếu đặt hàng`,
-            icon: scrollIcon,
-          },
-          {
-            link: `${currentPath}/order-form/create`,
-            label: `Thêm phiếu đặt hàng`,
-            icon: boxesIcon,
-          },
-        ]
-      },
-      {
-        label: `Quản lý nhập kho`,
-        icon: scrollIcon,
-        isExpanded: expandedGroups['warehouseReceipt'],
-        onClick: () => toggleGroup('warehouseReceipt'),
-        children: [
-          {
-            link: `${currentPath}/warehouse-receipt`,
-            label: `Danh sách phiếu nhập kho`,
-            icon: scrollIcon,
-          },
-          {
-            link: `${currentPath}/warehouse-receipt/create`,
-            label: `Thêm phiếu nhập kho`,
-            icon: boxesIcon,
-          },
-        ]
-      },
-      {
-        link: `${currentPath}/return-exchange`,
-        label: `Quản lý đổi trả`,
-        icon: scrollIcon,
-      },
     ];
   }
 
@@ -180,29 +198,12 @@ export default function RootLayout({
   navbarItems = [
     ...navbarItems,
     {
-      label: `Quản lý bán hàng`,
-      icon: scrollIcon,
-      isExpanded: expandedGroups['sales'],
-      onClick: () => toggleGroup('sales'),
-      children: [
-        {
-          link: `${currentPath}/order`,
-          label: `Danh sách đơn hàng`,
-          icon: scrollIcon,
-        },
-        {
-          link: `${currentPath}/order/create`,
-          label: `Thêm đơn hàng`,
-          icon: boxesIcon,
-        },
-      ]
-    },
-    {
       label: `Báo cáo thống kê`,
       icon: settingIcon,
       isExpanded: expandedGroups['report'],
       onClick: () => toggleGroup('report'),
       children: [
+
         {
           link: `${currentPath}/product-detail`,
           label: `Báo cáo tồn kho`,
@@ -210,7 +211,7 @@ export default function RootLayout({
         },
         {
           link: `${currentPath}/report-date`,
-          label: `Thống kê hạn sử dụng`,
+          label: `Báo cáo hạn sử dụng`,
           icon: chartBarIcon,
         },
         {
@@ -221,6 +222,11 @@ export default function RootLayout({
         {
           link: `${currentPath}/price-history`,
           label: `Lịch sử cập nhật giá`,
+          icon: chartBarIcon,
+        },
+        {
+          link: `${currentPath}/report`,
+          label: `Thống kê doanh thu`,
           icon: chartBarIcon,
         },
       ]

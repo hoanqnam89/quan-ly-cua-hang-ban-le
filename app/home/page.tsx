@@ -47,6 +47,12 @@ interface IStatCardData {
   iconBgColor: string;
 }
 
+// Hàm phân tích chuỗi ngày DD/MM/YYYY thành đối tượng Date (luôn set giờ về đầu ngày)
+function parseDate(dateString: string): Date {
+  const [day, month, year] = dateString.split('/').map(part => parseInt(part, 10));
+  return new Date(year, month - 1, day, 0, 0, 0, 0);
+}
+
 export default function Home(): ReactElement {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
@@ -72,6 +78,7 @@ export default function Home(): ReactElement {
   const isInitialized = useRef(false);
   const [productDetails, setProductDetails] = useState<IProductDetail[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
 
   // Hàm lấy số lượng từ collection
   const fetchCollectionCount = async (
@@ -95,15 +102,17 @@ export default function Home(): ReactElement {
       if (response.ok) {
         const orders = await response.json();
 
-        // Phân tích ngày bắt đầu và kết thúc nếu có
+        // Nếu không truyền khoảng thời gian, mặc định lấy tháng hiện tại
         let startDate: Date | null = null;
         let endDate: Date | null = null;
-
-        if (startDateStr && endDateStr) {
+        if (!startDateStr || !endDateStr) {
+          const now = new Date();
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        } else {
           startDate = parseDate(startDateStr);
           endDate = parseDate(endDateStr);
-          // Đặt giờ của endDate thành cuối ngày để bao gồm toàn bộ ngày kết thúc
-          endDate.setHours(23, 59, 59, 999);
+          endDate.setHours(23, 59, 59, 999); // Bao gồm cả ngày cuối cùng
         }
 
         // Tính doanh thu theo ngày
@@ -111,18 +120,16 @@ export default function Home(): ReactElement {
         let total = 0;
 
         orders.forEach((order: any) => {
-          if (order.created_at && order.total_amount) {
+          if (order.created_at && order.total_amount && order.total_amount > 0) {
+            // Luôn chuyển created_at về local time để so sánh
             const orderDate = new Date(order.created_at);
-
-            // Nếu có khoảng thời gian, kiểm tra xem đơn hàng có nằm trong khoảng không
+            // So sánh ngày >= startDate và <= endDate
             if (startDate && endDate) {
               if (orderDate < startDate || orderDate > endDate) {
-                return; // Bỏ qua đơn hàng nếu không nằm trong khoảng thời gian
+                return;
               }
             }
-
             const dateKey = `${orderDate.getDate()}/${orderDate.getMonth() + 1}`;
-
             if (!revenueByDate[dateKey]) {
               revenueByDate[dateKey] = 0;
             }
@@ -131,8 +138,8 @@ export default function Home(): ReactElement {
           }
         });
 
-        console.log('Tổng doanh thu trong khoảng thời gian:', total);
-        console.log('Doanh thu theo ngày:', revenueByDate);
+        // Sau khi tính xong, set lại dữ liệu cho biểu đồ doanh thu
+        setRevenueData(Object.keys(revenueByDate).map(date => ({ date, value: revenueByDate[date] })));
 
         return { total, byDate: revenueByDate };
       } else {
@@ -214,7 +221,7 @@ export default function Home(): ReactElement {
     }
   };
 
-  // Hàm tổng hợp để lấy tất cả dữ liệu
+  // Hàm tổng hợp để lấy tất cả dữ liệu (khôi phục Promise.all lấy tất cả dữ liệu cùng lúc)
   const fetchAllData = useCallback(async (startDate?: string, endDate?: string): Promise<void> => {
     setIsLoading(true);
     try {
@@ -246,7 +253,6 @@ export default function Home(): ReactElement {
       const totalInventoryCount = inventoryData.total > 0 ?
         inventoryData.total :
         productCount + productDetailCount;
-
       setTotalInventory(totalInventoryCount);
 
       if (startDate && endDate) {
@@ -264,112 +270,94 @@ export default function Home(): ReactElement {
 
       const startDateObj = parseDate(currentStartDate);
       const endDateObj = parseDate(currentEndDate);
-      const dateArray = generateDatesBetween(startDateObj, endDateObj, 7);
-
-      const newRevenueData: IRevenueData[] = [];
-
-      // Nếu có dữ liệu doanh thu theo ngày, sử dụng; nếu không, tạo dữ liệu ngẫu nhiên
-      if (Object.keys(revenueData.byDate).length > 0) {
-        // Tính toán doanh thu trung bình mỗi ngày
-        let totalDaysWithRevenue = 0;
-        let totalRevenue = 0;
-
-        dateArray.forEach((date) => {
-          const dateKey = `${date.getDate()}/${date.getMonth() + 1}`;
-          // Ngày nào không có doanh thu thì gán giá trị 0
-          const value = revenueData.byDate[dateKey] || 0;
-          newRevenueData.push({
-            date: dateKey,
-            value: value
-          });
-
-          if (value > 0) {
-            totalDaysWithRevenue++;
-          }
-          totalRevenue += value;
-        });
-
-        // Doanh thu trung bình hàng ngày (chỉ tính những ngày có doanh thu)
-        // const avgDailyRevenue = totalDaysWithRevenue > 0
-        //   ? Math.round(totalRevenue / totalDaysWithRevenue)
-        //   : 0;
-
-        // Đặt tổng doanh thu từ dữ liệu thực tế trong khoảng thời gian
-        setTotalRevenue(totalRevenue);
-      } else {
-        // Nếu không có dữ liệu doanh thu, set tất cả giá trị về 0
-        dateArray.forEach((date) => {
-          newRevenueData.push({
-            date: `${date.getDate()}/${date.getMonth() + 1}`,
-            value: 0
-          });
-        });
+      // Tạo đủ tất cả các ngày trong khoảng
+      const dateArray: Date[] = [];
+      let d = new Date(startDateObj);
+      while (d <= endDateObj) {
+        dateArray.push(new Date(d));
+        d.setDate(d.getDate() + 1);
       }
 
+      // Biểu đồ doanh thu theo ngày (giữ nguyên)
+      const newRevenueData: IRevenueData[] = [];
+      dateArray.forEach((date) => {
+        const dateKey = `${date.getDate()}/${date.getMonth() + 1}`;
+        const value = revenueData.byDate[dateKey] || 0;
+        newRevenueData.push({
+          date: dateKey,
+          value: value
+        });
+      });
       setRevenueData(newRevenueData);
 
-      // Dữ liệu cho biểu đồ tồn kho theo thời gian
-      const newInventoryData: IProductInventoryData[] = [];
-
-      // Nếu có dữ liệu tồn kho theo ngày, sử dụng; nếu không, tạo dữ liệu ngẫu nhiên
-      if (Object.keys(inventoryData.byDate).length > 0) {
-        dateArray.forEach((date) => {
-          const dateKey = `${date.getDate()}/${date.getMonth() + 1}`;
-          // Ngày nào không có tồn kho thì gán giá trị từ ngày trước đó hoặc 0
-          let value = inventoryData.byDate[dateKey] || 0;
-
-          // Nếu ngày hiện tại không có dữ liệu nhưng có tồn kho từ ngày trước
-          if (value === 0 && newInventoryData.length > 0) {
-            // Sử dụng giá trị tồn kho từ ngày trước đó (tồn kho thường không thay đổi nhiều giữa các ngày)
-            value = newInventoryData[newInventoryData.length - 1].value;
+      // Biểu đồ số lượng xuất theo ngày
+      const newOutputData: IProductInventoryData[] = [];
+      // Lấy productDetails từ API (nếu chưa có thì fetch)
+      let productDetailsData = [];
+      try {
+        productDetailsData = await fetch('/api/product-detail').then(res => res.json());
+      } catch { }
+      dateArray.forEach((date) => {
+        const dateKey = `${date.getDate()}/${date.getMonth() + 1}`;
+        // Tổng output_quantity của các productDetails có ngày xuất ứng với ngày đó
+        const totalOutput = productDetailsData.reduce((sum: number, detail: any) => {
+          if (!detail.output_date) return sum;
+          const outputDate = new Date(detail.output_date);
+          if (
+            outputDate.getDate() === date.getDate() &&
+            outputDate.getMonth() === date.getMonth() &&
+            outputDate.getFullYear() === date.getFullYear()
+          ) {
+            return sum + (Number(detail.output_quantity) || 0);
           }
-
-          newInventoryData.push({
-            date: dateKey,
-            value: value
-          });
+          return sum;
+        }, 0);
+        newOutputData.push({
+          date: dateKey,
+          value: totalOutput
         });
-      } else {
-        // Sử dụng dữ liệu ước tính nếu không có dữ liệu thực tế
-        const inventoryPerDay = Math.max(Math.ceil(totalInventoryCount / dateArray.length), 5);
+      });
+      setProductInventoryData(newOutputData);
 
-        dateArray.forEach((date, index) => {
-          const inventoryFactor = (Math.sin(index * 0.8) + 1) / 2 + 0.3;
-          newInventoryData.push({
-            date: `${date.getDate()}/${date.getMonth() + 1}`,
-            value: Math.max(Math.round(inventoryPerDay * inventoryFactor), 0)
-          });
-        });
-      }
-
-      setProductInventoryData(newInventoryData);
-
-      // Tính tổng số lượng tồn kho thực tế
-      const totalStockQuantity = productDetails.reduce((sum, detail) => {
-        const input = detail.input_quantity || 0;
-        const output = detail.output_quantity || 0;
-        return sum + (input - output);
-      }, 0);
-
-      // Tính số lượng sản phẩm hết hạn
-      const today = new Date();
-      const expiredProductCount = productDetails.filter(detail => {
+      // Đếm sản phẩm sắp hết hạn (HSD < 30 ngày tới và tồn kho > 0)
+      const soonExpiredProductCount = productDetails.filter(detail => {
         if (!detail.expiry_date) return false;
         const expiry = new Date(detail.expiry_date);
-        return expiry < today;
+        const now = new Date();
+        const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const input = Number(detail.input_quantity) || 0;
+        const output = Number(detail.output_quantity) || 0;
+        const stock = input - output;
+        return diffDays > 0 && diffDays <= 30 && stock > 0;
       }).length;
+
+      // Tổng số lượng xuất (output_quantity)
+      const totalOutputQuantity = productDetails.reduce((sum, detail) => sum + (Number(detail.output_quantity) || 0), 0);
+
+      // Sản phẩm trong kho (có tồn kho > 0)
+      const productInStockCount = productDetails.filter(detail => {
+        const input = Number(detail.input_quantity) || 0;
+        const output = Number(detail.output_quantity) || 0;
+        return (input - output) > 0;
+      }).length;
+
+      // Log dữ liệu thực tế để debug
+      console.log('productDetails:', productDetails);
+      console.log('soonExpiredProductCount:', soonExpiredProductCount);
+      console.log('totalOutputQuantity:', totalOutputQuantity);
+      console.log('productInStockCount:', productInStockCount);
 
       setStatsCards([
         {
-          title: 'Sản phẩm hết hạn',
-          value: expiredProductCount,
+          title: 'Sản phẩm sắp hết hạn',
+          value: soonExpiredProductCount,
           icon: 'product',
           iconColor: 'text-pink-600',
           iconBgColor: 'bg-pink-100'
         },
         {
-          title: 'Tổng tồn kho',
-          value: totalStockQuantity,
+          title: 'Số lượng xuất',
+          value: totalOutputQuantity,
           icon: 'employee',
           iconColor: 'text-indigo-600',
           iconBgColor: 'bg-indigo-100'
@@ -382,20 +370,13 @@ export default function Home(): ReactElement {
           iconBgColor: 'bg-blue-100'
         },
         {
-          title: 'Chi tiết kho',
-          value: productDetailCount,
+          title: 'Sản phẩm trong kho',
+          value: productInStockCount,
           icon: 'product-detail',
           iconColor: 'text-amber-600',
           iconBgColor: 'bg-amber-100'
         }
       ]);
-
-      const [productList, productDetailList] = await Promise.all([
-        fetch('/api/product').then(res => res.json()),
-        fetch('/api/product-detail').then(res => res.json())
-      ]);
-      setProducts(productList);
-      setProductDetails(productDetailList);
     } catch (error) {
       console.error('Lỗi khi lấy dữ liệu:', error);
 
@@ -467,31 +448,56 @@ export default function Home(): ReactElement {
       setRevenueData(newRevenueData);
       setProductInventoryData(newInventoryData);
 
+      // Đếm sản phẩm sắp hết hạn (HSD < 30 ngày tới và tồn kho > 0)
+      const soonExpiredProductCount = productDetails.filter(detail => {
+        if (!detail.expiry_date) return false;
+        const expiry = new Date(detail.expiry_date);
+        const now = new Date();
+        const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const input = Number(detail.input_quantity) || 0;
+        const output = Number(detail.output_quantity) || 0;
+        const stock = input - output;
+        return diffDays > 0 && diffDays <= 30 && stock > 0;
+      }).length;
+
+      // Tổng số lượng xuất (output_quantity)
+      const totalOutputQuantity = productDetails.reduce((sum, detail) => sum + (Number(detail.output_quantity) || 0), 0);
+
+      // Sản phẩm trong kho (có tồn kho > 0)
+      const productInStockCount = productDetails.filter(detail => {
+        const input = Number(detail.input_quantity) || 0;
+        const output = Number(detail.output_quantity) || 0;
+        return (input - output) > 0;
+      }).length;
+
+      // Đơn hàng (orders)
+      const orderCount = Array.isArray(orders) ? orders.length : 0;
+
       setStatsCards([
         {
-          title: 'Tổng sản phẩm',
-          value: 120,
+          title: 'Sản phẩm sắp hết hạn',
+          value: soonExpiredProductCount,
           icon: 'product',
           iconColor: 'text-pink-600',
           iconBgColor: 'bg-pink-100'
         },
         {
-          title: 'Tổng nhân viên',
-          value: 15,
+          title: 'Số lượng xuất',
+          value: totalOutputQuantity,
           icon: 'employee',
           iconColor: 'text-indigo-600',
           iconBgColor: 'bg-indigo-100'
         },
         {
           title: 'Đơn hàng',
-          value: 45,
+          value: orderCount,
           icon: 'order',
           iconColor: 'text-blue-600',
           iconBgColor: 'bg-blue-100'
         },
         {
-          title: 'Chi tiết sản phẩm',
-          value: 250,
+          title: 'Sản phẩm trong kho',
+          value: productInStockCount,
           icon: 'product-detail',
           iconColor: 'text-amber-600',
           iconBgColor: 'bg-amber-100'
@@ -501,12 +507,6 @@ export default function Home(): ReactElement {
       setIsLoading(false);
     }
   }, [dateRange]);
-
-  // Hàm phân tích chuỗi ngày DD/MM/YYYY thành đối tượng Date
-  const parseDate = (dateString: string): Date => {
-    const [day, month, year] = dateString.split('/').map(part => parseInt(part, 10));
-    return new Date(year, month - 1, day);
-  };
 
   // Hàm tạo các điểm ngày đều đặn giữa hai ngày, với số lượng điểm cố định
   const generateDatesBetween = (startDate: Date, endDate: Date, pointCount: number): Date[] => {
@@ -774,7 +774,7 @@ export default function Home(): ReactElement {
         const data = window.google.visualization.arrayToDataTable([
           ['Tình trạng', 'Số lượng'],
           ['Còn hàng', inStock],
-          ['Sắp hết hàng', lowStock],
+          ['Sắp hết hạng', lowStock],
           ['Hết hàng', outOfStock]
         ]);
         const options = {
@@ -792,7 +792,13 @@ export default function Home(): ReactElement {
       if (window.google && window.google.visualization && document.getElementById('inventory-status-chart')) {
         const startDateObj = parseDate(dateRange.startDate);
         const endDateObj = parseDate(dateRange.endDate);
-        const dateArray = generateDatesBetween(startDateObj, endDateObj, 7);
+        // Luôn tạo đủ ngày
+        const dateArray: Date[] = [];
+        let d = new Date(startDateObj);
+        while (d <= endDateObj) {
+          dateArray.push(new Date(d));
+          d.setDate(d.getDate() + 1);
+        }
         const stockStatusByDate = dateArray.map((date: Date) => {
           // Đếm số sản phẩm sắp hết hạn trong vòng 7 ngày kể từ ngày này
           const soonExpired = productDetails.filter((detail: IProductDetail) => {
@@ -839,7 +845,7 @@ export default function Home(): ReactElement {
         window.removeEventListener('google-charts-loaded', initGoogleCharts);
       }
     };
-  }, [isLoading, totalRevenue, totalProducts, totalProductDetails, totalOrders, totalInventory, productInventoryData, productDetails, products]);
+  }, [isLoading, totalRevenue, totalProducts, totalProductDetails, totalOrders, totalInventory, productInventoryData, productDetails, products, orders]);
 
   // Hàm format số tiền
   const formatCurrency = (amount: number): string => {

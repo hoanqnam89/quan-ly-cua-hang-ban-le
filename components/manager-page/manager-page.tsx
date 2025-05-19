@@ -115,6 +115,7 @@ export default function ManagerPage<T extends { _id: string }>({
   isModalReadonly,
   setIsModalReadonly,
   isClickShowMore,
+  setIsClickShowMore,
   isClickDelete,
   setIsClickDelete,
   isLoaded = false,
@@ -190,12 +191,18 @@ export default function ManagerPage<T extends { _id: string }>({
 
   const toggleAddCollectionModal = useCallback(
     (isReadOnly: boolean = false): void => {
-      setIsModalReadonly(!isReadOnly);
-      if (isReadOnly)
+      // Đặt trạng thái modal và collection trước khi mở modal
+      setIsModalReadonly(isReadOnly);
+
+      // Chỉ reset collection khi mở modal để thêm mới
+      if (!isReadOnly) {
         setCollection({ ...defaultCollection });
-      setIsAddCollectionModalOpen(handleOpenModal(isAddCollectionModalOpen));
+      }
+
+      // Mở modal
+      setIsAddCollectionModalOpenWrapper(true);
     },
-    [setIsModalReadonly, setIsAddCollectionModalOpen, handleOpenModal, setCollection, defaultCollection, isAddCollectionModalOpen],
+    [setIsModalReadonly, setCollection, defaultCollection, setIsAddCollectionModalOpenWrapper],
   );
 
   const handleAddCollection = async (): Promise<void> => {
@@ -354,25 +361,31 @@ export default function ManagerPage<T extends { _id: string }>({
     await getCollections();
   }
 
-  const handleShowMore: (collectionId: string) => Promise<void> = useCallback(
+  const handleShowMore = useCallback(
     async (collectionId: string): Promise<void> => {
       setIsLoading(true);
 
       const getCollectionByIdApiResponse: Response =
         await getCollectionById(collectionId, collectionName);
 
-      if (!getCollectionByIdApiResponse.ok)
+      if (!getCollectionByIdApiResponse.ok) {
+        setIsLoading(false);
         return;
+      }
 
       const getCollectionByIdApiJson: T =
         await getCollectionByIdApiResponse.json();
 
+      // Cập nhật collection trước
       setCollection({ ...getCollectionByIdApiJson });
-      toggleAddCollectionModal(false);
+
+      // Thiết lập readonly và mở modal riêng biệt
+      setIsModalReadonly(true);
+      setIsAddCollectionModalOpenWrapper(true);
 
       setIsLoading(false);
     },
-    [collectionName, toggleAddCollectionModal, setCollection],
+    [collectionName, setCollection, setIsModalReadonly, setIsAddCollectionModalOpenWrapper],
   );
 
   const handleDeleteCollectionById: (
@@ -462,11 +475,20 @@ export default function ManagerPage<T extends { _id: string }>({
   const mounted = useRef(false);
 
   useEffect(() => {
-    if (mounted.current && isClickShowMore.isClicked)
+    const shouldShowMore = mounted.current && isClickShowMore.isClicked && isClickShowMore.id;
+    if (shouldShowMore) {
       handleShowMore(isClickShowMore.id);
-    else
+      // Reset sau khi xử lý để tránh gọi lại
+      if (setIsClickShowMore) {
+        setIsClickShowMore({
+          id: isClickShowMore.id,
+          isClicked: false
+        });
+      }
+    } else {
       mounted.current = true;
-  }, [handleShowMore, isClickShowMore]);
+    }
+  }, [isClickShowMore, handleShowMore, setIsClickShowMore]);
 
   // Không lọc lại dữ liệu, chỉ nhận prop displayedItems
   const tableData = displayedItems !== undefined ? displayedItems : collections;

@@ -244,6 +244,21 @@ export default function Product() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Thêm useEffect để reset isClickShowMore sau khi đã được xử lý
+  useEffect(() => {
+    if (isClickShowMore.isClicked && isClickShowMore.id) {
+      // Đặt timeout để đảm bảo ManagerPage có thời gian xử lý
+      const timer = setTimeout(() => {
+        setIsClickShowMore({
+          id: isClickShowMore.id,
+          isClicked: false
+        });
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isClickShowMore]);
+
   const columns: Array<IColumnProps<collectionType>> = [
     {
       key: `index`,
@@ -320,7 +335,7 @@ export default function Product() {
             onClick={(): void => {
               setIsClickShowMore({
                 id: collection._id,
-                isClicked: !isClickShowMore.isClicked,
+                isClicked: true,
               });
             }}
             className="hover:bg-blue-50 p-2 rounded-full text-blue-500 hover:text-blue-600 transition-all"
@@ -550,11 +565,8 @@ export default function Product() {
   }, [orderForm.product_details, filteredProductOptions, createNotification]);
 
   const handleOpenModal = useCallback((prev: boolean): boolean => {
-    // Chỉ trả về false nếu modal đang mở
-    if (prev === true) {
-      return false;
-    }
-    return true;
+    // Chỉ trả về true để mở modal hoặc false để đóng modal
+    return !prev;
   }, []);
 
   // Lọc đơn hàng theo thời gian
@@ -949,10 +961,10 @@ export default function Product() {
   const isOrderCompleted = orderForm.status === OrderFormStatus.COMPLETED;
 
   // Wrapper cho setIsAddCollectionModalOpen để đúng kiểu (isOpen: boolean) => boolean
-  const handleSetItemModalOpening = (isOpen: boolean): boolean => {
+  const handleSetItemModalOpening = useCallback((isOpen: boolean): boolean => {
     setIsAddCollectionModalOpen(isOpen);
     return isOpen;
-  };
+  }, []);
 
   return (
     <>

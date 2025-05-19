@@ -1,5 +1,5 @@
 export interface IPageParams {
-  params: Promise<{
+  params: {
     id: string
-  }>
+  }
 }

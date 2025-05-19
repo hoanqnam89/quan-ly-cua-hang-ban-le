@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { StockHistoryModel } from '@/models/StockHistory';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { IProduct } from '@/interfaces/product.interface';
@@ -27,59 +27,67 @@ function formatDate(date: Date | string) {
 export default function StockHistoryPage() {
     const [histories, setHistories] = useState<IStockHistory[]>([]);
     const [products, setProducts] = useState<IProduct[]>([]);
-    const [actionFilter, setActionFilter] = useState<string>('all');
-    const [search, setSearch] = useState('');
-    const [productFilter, setProductFilter] = useState('');
-    const [fromDate, setFromDate] = useState('');
-    const [toDate, setToDate] = useState('');
+    const [defaultDate, setDefaultDate] = useState('2025-05-17');
+    const [shouldFetch, setShouldFetch] = useState(true);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                const [historiesData, productsData] = await Promise.all([
-                    fetch('/api/stock-history').then(res => res.json()),
-                    fetchGetCollections<IProduct>(ECollectionNames.PRODUCT)
-                ]);
-                setHistories(historiesData);
-                setProducts(productsData);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    // Lấy ngày hiện tại theo định dạng yyyy-mm-dd
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const [filters, setFilters] = useState({
+        actionFilter: 'all',
+        productFilter: '',
+        search: '',
+        fromDate: todayStr,
+        toDate: todayStr,
+    });
 
-        fetchData();
-    }, []);
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const params = new URLSearchParams();
+            if (filters.actionFilter && filters.actionFilter !== 'all') params.append('action', filters.actionFilter);
+            if (filters.productFilter) params.append('product_id', filters.productFilter);
+            if (filters.fromDate) params.append('fromDate', filters.fromDate);
+            if (filters.toDate) params.append('toDate', filters.toDate);
+            if (filters.search) params.append('search', filters.search);
+            const [historiesData, productsData] = await Promise.all([
+                fetch(`/api/stock-history?${params.toString()}`).then(res => res.json()),
+                fetchGetCollections<IProduct>(ECollectionNames.PRODUCT)
+            ]);
+            setHistories(historiesData);
+            setProducts(productsData);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (shouldFetch) {
+            fetchData();
+            setShouldFetch(false);
+        }
+        // eslint-disable-next-line
+    }, [shouldFetch]);
 
     const getProductName = (id: string) => {
         const p = products.find(p => p._id === id);
         return p ? p.name : id;
     };
 
-    const filtered = histories.filter(h => {
-        if (actionFilter !== 'all' && h.action !== actionFilter) return false;
-        if (productFilter && h.product_id !== productFilter) return false;
-        if (fromDate && new Date(h.created_at) < new Date(fromDate)) return false;
-        if (toDate && new Date(h.created_at) > new Date(toDate + 'T23:59:59')) return false;
-        if (search) {
-            const name = getProductName(h.product_id).toLowerCase();
-            if (!name.includes(search.toLowerCase()) && !(h.batch_number || '').toLowerCase().includes(search.toLowerCase())) return false;
-        }
-        return true;
-    });
-
-    // Phân trang
-    const totalPage = Math.ceil(filtered.length / pageSize) || 1;
-    const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+    // Không lọc ở client nữa, chỉ phân trang
+    const paged = useMemo(() => {
+        return histories.slice((page - 1) * pageSize, page * pageSize);
+    }, [histories, page, pageSize]);
+    const totalPage = Math.ceil(histories.length / pageSize) || 1;
 
     // Xuất Excel
     const handleExportExcel = () => {
-        const data = filtered.map(h => ({
+        const data = histories.map(h => ({
             'Thời gian': new Date(h.created_at).toLocaleString('vi-VN'),
             'Sản phẩm': getProductName(h.product_id),
             'Số lô': h.batch_number,
@@ -136,8 +144,8 @@ export default function StockHistoryPage() {
                     <div>
                         <label className="block text-lg font-medium text-gray-700 mb-1">Loại thao tác</label>
                         <select
-                            value={actionFilter}
-                            onChange={e => setActionFilter(e.target.value)}
+                            value={filters.actionFilter}
+                            onChange={e => setFilters(f => ({ ...f, actionFilter: e.target.value }))}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         >
                             <option value="all">Tất cả</option>
@@ -150,8 +158,8 @@ export default function StockHistoryPage() {
                     <div>
                         <label className="block text-lg font-medium text-gray-700 mb-1">Sản phẩm</label>
                         <select
-                            value={productFilter}
-                            onChange={e => setProductFilter(e.target.value)}
+                            value={filters.productFilter}
+                            onChange={e => setFilters(f => ({ ...f, productFilter: e.target.value }))}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         >
                             <option value="">Tất cả sản phẩm</option>
@@ -163,8 +171,8 @@ export default function StockHistoryPage() {
                     <div>
                         <label className="block text-lg font-medium text-gray-700 mb-1">Tìm kiếm</label>
                         <input
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
+                            value={filters.search}
+                            onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
                             placeholder="Tên sản phẩm hoặc số lô"
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
@@ -173,8 +181,8 @@ export default function StockHistoryPage() {
                         <label className="block text-lg font-medium text-gray-700 mb-1">Từ ngày</label>
                         <input
                             type="date"
-                            value={fromDate}
-                            onChange={e => setFromDate(e.target.value)}
+                            value={filters.fromDate}
+                            onChange={e => setFilters(f => ({ ...f, fromDate: e.target.value }))}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                     </div>
@@ -182,19 +190,21 @@ export default function StockHistoryPage() {
                         <label className="block text-lg font-medium text-gray-700 mb-1">Đến ngày</label>
                         <input
                             type="date"
-                            value={toDate}
-                            onChange={e => setToDate(e.target.value)}
+                            value={filters.toDate}
+                            onChange={e => setFilters(f => ({ ...f, toDate: e.target.value }))}
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                     </div>
-                    <div className="flex items-end">
+                    <div className="flex items-end gap-2">
                         <button
-                            onClick={handleExportExcel}
-                            className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-lg transition-colors duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow"
+                            onClick={() => setShouldFetch(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-lg transition-colors duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow"
                         >
-                            <span className="material-icons text-xl">file_download</span>
-                            Xuất Excel
+
+                            Lọc dữ liệu
+
                         </button>
+
                     </div>
                 </div>
             </div>

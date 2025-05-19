@@ -75,10 +75,7 @@ export default function Product() {
         ]);
 
         // Xử lý suppliers
-        const newSuppliers = newBusinesses.filter(
-          (business: IBusiness): boolean => business.type !== 'SUPPLIER'
-        );
-        setSupplier(newSuppliers);
+        const newSuppliers = newBusinesses
 
         // Chỉ set supplier_id nếu chưa có
         if (newSuppliers.length > 0) {
@@ -229,14 +226,13 @@ export default function Product() {
         </div>
     },
     {
-      key: `code`,
+      key: `supplier`,
       ref: useRef(null),
       title: `Nhà cung cấp`,
       size: `4fr`,
-      render: (collection: collectionType): ReactElement => {
-        const foundSupplier = supplier.find((element) => element._id === collection.supplier_id)
-        return <p>{foundSupplier?.name}</p>
-      }
+      render: (collection: collectionType): ReactElement => (
+        <p>{collection.supplier || ''}</p>
+      )
     },
     {
       key: `name`,

@@ -1,31 +1,29 @@
-import { EBusinessType } from '@/enums/business-type.enum';
-import { enumToArray } from '@/utils/enum-to-array';
 import { ObjectId } from 'mongodb';
 import { models, model, Schema } from 'mongoose';
 
 const CategorySchema = new Schema({
-  id: { type: ObjectId, }, 
-  created_at: { 
-    type: Date, 
+  id: { type: ObjectId, },
+  created_at: {
+    type: Date,
     default: () => Date.now(),
     immutable: true,
-  }, 
-  updated_at: { 
+  },
+  updated_at: {
     default: () => Date.now(),
-    type: Date, 
-  }, 
+    type: Date,
+  },
 
   name: {
-    type: String, 
-    required: [true, `Name is required!`], 
-  }, 
+    type: String,
+    required: [true, `Name is required!`],
+  },
   code: {
-    type: String, 
-    required: [false], 
-  }, 
+    type: String,
+    required: [false],
+  },
   discount: { type: Number, },
-  subcategories: {type: []},  
+  subcategories: { type: [] },
 });
 
-export const CategoryModel = 
+export const CategoryModel =
   models.Category2 || model(`Category2`, CategorySchema);

@@ -11,6 +11,7 @@ import { generatePDF } from '@/utils/generatePDF';
 import BarcodeScanner from '@/components/barcode-scanner';
 import dynamic from 'next/dynamic';
 import CustomNotification, { ENotificationType } from '@/components/notify/notification/notification';
+import useNotificationsHook from '@/hooks/notifications-hook';
 
 
 const DynamicReactBarcode = dynamic(() => import('react-barcode'), { ssr: false });
@@ -27,6 +28,7 @@ interface OrderItem {
 
 export default function CreateOrder() {
     const router = useRouter();
+    const { createNotification, notificationElements } = useNotificationsHook();
     const [products, setProducts] = useState<IProduct[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -302,7 +304,12 @@ export default function CreateOrder() {
 
     const handleCreateOrder = async () => {
         if (orderItems.length === 0) {
-            alert('Vui lòng thêm sản phẩm vào đơn hàng');
+            createNotification({
+                children: 'Vui lòng thêm sản phẩm vào đơn hàng',
+                type: ENotificationType.ERROR,
+                isAutoClose: true,
+                id: Math.random(),
+            });
             return;
         }
 
@@ -323,7 +330,9 @@ export default function CreateOrder() {
                     total_amount: totalAmount,
                     payment_method: paymentMethod,
                     payment_status: true,
-                    note: note
+                    note: note,
+                    customer_payment: parseInt(customerPayment.replace(/[^\d]/g, '')),
+                    status: 'completed'
                 }),
             });
 
@@ -358,11 +367,29 @@ export default function CreateOrder() {
 
                 // Nếu muốn in tự động, có thể gọi generatePDF(pdfData) ở đây hoặc trong modal
             } else {
-                throw new Error('Failed to create order');
+                let errorMsg = 'Có lỗi xảy ra khi tạo đơn hàng';
+                try {
+                    const errorData = await response.json();
+                    if (errorData && errorData.error) {
+                        errorMsg = errorData.error;
+                    }
+                } catch (e) { }
+                createNotification({
+                    children: errorMsg,
+                    type: ENotificationType.ERROR,
+                    isAutoClose: true,
+                    id: Math.random(),
+                });
+                return;
             }
         } catch (error) {
             console.error('Error creating order:', error);
-            alert('Có lỗi xảy ra khi tạo đơn hàng');
+            createNotification({
+                children: error instanceof Error ? error.message : 'Có lỗi xảy ra khi tạo đơn hàng',
+                type: ENotificationType.ERROR,
+                isAutoClose: true,
+                id: Math.random(),
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -521,6 +548,8 @@ export default function CreateOrder() {
                                         },
                                         body: JSON.stringify({
                                             output_quantity: newOutput,
+                                            user_id: employee,
+                                            user_name: employeeName,
                                         }),
                                     });
 
@@ -548,7 +577,7 @@ export default function CreateOrder() {
                             return dateA - dateB;
                         });
 
-                        // Process each product detail
+                        // Tiến hành xử lý từng chi tiết sản phẩm
                         for (const detail of sortedDetails) {
                             // Bỏ qua lô đã xử lý ở trên
                             if (batchDetailId && detail._id.toString() === batchDetailId) continue;
@@ -576,6 +605,8 @@ export default function CreateOrder() {
                                         },
                                         body: JSON.stringify({
                                             output_quantity: newOutput,
+                                            user_id: employee,
+                                            user_name: employeeName,
                                         }),
                                     });
 
@@ -1258,6 +1289,7 @@ export default function CreateOrder() {
                     Tạo đơn hàng thành công!
                 </CustomNotification>
             )}
+            {notificationElements}
         </div>
     );
 } 

@@ -21,33 +21,54 @@ interface IPriceHistory {
 export default function PriceHistoryPage() {
     const [histories, setHistories] = useState<IPriceHistory[]>([]);
     const [products, setProducts] = useState<IProduct[]>([]);
-    const [search, setSearch] = useState('');
-    const [productFilter, setProductFilter] = useState('');
-    const [fromDate, setFromDate] = useState('');
-    const [toDate, setToDate] = useState('');
+    const [filters, setFilters] = useState({
+        productFilter: '',
+        search: '',
+        fromDate: getToday(),
+        toDate: getToday(),
+    });
+    const [shouldFetch, setShouldFetch] = useState(true);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                const [historiesData, productsData] = await Promise.all([
-                    fetch('/api/price-history').then(res => res.json()),
-                    fetchGetCollections<IProduct>(ECollectionNames.PRODUCT)
-                ]);
-                setHistories(historiesData);
-                setProducts(productsData);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+    const today = getToday();
 
-        fetchData();
-    }, []);
+    function getToday() {
+        const d = new Date();
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+        const day = d.getDate().toString().padStart(2, '0');
+        return `${d.getFullYear()}-${month}-${day}`;
+    }
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const params = new URLSearchParams();
+            if (filters.productFilter) params.append('product_id', filters.productFilter);
+            if (filters.fromDate) params.append('fromDate', filters.fromDate);
+            if (filters.toDate) params.append('toDate', filters.toDate);
+            if (filters.search) params.append('search', filters.search);
+            const [historiesData, productsData] = await Promise.all([
+                fetch(`/api/price-history?${params.toString()}`).then(res => res.json()),
+                fetchGetCollections<IProduct>(ECollectionNames.PRODUCT)
+            ]);
+            setHistories(historiesData);
+            setProducts(productsData);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (shouldFetch) {
+            fetchData();
+            setShouldFetch(false);
+        }
+        // eslint-disable-next-line
+    }, [shouldFetch]);
 
     const getProductName = (id: string) => {
         const p = products.find(p => p._id === id);
@@ -55,12 +76,12 @@ export default function PriceHistoryPage() {
     };
 
     const filtered = histories.filter(h => {
-        if (productFilter && h.product_id !== productFilter) return false;
-        if (fromDate && new Date(h.changed_at) < new Date(fromDate)) return false;
-        if (toDate && new Date(h.changed_at) > new Date(toDate + 'T23:59:59')) return false;
-        if (search) {
+        if (filters.productFilter && h.product_id !== filters.productFilter) return false;
+        if (filters.fromDate && new Date(h.changed_at) < new Date(filters.fromDate)) return false;
+        if (filters.toDate && new Date(h.changed_at) > new Date(filters.toDate + 'T23:59:59')) return false;
+        if (filters.search) {
             const name = getProductName(h.product_id).toLowerCase();
-            if (!name.includes(search.toLowerCase())) return false;
+            if (!name.includes(filters.search.toLowerCase())) return false;
         }
         return true;
     });
@@ -108,13 +129,16 @@ export default function PriceHistoryPage() {
             {/* Card chứa bộ lọc */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">
                 <h2 className="text-lg font-semibold mb-4 text-gray-700">Bộ lọc</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <form
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end"
+                    onSubmit={e => { e.preventDefault(); setShouldFetch(true); }}
+                >
                     <div>
-                        <label className="block text-lg font-medium text-gray-700 mb-1">Sản phẩm</label>
+                        <label className="block text-base font-medium text-gray-700 mb-1">Sản phẩm</label>
                         <select
-                            value={productFilter}
-                            onChange={e => setProductFilter(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                            value={filters.productFilter}
+                            onChange={e => setFilters(f => ({ ...f, productFilter: e.target.value }))}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                         >
                             <option value="">Tất cả sản phẩm</option>
                             {products.map(p => (
@@ -123,42 +147,42 @@ export default function PriceHistoryPage() {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-lg font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                        <label className="block text-base font-medium text-gray-700 mb-1">Tìm kiếm</label>
                         <input
-                            value={search}
-                            onChange={e => setSearch(e.target.value)}
+                            value={filters.search}
+                            onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
                             placeholder="Tên sản phẩm"
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                         />
                     </div>
                     <div>
-                        <label className="block text-lg font-medium text-gray-700 mb-1">Từ ngày</label>
+                        <label className="block text-base font-medium text-gray-700 mb-1">Từ ngày</label>
                         <input
                             type="date"
-                            value={fromDate}
-                            onChange={e => setFromDate(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                            value={filters.fromDate}
+                            onChange={e => setFilters(f => ({ ...f, fromDate: e.target.value }))}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                         />
                     </div>
                     <div>
-                        <label className="block text-lg font-medium text-gray-700 mb-1">Đến ngày</label>
+                        <label className="block text-base font-medium text-gray-700 mb-1">Đến ngày</label>
                         <input
                             type="date"
-                            value={toDate}
-                            onChange={e => setToDate(e.target.value)}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                            value={filters.toDate}
+                            onChange={e => setFilters(f => ({ ...f, toDate: e.target.value }))}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                         />
                     </div>
-                    <div className="flex items-end">
+                    <div className="md:col-span-2 lg:col-span-4 flex justify-center mt-2">
                         <button
-                            onClick={handleExportExcel}
-                            className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-lg transition-colors duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow"
+                            type="submit"
+                            className="w-full md:w-auto bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-8 py-2 rounded-lg text-lg font-semibold shadow transition-colors duration-300 flex items-center justify-center gap-2"
                         >
-                            <span className="material-icons text-xl">file_download</span>
-                            Xuất Excel
+
+                            Lọc dữ liệu
                         </button>
                     </div>
-                </div>
+                </form>
             </div>
 
             {/* Card chứa dữ liệu */}

@@ -3,14 +3,13 @@
 import { ECollectionNames } from '@/enums';
 import { IPageParams } from '@/interfaces/page-params.interface'
 import { getCollectionById } from '@/services/api-service';
-import React, { ReactElement, useCallback, useEffect, useState } from 'react'
+import React, { ReactElement, useCallback, useEffect, useState, useRef } from 'react'
 import { LoadingScreen } from '@/components';
 import { IProduct } from '@/interfaces/product.interface';
 import { DEFAULT_PROCDUCT } from '@/constants/product.constant';
 import Image from 'next/image';
 import { IBusiness } from '@/interfaces/business.interface';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
-import { EBusinessType } from '@/enums/business-type.enum';
 import { ISelectOption } from '@/components/select-dropdown/interfaces/select-option.interface';
 import Link from 'next/link';
 import styles from '../style.module.css';
@@ -26,7 +25,7 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { id } = React.use(params);
+  const productId = params.id;
   const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [supplierName, setSupplierName] = useState<string>('');
@@ -39,8 +38,11 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
     expiryDate: null as Date | null
   });
 
+  // Đánh dấu đã tải dữ liệu
+  const isDataFetched = useRef(false);
+
   // Safely create collection detail link
-  const safeCreateCollectionDetailLink = (collectionName: ECollectionNames, id: string) => {
+  const safeCreateCollectionDetailLink = useCallback((collectionName: ECollectionNames, id: string) => {
     if (!id) return null;
 
     const href = `/home/${collectionName}/${id}`;
@@ -53,54 +55,22 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
         </svg>
       </Link>
     );
-  };
+  }, []);
 
-  const getSuppliers = useCallback(async () => {
+  const fetchProductDetails = useCallback(async () => {
     try {
-      const newBusinesses = await fetchGetCollections<IBusiness>(
-        ECollectionNames.BUSINESS
-      );
+      // Kiểm tra nếu đã tải rồi thì không tải lại
+      if (isDataFetched.current) return;
 
-      if (!newBusinesses || !Array.isArray(newBusinesses)) {
-        console.error('Invalid business data received');
-        return;
-      }
-
-      const newSuppliers = newBusinesses.filter(
-        (business) => business && business.type !== EBusinessType.SUPPLIER
-      );
-
-      const options = newSuppliers.map((supplier) => ({
-        label: supplier.name || 'Unknown',
-        value: supplier._id || '',
-      }));
-
-      setSupplierOptions(options);
-
-      // Find supplier name if we already have collection data
-      if (collection.supplier_id) {
-        const supplier = newSuppliers.find(s => s._id === collection.supplier_id);
-        if (supplier) {
-          setSupplierName(supplier.name || '');
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching suppliers:', err);
-      setError('Không thể tải danh sách nhà sản xuất');
-    }
-  }, [collection.supplier_id]);
-
-  const getProductDetails = useCallback(async () => {
-    try {
       setIsLoading(true);
 
-      const response = await getCollectionById(id, collectionName);
+      // Tải dữ liệu sản phẩm
+      const response = await getCollectionById(productId, collectionName);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const productData = await response.json();
-
       if (!productData) {
         throw new Error('No product data received');
       }
@@ -112,17 +82,33 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
         setSelectedImage(productData.image_links[0]);
       }
 
-      // Update supplier name if we have supplier options
-      if (productData.supplier_id && supplierOptions.length > 0) {
-        const supplier = supplierOptions.find(o => o.value === productData.supplier_id);
-        if (supplier) {
-          setSupplierName(supplier.label);
+      // Tải dữ liệu nhà cung cấp
+      if (productData.supplier_id) {
+        try {
+          const newBusinesses = await fetchGetCollections<IBusiness>(ECollectionNames.BUSINESS);
+
+          if (newBusinesses && Array.isArray(newBusinesses)) {
+            const options = newBusinesses.map((supplier) => ({
+              label: supplier.name || 'Unknown',
+              value: supplier._id || '',
+            }));
+
+            setSupplierOptions(options);
+
+            const supplier = newBusinesses.find(s => s._id === productData.supplier_id);
+            if (supplier) {
+              setSupplierName(supplier.name || '');
+            }
+          }
+        } catch (supplierError) {
+          console.error('Error fetching suppliers:', supplierError);
+          // Không ngắt luồng chính, chỉ log lỗi
         }
       }
 
-      // Fetch product details for inventory information
+      // Tải chi tiết sản phẩm
       try {
-        const detailsResponse = await fetch(`/api/product-detail/by-product/${id}`);
+        const detailsResponse = await fetch(`/api/product-detail/by-product/${productId}`);
         if (detailsResponse.ok) {
           const details = await detailsResponse.json();
           if (Array.isArray(details) && details.length > 0) {
@@ -136,20 +122,12 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
             // Get most recent batch for dates
             const latestBatch = sortedDetails[0];
 
-            // Calculate inventory data from all product details
+            // Calculate inventory data 
             let totalInput = 0;
             let totalOutput = 0;
             let totalInventory = 0;
 
-            // Sum up inventory data from all product details
-            details.forEach((detail, index) => {
-              console.log(`Detail #${index + 1}:`, {
-                id: detail._id,
-                input_quantity: detail.input_quantity,
-                output_quantity: detail.output_quantity,
-                inventory: detail.inventory || (detail.input_quantity - detail.output_quantity)
-              });
-
+            details.forEach((detail) => {
               // input_quantity là tổng kho
               totalInput += Number(detail.input_quantity) || 0;
 
@@ -161,23 +139,11 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
               totalInventory += Number(detailInventory) || 0;
             });
 
-            console.log("Inventory data:", {
-              totalInput,
-              totalOutput,
-              totalInventory
-            });
-
             // Set inventory summary with calculated values
             setInventorySummary({
-              // Tổng kho
               totalInventory: totalInput,
-
-              // Số lượng đã bán
               onShelf: totalOutput,
-
-              // Số lượng tồn kho
               remaining: totalInventory,
-
               productionDate: latestBatch.date_of_manufacture ? new Date(latestBatch.date_of_manufacture) : null,
               expiryDate: latestBatch.expiry_date ? new Date(latestBatch.expiry_date) : null
             });
@@ -185,24 +151,27 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
         }
       } catch (detailsError) {
         console.error('Error fetching product details:', detailsError);
-        // Don't interrupt main flow, just log the error
       }
 
+      // Đánh dấu đã tải dữ liệu
+      isDataFetched.current = true;
     } catch (err) {
       console.error('Error fetching product details:', err);
       setError('Không thể tải thông tin sản phẩm');
     } finally {
       setIsLoading(false);
     }
-  }, [id, supplierOptions]);
+  }, [productId]); // Chỉ phụ thuộc vào productId
 
+  // Chỉ tải dữ liệu một lần khi component mount
   useEffect(() => {
-    getSuppliers();
-  }, [getSuppliers]);
+    fetchProductDetails();
 
-  useEffect(() => {
-    getProductDetails();
-  }, [getProductDetails]);
+    // Cleanup function
+    return () => {
+      isDataFetched.current = false;
+    };
+  }, [fetchProductDetails]);
 
   const handleGoBack = () => {
     router.push('/home/product');
@@ -242,7 +211,7 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
           </button>
           <div>
             <h1 className={styles.title}>Chi tiết sản phẩm</h1>
-            <p className={styles.productId}>{id}</p>
+            <p className={styles.productId}>{productId}</p>
           </div>
         </div>
       </div>

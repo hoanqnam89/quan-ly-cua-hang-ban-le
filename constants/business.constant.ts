@@ -1,4 +1,3 @@
-// import { EBusinessType } from "@/enums/business-type.enum";
 import { IBusiness } from "@/interfaces/business.interface";
 
 export const DEFAULT_BUSINESS: IBusiness = {

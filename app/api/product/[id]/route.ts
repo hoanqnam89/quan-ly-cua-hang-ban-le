@@ -86,7 +86,7 @@ export async function GET(
 ) {
   try {
     await connectToDatabase();
-    const { id } = context.params;
+    const { id } = await Promise.resolve(context.params);
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
@@ -119,7 +119,7 @@ export async function DELETE(
   context: { params: { id: string } }
 ) {
   await connectToDatabase();
-  const { id } = (await context).params;
+  const { id } = await Promise.resolve(context.params);
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return NextResponse.json(

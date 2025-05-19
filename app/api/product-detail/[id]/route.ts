@@ -39,7 +39,8 @@ export const PATCH = async (
   //   );
 
   try {
-    const productDetail: Partial<collectionType> = await req.json();
+    const productDetail = await req.json();
+    const { user_id, user_name } = productDetail;
     console.log(`Xử lý PATCH request cho product-detail/${id}`, productDetail);
 
     connectToDatabase();
@@ -58,8 +59,28 @@ export const PATCH = async (
         { status: EStatusCode.NOT_FOUND }
       );
 
+    // Kiểm tra hợp lệ số lượng
+    const inputQty = productDetail.input_quantity !== undefined
+      ? productDetail.input_quantity
+      : foundProductDetail.input_quantity ?? 0;
+    const outputQty = productDetail.output_quantity !== undefined
+      ? productDetail.output_quantity
+      : foundProductDetail.output_quantity ?? 0;
+
+    if (outputQty > inputQty) {
+      return NextResponse.json(
+        createErrorMessage(
+          `Failed to update ${collectionName}.`,
+          `Số lượng đã bán (output_quantity) không được lớn hơn số lượng nhập (input_quantity)!`,
+          path,
+          `Vui lòng kiểm tra lại số lượng.`
+        ),
+        { status: EStatusCode.UNPROCESSABLE_ENTITY }
+      );
+    }
+
     // Chuẩn bị đối tượng cập nhật
-    const updateData: IProductDetail = {
+    const updateData: Partial<IProductDetail> = {
       updated_at: new Date(),
     };
 
@@ -121,6 +142,7 @@ export const PATCH = async (
       { new: true }
     );
 
+
     if (!updatedProductDetail)
       return NextResponse.json(
         createErrorMessage(
@@ -144,7 +166,8 @@ export const PATCH = async (
           related_receipt_id: null, // Có thể truyền id hóa đơn nếu có
           note: 'Xuất kho khi bán hàng',
           created_at: new Date(),
-          // user_id: null // Có thể lấy từ token nếu có
+          user_id: user_id || null, // Lưu user_id nếu có
+          user_name: user_name || null, // Lưu user_name nếu có
         });
       }
     }

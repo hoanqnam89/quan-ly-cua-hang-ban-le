@@ -11,8 +11,11 @@ function validateOrderInput(body: any) {
     if (!body.items || body.items.length === 0) {
         return 'Đơn hàng phải có ít nhất một sản phẩm';
     }
-    if (!body.total_amount || body.total_amount <= 0) {
+    if (body.total_amount === undefined || body.total_amount === null || body.total_amount < 0) {
         return 'Tổng tiền không hợp lệ';
+    }
+    if (body.payment_method !== 'cancel' && body.status !== 'cancelled' && Number(body.total_amount) > 0 && (!body.customer_payment || Number(body.customer_payment) < Number(body.total_amount))) {
+        return 'Số tiền khách đưa phải lớn hơn hoặc bằng thành tiền';
     }
     return null;
 }
@@ -42,6 +45,7 @@ async function createOrder(body: any) {
         total_amount: body.total_amount,
         payment_method: body.payment_method,
         payment_status: body.payment_status,
+        status: body.status || 'completed',
         note: body.note
     });
 }

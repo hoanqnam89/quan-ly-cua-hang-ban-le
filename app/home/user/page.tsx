@@ -61,6 +61,15 @@ const UserDetailModal = ({
         setLoading(true);
         const response = await getCollectionById(userId, ECollectionNames.USER);
         const userData = await response.json();
+
+        // Chuyển đổi name và address nếu là object
+        if (userData && typeof userData.name === 'object') {
+          userData.name = [userData.name.first, userData.name.middle, userData.name.last].filter(Boolean).join(' ');
+        }
+        if (userData && typeof userData.address === 'object') {
+          userData.address = Object.values(userData.address).filter(Boolean).join(', ');
+        }
+
         setUser(userData);
 
         // Lấy thông tin tài khoản
@@ -128,7 +137,7 @@ const UserDetailModal = ({
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-500">Họ và tên</h3>
                   <p className="mt-1 text-lg font-medium text-gray-900">
-                    {`${user.name.first} ${user.name.middle || ''} ${user.name.last || ''}`}
+                    {user.name || ''}
                   </p>
                 </div>
 
@@ -162,9 +171,7 @@ const UserDetailModal = ({
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-500">Địa chỉ</h3>
                   <p className="mt-1 text-lg font-medium text-gray-900">
-                    {typeof user.address.number === 'string' && user.address.number.includes(',')
-                      ? user.address.number
-                      : `${user.address.number || ''} ${user.address.street || ''}, ${user.address.ward || ''}, ${user.address.district || ''}, ${user.address.city || ''}, ${user.address.country || ''}`}
+                    {user.address || ''}
                   </p>
                 </div>
               </div>
@@ -175,26 +182,30 @@ const UserDetailModal = ({
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-500">Ngày tạo</h3>
                   <p className="mt-1 text-lg font-medium text-gray-900">
-                    {new Date(user.created_at).toLocaleDateString('vi-VN', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {user.created_at
+                      ? new Date(user.created_at).toLocaleDateString('vi-VN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                      : 'Chưa có'}
                   </p>
                 </div>
 
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-500">Cập nhật lần cuối</h3>
                   <p className="mt-1 text-lg font-medium text-gray-900">
-                    {new Date(user.updated_at).toLocaleDateString('vi-VN', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
+                    {user.updated_at
+                      ? new Date(user.updated_at).toLocaleDateString('vi-VN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                      : 'Chưa có'}
                   </p>
                 </div>
               </div>
@@ -333,11 +344,30 @@ const AccountDetailModal = ({
   );
 };
 
+// Thêm util ép _id về string
+function ensureStringId<T extends { _id?: string }>(obj: T): T & { _id: string } {
+  return { ...obj, _id: obj._id ? obj._id : '' } as T & { _id: string };
+}
+
+// Hàm chuyển đổi name/address về string nếu là object
+function normalizeUserFields(users: IUser[]): ({ _id: string } & IUser)[] {
+  return users.map(user => {
+    const newUser = { ...user, _id: user._id || '' };
+    if (newUser && typeof newUser.name === 'object') {
+      const nameObj = newUser.name as any;
+      newUser.name = [nameObj.first, nameObj.middle, nameObj.last].filter(Boolean).join(' ');
+    }
+    if (newUser && typeof newUser.address === 'object') {
+      newUser.address = Object.values(newUser.address as any).filter(Boolean).join(', ');
+    }
+    return newUser;
+  });
+}
+
 export default function User() {
   const { createNotification, notificationElements } = useNotificationsHook();
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [user, setUser] = useState<IUser>(DEFAULT_USER);
   const [isModalReadOnly, setIsModalReadOnly] = useState<boolean>(false);
   const [isClickShowMore, setIsClickShowMore] = useState<ICollectionIdNotify>({
     id: ``,
@@ -354,6 +384,10 @@ export default function User() {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [showAccountModal, setShowAccountModal] = useState<boolean>(false);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+
+  // Đảm bảo _id luôn là string khi truyền vào ManagerPage và khi dùng state
+  const defaultUserWithStringId: { _id: string } & IUser = { ...DEFAULT_USER, _id: DEFAULT_USER._id || '' };
+  const [user, setUser] = useState<{ _id: string } & IUser>(defaultUserWithStringId);
 
   const getAccounts: () => Promise<void> = useCallback(
     async (): Promise<void> => {
@@ -413,6 +447,7 @@ export default function User() {
       setUser({
         ...user,
         avatar: URL.createObjectURL(compressedFile),
+        _id: user._id,
       });
 
       createNotification({
@@ -509,22 +544,10 @@ export default function User() {
       title: `Họ tên`,
       size: `3fr`,
       render: (user: collectionType): ReactElement => {
-        const name: string = `${user.name.first} ${user.name.middle + ` `}${user.name.last}`;
+        const name: string = user.name || '';
         return <Text isEllipsis={true} tooltip={name}>{name}</Text>
       }
     },
-    // {
-    //   key: `address`,
-    //   ref: useRef(null),
-    //   title: `Địa chỉ`,
-    //   size: `4fr`,
-    //   render: (collection: collectionType): ReactElement => {
-    //     const address: string = typeof collection.address.number === 'string' && collection.address.number.includes(',')
-    //       ? collection.address.number
-    //       : `${collection.address.number} ${collection.address.street}, ${collection.address.ward}, ${collection.address.district}, ${collection.address.city}, ${collection.address.country}`;
-    //     return <Text isEllipsis={true} tooltip={address}>{address}</Text>
-    //   }
-    // },
     {
       key: `email`,
       ref: useRef(null),
@@ -581,7 +604,9 @@ export default function User() {
       title: `Ngày tạo`,
       size: `2fr`,
       render: (collection: collectionType): ReactElement => {
-        const date: string = new Date(collection.created_at).toLocaleDateString();
+        const date: string = collection.created_at
+          ? new Date(collection.created_at).toLocaleDateString()
+          : '';
         return <Text isEllipsis={true} tooltip={date}>{date}</Text>
       }
     },
@@ -593,7 +618,7 @@ export default function User() {
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={(): void => {
-              setSelectedUserId(collection._id);
+              setSelectedUserId(collection._id || '');
               setIsModalReadOnly(true);
               setShowDetailModal(true);
             }}
@@ -606,33 +631,6 @@ export default function User() {
               tooltip="Xem chi tiết nhân viên"
             />
             <span className={ActionButtonStyles.tooltipText}>Xem chi tiết nhân viên</span>
-          </button>
-
-          <button
-            onClick={(): void => {
-              // Tìm account_id dựa trên người dùng được chọn
-              const foundAccount = account.find((element) => element._id === collection.account_id);
-              if (foundAccount) {
-                setSelectedAccountId(foundAccount._id);
-                setShowAccountModal(true);
-              } else {
-                createNotification({
-                  id: Date.now(),
-                  children: 'Không tìm thấy thông tin tài khoản',
-                  type: ENotificationType.WARNING,
-                  isAutoClose: true,
-                  title: 'Cảnh báo',
-                });
-              }
-            }}
-            className="group relative w-6 h-6 flex items-center justify-center"
-            title="Xem chi tiết tài khoản"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-            </svg>
-            <span className={ActionButtonStyles.tooltipText}>Xem chi tiết tài khoản</span>
           </button>
 
           <Link
@@ -651,7 +649,7 @@ export default function User() {
           <button
             onClick={(): void => {
               setIsClickDelete({
-                id: collection._id,
+                id: collection._id || '',
                 isClicked: !isClickDelete.isClicked,
               });
             }}
@@ -674,33 +672,23 @@ export default function User() {
     setUser({
       ...user,
       account_id: e.target.value,
+      _id: user._id,
     });
   }
 
   const handleChangeName = (e: ChangeEvent<HTMLInputElement>): void => {
     setUser({
       ...user,
-      name: {
-        first: e.target.value,
-        middle: "",
-        last: ""
-      }
+      name: e.target.value,
+      _id: user._id,
     });
   }
 
   const handleChangeAddress = (e: ChangeEvent<HTMLInputElement>): void => {
-    const fullAddress = e.target.value;
     setUser({
       ...user,
-      address: {
-        ...user.address,
-        number: fullAddress,
-        street: "",
-        ward: "",
-        district: "",
-        city: "",
-        country: "",
-      }
+      address: e.target.value,
+      _id: user._id,
     });
   }
 
@@ -708,6 +696,7 @@ export default function User() {
     setUser({
       ...user,
       email: e.target.value,
+      _id: user._id,
     });
   }
 
@@ -715,6 +704,7 @@ export default function User() {
     setUser({
       ...user,
       birthday: new Date(e.target.value),
+      _id: user._id,
     });
   }
 
@@ -722,6 +712,7 @@ export default function User() {
     setUser({
       ...user,
       gender: e.target.value,
+      _id: user._id,
     });
   }
 
@@ -729,6 +720,7 @@ export default function User() {
     setUser({
       ...user,
       avatar: undefined,
+      _id: user._id,
     });
     setAvatarFile(null);
     setAvatarPreview(null);
@@ -740,11 +732,41 @@ export default function User() {
     { label: 'Khác', value: EUserGender.UNKNOWN }
   ];
 
+  // Đặt hàm handleSaveUser ở ngoài return, ngay trước return
+  const handleSaveUser = async () => {
+    try {
+      let avatarUrl = user.avatar;
+      if (avatarFile) {
+        // Upload lên Cloudinary
+        avatarUrl = await uploadAvatar(avatarFile);
+      }
+      // Gửi dữ liệu user lên server (tùy API của bạn)
+      const userToSave = { ...user, avatar: avatarUrl };
+      // TODO: Gọi API lưu user ở đây, ví dụ:
+      // await saveUserApi(userToSave);
+      createNotification({
+        id: Date.now(),
+        children: 'Lưu nhân viên thành công!',
+        type: ENotificationType.SUCCESS,
+        isAutoClose: true,
+        title: 'Thành công',
+      });
+    } catch (error) {
+      createNotification({
+        id: Date.now(),
+        children: 'Lưu nhân viên thất bại!',
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+        title: 'Lỗi',
+      });
+    }
+  };
+
   return (
-    <ManagerPage<collectionType>
+    <ManagerPage<{ _id: string } & IUser>
       columns={columns}
       collectionName={collectionName}
-      defaultCollection={DEFAULT_USER}
+      defaultCollection={defaultUserWithStringId}
       collection={user}
       setCollection={setUser}
       isModalReadonly={isModalReadOnly}
@@ -752,6 +774,7 @@ export default function User() {
       isClickShowMore={isClickShowMore}
       isClickDelete={isClickDelete}
       isLoaded={isLoading}
+      additionalProcessing={normalizeUserFields}
     >
       <>
         <Tabs>
@@ -774,7 +797,7 @@ export default function User() {
                         isDisable={isModalReadOnly}
                         options={accountOptions}
                         defaultOptionIndex={getSelectedOptionIndex(
-                          accountOptions, user.account_id
+                          accountOptions, user.account_id || ''
                         )}
                         onInputChange={handleChangeAccountId}
                         className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
@@ -798,7 +821,7 @@ export default function User() {
                     <TextInput
                       name={`fullName`}
                       isDisable={isModalReadOnly}
-                      value={`${user.name.first} ${user.name.middle} ${user.name.last}`.trim()}
+                      value={user.name || ''}
                       onInputChange={handleChangeName}
                       className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Nhập họ và tên đầy đủ"
@@ -816,7 +839,7 @@ export default function User() {
                     <TextInput
                       name={`address`}
                       isDisable={isModalReadOnly}
-                      value={typeof user.address.number === 'string' && user.address.number.includes(',') ? user.address.number : `${user.address.number} ${user.address.street}, ${user.address.ward}, ${user.address.district}, ${user.address.city}, ${user.address.country}`}
+                      value={user.address || ''}
                       onInputChange={handleChangeAddress}
                       placeholder="Nhập địa chỉ đầy đủ"
                       className="w-full p-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -965,10 +988,10 @@ export default function User() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-8">
+              {/* <div className="flex justify-end gap-3 mt-8">
                 <Button
                   onClick={() => {
-                    setUser(DEFAULT_USER);
+                    setUser(defaultUserWithStringId);
                     setAvatarFile(null);
                     setAvatarPreview(null);
                   }}
@@ -978,10 +1001,11 @@ export default function User() {
                 </Button>
                 <Button
                   className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+                  onClick={handleSaveUser}
                 >
                   Lưu nhân viên
                 </Button>
-              </div>
+              </div> */}
             </div>
           </TabItem>
         </Tabs>

@@ -631,24 +631,26 @@ function CreateWarehouseReceiptPage() {
                                     </div>
                                     <div className="col-span-2 mt-2 grid grid-cols-2 gap-4">
                                         <div className="flex flex-col">
-                                            <label className="text-sm font-medium text-gray-700 mb-1">Số lô</label>
-                                            <BarcodeComponent
-                                                productId={warehouseProductDetail?._id || ''}
-                                                value={warehouseProductDetail?.batch_number || ''}
-                                                onChange={(value: string) => {
-                                                    setWarehouseReceipt(prev => {
-                                                        const newProductDetails = [...prev.product_details];
-                                                        newProductDetails[index] = {
-                                                            ...newProductDetails[index],
-                                                            batch_number: value
-                                                        };
-                                                        return {
-                                                            ...prev,
-                                                            product_details: newProductDetails
-                                                        };
-                                                    });
-                                                }}
-                                            />
+                                            <label className="text-sm font-medium text-gray-700 mb-1 text-lg" style={{ paddingLeft: 35, paddingRight: 5 }}>Số lô</label>
+                                            <div style={{ paddingLeft: 35, paddingRight: 5 }}>
+                                                <BarcodeComponent
+                                                    productId={warehouseProductDetail?._id || ''}
+                                                    value={warehouseProductDetail?.batch_number || ''}
+                                                    onChange={(value: string) => {
+                                                        setWarehouseReceipt(prev => {
+                                                            const newProductDetails = [...prev.product_details];
+                                                            newProductDetails[index] = {
+                                                                ...newProductDetails[index],
+                                                                batch_number: value
+                                                            };
+                                                            return {
+                                                                ...prev,
+                                                                product_details: newProductDetails
+                                                            };
+                                                        });
+                                                    }}
+                                                />
+                                            </div>
                                         </div>
                                         <div className="flex flex-col">
                                             <label className="text-sm font-medium text-gray-700 mb-1">Mã vạch</label>

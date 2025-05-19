@@ -12,25 +12,31 @@ import { EButtonType } from '@/components/button/interfaces/button-type.interfac
 import Image from 'next/legacy/image';
 import useNotificationsHook from '@/hooks/notifications-hook';
 import { ENotificationType } from '@/components/notify/notification/notification';
+import { EUserGender } from '@/enums/user-gender.enum';
 
-// Sử dụng memo để tránh re-render không cần thiết
+// Component hiển thị trường thông tin
 const FormField = React.memo(({
   label,
   editing,
   editValue,
   displayValue,
-  children
+  required = false
 }: {
   label: string;
   editing: boolean;
   editValue: React.ReactNode;
   displayValue: React.ReactNode;
-  children?: React.ReactNode;
+  required?: boolean;
 }) => (
-  <div className="flex mb-3">
-    <Text className="w-32">{label}:</Text>
-    {editing ? editValue : displayValue}
-    {children}
+  <div className="mb-0">
+    <div className="border border-gray-200 rounded-xl bg-white shadow-sm p-5 flex flex-col min-h-[100px] hover:shadow-md transition-shadow duration-200">
+      <div className="text-gray-700 font-semibold mb-2 text-base flex items-center">
+        {label} {required && <span className="text-red-500 ml-1">*</span>}
+      </div>
+      <div className="flex-1 text-lg text-gray-900">
+        {editing ? editValue : displayValue}
+      </div>
+    </div>
   </div>
 ));
 
@@ -363,16 +369,12 @@ export default function PersonalInfo(): ReactElement {
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState<boolean>(false);
 
   // Refs cho các input fields
-  const firstNameRef = useRef<HTMLInputElement>(null);
-  const middleNameRef = useRef<HTMLInputElement>(null);
-  const lastNameRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
   const emailRef = useRef<HTMLInputElement>(null);
-  const numberRef = useRef<HTMLInputElement>(null);
-  const streetRef = useRef<HTMLInputElement>(null);
-  const wardRef = useRef<HTMLInputElement>(null);
-  const districtRef = useRef<HTMLInputElement>(null);
-  const cityRef = useRef<HTMLInputElement>(null);
+  const addressRef = useRef<HTMLTextAreaElement>(null);
   const birthdayRef = useRef<HTMLInputElement>(null);
+  const genderRef = useRef<HTMLSelectElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
 
   // --------------------------------------------------
   // HELPER FUNCTIONS
@@ -381,72 +383,43 @@ export default function PersonalInfo(): ReactElement {
   // Cập nhật giá trị từ refs vào state khi người dùng bấm lưu
   const updateFromRefs = useCallback(() => {
     if (isEditing) {
-      // Clone user để cập nhật
       const updatedUser = { ...editableUser };
 
-      // Cập nhật thông tin tên
-      if (!updatedUser.name) updatedUser.name = DEFAULT_USER.name;
-      if (firstNameRef.current) updatedUser.name.first = firstNameRef.current.value;
-      if (middleNameRef.current) updatedUser.name.middle = middleNameRef.current.value;
-      if (lastNameRef.current) updatedUser.name.last = lastNameRef.current.value;
+      if (nameRef.current) updatedUser.name = nameRef.current.value.trim();
+      if (emailRef.current) updatedUser.email = emailRef.current.value.trim();
+      if (addressRef.current) updatedUser.address = addressRef.current.value.trim();
+      if (genderRef.current) updatedUser.gender = genderRef.current.value;
 
-      // Cập nhật email
-      if (emailRef.current) {
-        console.log("Email từ input:", emailRef.current.value);
-        updatedUser.email = emailRef.current.value.trim();
-      }
-
-      // Cập nhật địa chỉ
-      if (!updatedUser.address) updatedUser.address = DEFAULT_USER.address;
-      if (numberRef.current) updatedUser.address.number = numberRef.current.value;
-      if (streetRef.current) updatedUser.address.street = streetRef.current.value;
-      if (wardRef.current) updatedUser.address.ward = wardRef.current.value;
-      if (districtRef.current) updatedUser.address.district = districtRef.current.value;
-      if (cityRef.current) updatedUser.address.city = cityRef.current.value;
-
-      // Cập nhật ngày sinh
       if (birthdayRef.current && birthdayRef.current.value) {
-        console.log("Ngày sinh từ input:", birthdayRef.current.value);
         try {
-          // Xử lý ngày sinh - lưu dưới dạng Date object
-          const dateValue = birthdayRef.current.value; // Format: YYYY-MM-DD
+          const dateValue = birthdayRef.current.value;
           const birthDate = new Date(dateValue);
 
-          // Đảm bảo ngày sinh hợp lệ
           if (!isNaN(birthDate.getTime())) {
             updatedUser.birthday = birthDate;
-            console.log("Ngày sinh đã chuyển đổi:", updatedUser.birthday);
-          } else {
-            console.error("Ngày sinh không hợp lệ:", birthdayRef.current.value);
           }
         } catch (error) {
           console.error("Lỗi khi xử lý ngày sinh:", error);
         }
       } else {
-        // Nếu người dùng xóa ngày sinh, đặt birthday về undefined
         updatedUser.birthday = undefined;
       }
 
       setEditableUser(updatedUser);
-      console.log("Dữ liệu người dùng sau khi cập nhật:", updatedUser);
     }
   }, [editableUser, isEditing]);
 
   // Cập nhật giá trị vào refs khi bắt đầu chỉnh sửa
   useEffect(() => {
     if (isEditing) {
-      if (firstNameRef.current) firstNameRef.current.value = editableUser.name?.first || '';
-      if (middleNameRef.current) middleNameRef.current.value = editableUser.name?.middle || '';
-      if (lastNameRef.current) lastNameRef.current.value = editableUser.name?.last || '';
+      if (nameRef.current) nameRef.current.value = editableUser.name || '';
       if (emailRef.current) emailRef.current.value = editableUser.email || '';
-      if (numberRef.current) numberRef.current.value = editableUser.address?.number || '';
-      if (streetRef.current) streetRef.current.value = editableUser.address?.street || '';
-      if (wardRef.current) wardRef.current.value = editableUser.address?.ward || '';
-      if (districtRef.current) districtRef.current.value = editableUser.address?.district || '';
-      if (cityRef.current) cityRef.current.value = editableUser.address?.city || '';
+      if (addressRef.current) addressRef.current.value = editableUser.address || '';
+      if (genderRef.current) genderRef.current.value = editableUser.gender || EUserGender.UNKNOWN;
       if (birthdayRef.current && editableUser.birthday) {
         birthdayRef.current.value = new Date(editableUser.birthday).toISOString().split('T')[0];
       }
+      if (phoneRef.current) phoneRef.current.value = "0369445470"; // Giả định số điện thoại cố định
     }
   }, [isEditing, editableUser]);
 
@@ -514,76 +487,53 @@ export default function PersonalInfo(): ReactElement {
       const userApiResponse = await fetch(`/api/user/account/${accountId}`);
 
       if (userApiResponse.ok) {
-        await handleExistingUserData(userApiResponse, isAdmin);
+        const userResponseText = await userApiResponse.text();
+        if (!userResponseText) {
+          throw new Error('Phản hồi API user trống');
+        }
+
+        const userApiJson: IUser = JSON.parse(userResponseText);
+        const completeUser = {
+          ...DEFAULT_USER,
+          ...userApiJson,
+          position: isAdmin ? 'Quản lý' : 'Nhân viên'
+        };
+
+        setUser(completeUser);
+        setEditableUser(completeUser);
       } else if (userApiResponse.status === 404) {
-        handleNewUserSetup(accountId, isAdmin);
+        // Người dùng mới
+        const emptyUserInfo: IUser = {
+          ...DEFAULT_USER,
+          account_id: accountId,
+          name: '',
+          email: '',
+          address: '',
+          position: isAdmin ? 'Quản lý' : 'Nhân viên'
+        };
+
+        setUser(emptyUserInfo);
+        setEditableUser(emptyUserInfo);
+        setIsEditing(true);
+
+        createNotification({
+          id: new Date().getTime(),
+          children: <Text>Vui lòng cập nhật thông tin cá nhân của bạn</Text>,
+          type: ENotificationType.INFO,
+          isAutoClose: true,
+        });
       } else {
         throw new Error(`Lỗi API user: ${userApiResponse.status} ${userApiResponse.statusText}`);
       }
     } catch (error) {
-      alert(`Lỗi khi lấy thông tin người dùng: ${error instanceof Error ? error.message : 'Lỗi không xác định'}`);
+      createNotification({
+        id: new Date().getTime(),
+        children: <Text>Lỗi: {error instanceof Error ? error.message : 'Không xác định'}</Text>,
+        type: ENotificationType.ERROR,
+        isAutoClose: true,
+      });
     }
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  }, []);
-
-  /**
-   * Xử lý dữ liệu khi người dùng đã tồn tại trong hệ thống
-   */
-  const handleExistingUserData = useCallback(async (response: Response, isAdmin: boolean): Promise<void> => {
-    const userResponseText = await response.text();
-    if (!userResponseText) {
-      throw new Error('Phản hồi API user trống');
-    }
-
-    const userApiJson: IUser = JSON.parse(userResponseText);
-    const completeUser = {
-      ...DEFAULT_USER,
-      ...userApiJson,
-      name: {
-        ...DEFAULT_USER.name,
-        ...(userApiJson.name || {})
-      },
-      address: {
-        ...DEFAULT_USER.address,
-        ...(userApiJson.address || {})
-      },
-      gender: userApiJson.gender,
-      position: isAdmin ? 'Quản lý' : 'Nhân viên'
-    };
-
-    setUser(completeUser);
-  }, []);
-
-  /**
-   * Cài đặt thông tin ban đầu cho người dùng mới
-   */
-  const handleNewUserSetup = useCallback((accountId: string, isAdmin: boolean): void => {
-    const emptyUserInfo: IUser = {
-      ...DEFAULT_USER,
-      account_id: accountId,
-      name: {
-        first: '',
-        last: ''
-      },
-      email: '',
-      gender: DEFAULT_USER.gender,
-      address: {
-        number: '',
-        street: '',
-        ward: '',
-        district: '',
-        city: '',
-        country: ''
-      },
-      avatar: undefined,
-      position: isAdmin ? 'Quản lý' : 'Nhân viên'
-    };
-
-    setUser(emptyUserInfo);
-    setEditableUser(emptyUserInfo);
-    setIsEditing(true);
-    alert('Vui lòng cập nhật thông tin cá nhân của bạn.');
-  }, []);
+  }, [createNotification]);
 
   // --------------------------------------------------
   // UPDATE HANDLERS
@@ -596,13 +546,13 @@ export default function PersonalInfo(): ReactElement {
     updateFromRefs();
 
     // Kiểm tra thông tin đầu vào
-    if (!editableUser.name?.first || editableUser.name.first.trim() === '') {
-      alert('Vui lòng nhập họ của bạn!');
+    if (!editableUser.name || editableUser.name.trim() === '') {
+      alert('Vui lòng nhập họ tên của bạn!');
       return;
     }
 
-    if (!editableUser.name?.last || editableUser.name.last.trim() === '') {
-      alert('Vui lòng nhập tên của bạn!');
+    if (!editableUser.address || editableUser.address.trim() === '') {
+      alert('Vui lòng nhập địa chỉ của bạn!');
       return;
     }
 
@@ -695,13 +645,13 @@ export default function PersonalInfo(): ReactElement {
     updateFromRefs();
 
     // Kiểm tra thông tin đầu vào
-    if (!editableUser.name?.first || editableUser.name.first.trim() === '') {
-      alert('Vui lòng nhập họ của bạn!');
+    if (!editableUser.name || editableUser.name.trim() === '') {
+      alert('Vui lòng nhập họ tên của bạn!');
       return;
     }
 
-    if (!editableUser.name?.last || editableUser.name.last.trim() === '') {
-      alert('Vui lòng nhập tên của bạn!');
+    if (!editableUser.address || editableUser.address.trim() === '') {
+      alert('Vui lòng nhập địa chỉ của bạn!');
       return;
     }
 
@@ -834,8 +784,8 @@ export default function PersonalInfo(): ReactElement {
    */
   const getGenderText = useCallback((genderValue: string | undefined): string => {
     switch (genderValue) {
-      case "1": return "Nam";
-      case "2": return "Nữ";
+      case EUserGender.MALE: return "Nam";
+      case EUserGender.FEMALE: return "Nữ";
       default: return "Không xác định";
     }
   }, []);
@@ -964,26 +914,37 @@ export default function PersonalInfo(): ReactElement {
 
   // Component cho ảnh đại diện
   const AvatarSection = useCallback(() => (
-    <div className="flex flex-col items-center mb-6 mt-10">
+    <div className="flex flex-col items-center mb-6 mt-4">
       <div
-        className={`w-40 h-40 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center relative ${isEditing ? 'cursor-pointer hover:opacity-75' : ''}`}
+        className={`w-48 h-48 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative shadow-lg border-4 border-white ${isEditing ? 'cursor-pointer hover:opacity-90 transition-opacity duration-300' : ''}`}
         onClick={isEditing ? handleSelectImage : undefined}
       >
         {editableUser.avatar && isEditing ? (
-          <Image src={editableUser.avatar} alt="Avatar" width={150} height={150} className="object-cover w-full h-full" unoptimized={true} />
+          <Image src={editableUser.avatar} alt="Avatar" width={192} height={192} className="object-cover w-full h-full" unoptimized={true} />
         ) : user.avatar ? (
-          <Image src={user.avatar} alt="Avatar" width={150} height={150} className="object-cover w-full h-full" unoptimized={true} />
+          <Image src={user.avatar} alt="Avatar" width={192} height={192} className="object-cover w-full h-full" unoptimized={true} />
         ) : (
-          <Image src="/avatar.svg" alt="Default avatar" width={150} height={150} className="object-cover w-full h-full" priority />
+          <Image src="/avatar.svg" alt="Default avatar" width={192} height={192} className="object-cover w-full h-full" priority />
         )}
         {isEditing && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity">
-            <Text className="text-white">Thay đổi</Text>
+          <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40 opacity-0 hover:opacity-100 transition-opacity duration-300">
+            <div className="text-white text-center">
+              <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              <Text className="text-sm font-medium">Thay đổi ảnh</Text>
+            </div>
           </div>
         )}
       </div>
+      {!isEditing && user.position && (
+        <div className="mt-4 bg-blue-100 text-blue-700 px-6 py-2 rounded-full font-semibold text-lg shadow-sm">
+          {user.position}
+        </div>
+      )}
     </div>
-  ), [editableUser.avatar, user.avatar, isEditing, handleSelectImage]);
+  ), [editableUser.avatar, user.avatar, user.position, isEditing, handleSelectImage]);
 
   // Component cho phần thông tin người dùng
   const UserInfoSection = useCallback(() => (
@@ -996,29 +957,15 @@ export default function PersonalInfo(): ReactElement {
           editValue={
             <div className="flex space-x-2">
               <input
-                ref={firstNameRef}
+                ref={nameRef}
                 type="text"
                 className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                placeholder="Họ"
-                defaultValue={editableUser.name?.first || ''}
-              />
-              <input
-                ref={middleNameRef}
-                type="text"
-                className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                placeholder="Tên đệm"
-                defaultValue={editableUser.name?.middle || ''}
-              />
-              <input
-                ref={lastNameRef}
-                type="text"
-                className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                placeholder="Tên"
-                defaultValue={editableUser.name?.last || ''}
+                placeholder="Nhập họ và tên đầy đủ"
+                defaultValue={editableUser.name || ''}
               />
             </div>
           }
-          displayValue={<Text>{user.name?.first || ''} {user.name?.middle || ''} {user.name?.last || ''}</Text>}
+          displayValue={<Text>{user.name || 'Chưa cập nhật'}</Text>}
         />
 
         {/* Chức vụ */}
@@ -1035,9 +982,10 @@ export default function PersonalInfo(): ReactElement {
           editing={isEditing}
           editValue={
             <input
+              ref={phoneRef}
               type="text"
               className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              placeholder="Số điện thoại"
+              placeholder="Nhập số điện thoại"
               defaultValue="0369445470"
               readOnly
             />
@@ -1054,15 +1002,8 @@ export default function PersonalInfo(): ReactElement {
               ref={emailRef}
               type="email"
               className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              placeholder="Nhập địa chỉ email"
               defaultValue={editableUser.email || ''}
-              onBlur={(e) => {
-                if (e.target.value.trim() !== editableUser.email) {
-                  setEditableUser(prev => ({
-                    ...prev,
-                    email: e.target.value.trim()
-                  }));
-                }
-              }}
             />
           }
           displayValue={<Text>{user.email || 'Chưa cập nhật'}</Text>}
@@ -1073,54 +1014,17 @@ export default function PersonalInfo(): ReactElement {
           label="Địa chỉ"
           editing={isEditing}
           editValue={
-            <div className="flex flex-col">
-              <div className="flex space-x-2 mb-2">
-                <input
-                  ref={numberRef}
-                  type="text"
-                  className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  placeholder="Số nhà"
-                  defaultValue={editableUser.address?.number || ''}
-                />
-                <input
-                  ref={streetRef}
-                  type="text"
-                  className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  placeholder="Đường"
-                  defaultValue={editableUser.address?.street || ''}
-                />
-                <input
-                  ref={wardRef}
-                  type="text"
-                  className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  placeholder="Phường"
-                  defaultValue={editableUser.address?.ward || ''}
-                />
-              </div>
-              <div className="flex space-x-2">
-                <input
-                  ref={districtRef}
-                  type="text"
-                  className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  placeholder="Quận"
-                  defaultValue={editableUser.address?.district || ''}
-                />
-                <input
-                  ref={cityRef}
-                  type="text"
-                  className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                  placeholder="Thành phố"
-                  defaultValue={editableUser.address?.city || ''}
-                />
-              </div>
-            </div>
+            <textarea
+              ref={addressRef}
+              className="w-full p-2 border-0 focus:outline-none bg-transparent resize-none"
+              placeholder="Nhập địa chỉ đầy đủ"
+              defaultValue={editableUser.address || ''}
+              rows={3}
+            />
           }
           displayValue={
             <Text>
-              {user.address?.number || ''} {user.address?.street || ''},
-              {user.address?.ward ? ` P.${user.address.ward},` : ''}
-              {user.address?.district ? ` Q.${user.address.district},` : ''}
-              {user.address?.city || ''}
+              {user.address || 'Chưa cập nhật'}
             </Text>
           }
         />
@@ -1134,31 +1038,7 @@ export default function PersonalInfo(): ReactElement {
               ref={birthdayRef}
               type="date"
               className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              defaultValue={editableUser.birthday ? new Date(editableUser.birthday).toDateString().split('T')[0] : ''}
-              onChange={(e) => {
-                console.log("Ngày sinh thay đổi:", e.target.value);
-                if (e.target.value) {
-                  try {
-                    const birthDate = new Date(e.target.value);
-                    // Gán giá trị trực tiếp để tránh lỗi kiểu dữ liệu
-                    // và để cập nhật state ngay khi người dùng thay đổi
-                    if (!isNaN(birthDate.getTime())) {
-                      setEditableUser(prev => ({
-                        ...prev,
-                        birthday: birthDate
-                      }));
-                    }
-                  } catch (error) {
-                    console.error("Lỗi khi xử lý ngày sinh:", error);
-                  }
-                } else {
-                  // Người dùng xóa ngày sinh
-                  setEditableUser(prev => ({
-                    ...prev,
-                    birthday: undefined
-                  }));
-                }
-              }}
+              defaultValue={editableUser.birthday ? new Date(editableUser.birthday).toISOString().split('T')[0] : ''}
             />
           }
           displayValue={<Text>{user.birthday ? new Date(user.birthday).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}</Text>}
@@ -1170,19 +1050,13 @@ export default function PersonalInfo(): ReactElement {
           editing={isEditing}
           editValue={
             <select
+              ref={genderRef}
               className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              defaultValue={editableUser.gender || "0"}
-              onChange={(e) => {
-                const genderValue = e.target.value;
-                setEditableUser(prev => ({
-                  ...prev,
-                  gender: genderValue
-                }));
-              }}
+              defaultValue={editableUser.gender || EUserGender.UNKNOWN}
             >
-              <option value="1">Nam</option>
-              <option value="2">Nữ</option>
-              <option value="0">Không xác định</option>
+              <option value={EUserGender.MALE}>Nam</option>
+              <option value={EUserGender.FEMALE}>Nữ</option>
+              <option value={EUserGender.UNKNOWN}>Không xác định</option>
             </select>
           }
           displayValue={<Text>{getGenderText(user.gender)}</Text>}
@@ -1193,23 +1067,27 @@ export default function PersonalInfo(): ReactElement {
 
   // Component cho phần actions
   const ActionButtons = useCallback(() => (
-    <div className="flex gap-2 mt-4">
-      <Button type={EButtonType.INFO} onClick={handleEditActions}>
-        <Text>{isEditing ? 'Lưu' : 'Chỉnh sửa'}</Text>
+    <div className="flex gap-4 mt-8 justify-center w-full">
+      <Button
+        type={isEditing ? EButtonType.SUCCESS : EButtonType.INFO}
+        onClick={handleEditActions}
+        className={`px-8 py-3 rounded-xl text-lg font-semibold transition-all duration-300 ${isEditing ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+      >
+        <Text className="font-semibold text-white">{isEditing ? 'Lưu thay đổi' : 'Chỉnh sửa'}</Text>
       </Button>
-
-      {isEditing && (
-        <Button type={EButtonType.SUCCESS} onClick={handleCancelEdit}>
-          <Text>Hủy</Text>
-        </Button>
-      )}
-
-      <Button type={EButtonType.INFO} onClick={handleOpenChangePasswordModal}>
-        <Text>Đổi mật khẩu</Text>
+      <Button
+        type={EButtonType.INFO}
+        onClick={handleOpenChangePasswordModal}
+        className="px-8 py-3 rounded-xl text-lg font-semibold bg-blue-600 hover:bg-blue-700 transition-all duration-300"
+      >
+        <Text className="font-semibold text-white">Đổi mật khẩu</Text>
       </Button>
-
-      <Button type={EButtonType.ERROR} onClick={handleLogout}>
-        <Text>Đăng xuất</Text>
+      <Button
+        type={EButtonType.ERROR}
+        onClick={handleLogout}
+        className="px-8 py-3 rounded-xl text-lg font-semibold bg-red-600 hover:bg-red-700 transition-all duration-300"
+      >
+        <Text className="font-semibold text-white">Đăng xuất</Text>
       </Button>
     </div>
   ), [isEditing, handleEditActions, handleOpenChangePasswordModal, handleLogout, handleCancelEdit]);
@@ -1227,15 +1105,122 @@ export default function PersonalInfo(): ReactElement {
         style={{ display: 'none' }}
       />
 
-      <div className="p-4">
-        <Text size={24} className="font-bold mb-4">Thông tin cá nhân</Text>
-
-        <div className="flex flex-row gap-8">
-          <AvatarSection />
-          <UserInfoSection />
+      <div className="min-h-screen bg-gray-50 py-10 px-2">
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8 flex flex-col md:flex-row gap-10 items-center md:items-start">
+          {/* Avatar + chức vụ */}
+          <div className="flex flex-col items-center md:items-start md:w-1/3 w-full">
+            <AvatarSection />
+          </div>
+          {/* Thông tin cá nhân */}
+          <div className="flex-1 w-full">
+            <Text size={28} className="font-bold mb-6 text-gray-800 text-center md:text-left">Thông tin cá nhân</Text>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Họ tên */}
+              <FormField
+                label="Họ tên"
+                editing={isEditing}
+                editValue={
+                  <input
+                    ref={nameRef}
+                    type="text"
+                    className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-full"
+                    placeholder="Nhập họ và tên đầy đủ"
+                    defaultValue={editableUser.name || ''}
+                  />
+                }
+                displayValue={<Text>{user.name || 'Chưa cập nhật'}</Text>}
+              />
+              {/* Email */}
+              <FormField
+                label="Email"
+                editing={isEditing}
+                editValue={
+                  <input
+                    ref={emailRef}
+                    type="email"
+                    className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-full"
+                    placeholder="Nhập địa chỉ email"
+                    defaultValue={editableUser.email || ''}
+                  />
+                }
+                displayValue={<Text>{user.email || 'Chưa cập nhật'}</Text>}
+              />
+              {/* Số điện thoại */}
+              <FormField
+                label="Số điện thoại"
+                editing={isEditing}
+                editValue={
+                  <input
+                    ref={phoneRef}
+                    type="text"
+                    className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-full"
+                    placeholder="Nhập số điện thoại"
+                    defaultValue="0369445470"
+                    readOnly
+                  />
+                }
+                displayValue={<Text>0369445470</Text>}
+              />
+              {/* Địa chỉ */}
+              <FormField
+                label="Địa chỉ"
+                editing={isEditing}
+                editValue={
+                  <textarea
+                    ref={addressRef}
+                    className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 resize-none"
+                    placeholder="Nhập địa chỉ đầy đủ"
+                    defaultValue={editableUser.address || ''}
+                    rows={3}
+                  />
+                }
+                displayValue={<Text>{user.address || 'Chưa cập nhật'}</Text>}
+              />
+              {/* Ngày sinh */}
+              <FormField
+                label="Ngày sinh"
+                editing={isEditing}
+                editValue={
+                  <input
+                    ref={birthdayRef}
+                    type="date"
+                    className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-full"
+                    defaultValue={editableUser.birthday ? new Date(editableUser.birthday).toISOString().split('T')[0] : ''}
+                  />
+                }
+                displayValue={<Text>{user.birthday ? new Date(user.birthday).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}</Text>}
+              />
+              {/* Giới tính */}
+              <FormField
+                label="Giới tính"
+                editing={isEditing}
+                editValue={
+                  <select
+                    ref={genderRef}
+                    className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 w-full"
+                    defaultValue={editableUser.gender || EUserGender.UNKNOWN}
+                  >
+                    <option value={EUserGender.MALE}>Nam</option>
+                    <option value={EUserGender.FEMALE}>Nữ</option>
+                    <option value={EUserGender.UNKNOWN}>Không xác định</option>
+                  </select>
+                }
+                displayValue={<Text>{getGenderText(user.gender)}</Text>}
+              />
+              {/* Chức vụ */}
+              <FormField
+                label="Chức vụ"
+                editing={isEditing}
+                editValue={<Text>{user.position || 'Nhân viên'}</Text>}
+                displayValue={<Text>{user.position || 'Quản lý'}</Text>}
+              />
+            </div>
+            {/* Nút thao tác */}
+            <div className="flex flex-col md:flex-row gap-3 mt-8 justify-center md:justify-end">
+              <ActionButtons />
+            </div>
+          </div>
         </div>
-
-        <ActionButtons />
       </div>
 
       <ChangePasswordModal

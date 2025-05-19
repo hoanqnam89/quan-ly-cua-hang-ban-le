@@ -12,4 +12,5 @@ export interface IProduct {
   image_links?: string[]
   input_price: number
   output_price: number
+  supplier?: string
 }

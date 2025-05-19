@@ -12,5 +12,7 @@ export enum ECollectionNames {
   WAREHOUSE_RECEIPT = `Warehouse Receipt`,
   CATEGORY = `Category`,
   CUSTOMER = `customer`,
-  RECEIPT = `receipt`
+  RECEIPT = `receipt`,
+  ORDER = `order`,
+  ORDERS = `orders`
 }
