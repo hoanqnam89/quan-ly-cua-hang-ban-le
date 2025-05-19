@@ -4,6 +4,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { FaCalendarAlt, FaChartLine, FaFileInvoiceDollar, FaShoppingCart, FaListAlt, FaDollarSign, FaFileExcel, FaSpinner } from 'react-icons/fa';
+import ExcelJS from 'exceljs';
 
 const TYPE_OPTIONS = [
     { value: 'day', label: 'Theo ngày' },
@@ -352,17 +353,43 @@ export default function ReportPage() {
     }, [chartData, hasChartData, type]);
 
     // Xử lý xuất Excel
-    const exportToExcel = () => {
+    const exportToExcel = async () => {
         if (chartData.length <= 1) {
             alert('Không có dữ liệu để xuất file Excel.');
             return;
         }
-        let csv = chartData.map(row => row.join(',')).join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('BaoCaoDoanhThu');
+
+        // Định nghĩa cột
+        const headers = chartData[0];
+        worksheet.columns = headers.map((header: string, index: number) => ({
+            header,
+            key: `col${index}`,
+            width: index === 0 ? 30 : 20
+        }));
+
+        // Thêm dữ liệu
+        chartData.slice(1).forEach((row: any) => {
+            const rowData: any = {};
+            row.forEach((cell: any, index: number) => {
+                rowData[`col${index}`] = cell;
+            });
+            worksheet.addRow(rowData);
+        });
+
+        // Định dạng số cho cột doanh thu và số đơn
+        worksheet.getColumn(2).numFmt = '#,##0';
+        worksheet.getColumn(3).numFmt = '#,##0';
+
+        // Tạo file và tải xuống
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `bao-cao-doanh-thu-${type}.csv`;
+        a.download = `bao-cao-doanh-thu-${type}.xlsx`;
         a.click();
         window.URL.revokeObjectURL(url);
     };

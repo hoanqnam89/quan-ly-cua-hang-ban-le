@@ -6,7 +6,7 @@ import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { IProduct } from '@/interfaces/product.interface';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
 import { ECollectionNames } from '@/enums';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 interface IStockHistory {
     _id: string;
@@ -87,22 +87,53 @@ export default function StockHistoryPage() {
     const totalPage = Math.ceil(histories.length / pageSize) || 1;
 
     // Xuất Excel
-    const handleExportExcel = () => {
-        const data = histories.map(h => ({
-            'Thời gian': new Date(h.created_at).toLocaleString('vi-VN'),
-            'Sản phẩm': getProductName(h.product_id),
-            'Số lô': h.batch_number,
-            'Loại thao tác': h.action === 'import' ? 'Nhập kho' :
-                h.action === 'export' ? 'Xuất kho' :
-                    h.action === 'return' ? 'Trả hàng' : 'Đổi hàng',
-            'Số lượng': h.quantity,
-            'Người thực hiện': h.user_name || '',
-            'Ghi chú': h.note || ''
-        }));
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'LichSuNhapXuatKho');
-        XLSX.writeFile(wb, 'lich_su_nhap_xuat_kho.xlsx');
+    const handleExportExcel = async () => {
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('LichSuNhapXuatKho');
+
+            // Định nghĩa cột
+            worksheet.columns = [
+                { header: 'Thời gian', key: 'time', width: 20 },
+                { header: 'Sản phẩm', key: 'product', width: 30 },
+                { header: 'Số lô', key: 'batch', width: 15 },
+                { header: 'Loại thao tác', key: 'action', width: 15 },
+                { header: 'Số lượng', key: 'quantity', width: 15 },
+                { header: 'Người thực hiện', key: 'user', width: 20 },
+                { header: 'Ghi chú', key: 'note', width: 30 }
+            ];
+
+            // Thêm dữ liệu
+            histories.forEach(h => {
+                worksheet.addRow({
+                    time: new Date(h.created_at).toLocaleString('vi-VN'),
+                    product: getProductName(h.product_id),
+                    batch: h.batch_number,
+                    action: h.action === 'import' ? 'Nhập kho' :
+                        h.action === 'export' ? 'Xuất kho' :
+                            h.action === 'return' ? 'Trả hàng' : 'Đổi hàng',
+                    quantity: h.quantity,
+                    user: h.user_name || '',
+                    note: h.note || ''
+                });
+            });
+
+            // Định dạng số cho cột số lượng
+            worksheet.getColumn('quantity').numFmt = '#,##0';
+
+            // Tạo file và tải xuống
+            const buffer = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lich_su_nhap_xuat_kho.xlsx';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Lỗi khi xuất Excel:', error);
+            alert('Có lỗi xảy ra khi xuất file Excel. Vui lòng thử lại.');
+        }
     };
 
     // Style cho từng loại thao tác

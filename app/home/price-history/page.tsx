@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { fetchGetCollections } from '@/utils/fetch-get-collections';
 import { IProduct } from '@/interfaces/product.interface';
 import { ECollectionNames } from '@/enums';
+import ExcelJS from 'exceljs';
 
 interface IPriceHistory {
     _id: string;
@@ -101,6 +102,46 @@ export default function PriceHistoryPage() {
     };
 
     // Xuất Excel
+    const handleExportExcel = async () => {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('LichSuGia');
+
+        // Định nghĩa cột
+        worksheet.columns = [
+            { header: 'Thời gian', key: 'time', width: 20 },
+            { header: 'Sản phẩm', key: 'product', width: 30 },
+            { header: 'Giá nhập cũ', key: 'oldInput', width: 15 },
+            { header: 'Giá nhập mới', key: 'newInput', width: 15 },
+            { header: 'Giá bán cũ', key: 'oldOutput', width: 15 },
+            { header: 'Giá bán mới', key: 'newOutput', width: 15 },
+            { header: 'Người thực hiện', key: 'user', width: 20 },
+            { header: 'Ghi chú', key: 'note', width: 30 }
+        ];
+
+        // Thêm dữ liệu
+        histories.forEach(h => {
+            worksheet.addRow({
+                time: new Date(h.changed_at).toLocaleString('vi-VN'),
+                product: getProductName(h.product_id),
+                oldInput: formatCurrency(h.old_input_price),
+                newInput: formatCurrency(h.new_input_price),
+                oldOutput: formatCurrency(h.old_output_price),
+                newOutput: formatCurrency(h.new_output_price),
+                user: h.user_name || '',
+                note: h.note || ''
+            });
+        });
+
+        // Tạo file và tải xuống
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'lich_su_gia.xlsx';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
 
     return (
         <div className="max-w-8xl mx-auto p-6">
