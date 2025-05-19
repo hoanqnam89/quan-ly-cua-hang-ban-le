@@ -947,123 +947,6 @@ export default function PersonalInfo(): ReactElement {
   ), [editableUser.avatar, user.avatar, user.position, isEditing, handleSelectImage]);
 
   // Component cho phần thông tin người dùng
-  const UserInfoSection = useCallback(() => (
-    <div className="flex-1">
-      <div>
-        {/* Họ tên */}
-        <FormField
-          label="Họ tên"
-          editing={isEditing}
-          editValue={
-            <div className="flex space-x-2">
-              <input
-                ref={nameRef}
-                type="text"
-                className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-                placeholder="Nhập họ và tên đầy đủ"
-                defaultValue={editableUser.name || ''}
-              />
-            </div>
-          }
-          displayValue={<Text>{user.name || 'Chưa cập nhật'}</Text>}
-        />
-
-        {/* Chức vụ */}
-        <FormField
-          label="Chức vụ"
-          editing={isEditing}
-          editValue={<Text>{user.position || 'Nhân viên'}</Text>}
-          displayValue={<Text>{user.position || 'Quản lý'}</Text>}
-        />
-
-        {/* Số điện thoại */}
-        <FormField
-          label="Số điện thoại"
-          editing={isEditing}
-          editValue={
-            <input
-              ref={phoneRef}
-              type="text"
-              className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              placeholder="Nhập số điện thoại"
-              defaultValue="0369445470"
-              readOnly
-            />
-          }
-          displayValue={<Text>0369445470</Text>}
-        />
-
-        {/* Email */}
-        <FormField
-          label="Email"
-          editing={isEditing}
-          editValue={
-            <input
-              ref={emailRef}
-              type="email"
-              className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              placeholder="Nhập địa chỉ email"
-              defaultValue={editableUser.email || ''}
-            />
-          }
-          displayValue={<Text>{user.email || 'Chưa cập nhật'}</Text>}
-        />
-
-        {/* Địa chỉ */}
-        <FormField
-          label="Địa chỉ"
-          editing={isEditing}
-          editValue={
-            <textarea
-              ref={addressRef}
-              className="w-full p-2 border-0 focus:outline-none bg-transparent resize-none"
-              placeholder="Nhập địa chỉ đầy đủ"
-              defaultValue={editableUser.address || ''}
-              rows={3}
-            />
-          }
-          displayValue={
-            <Text>
-              {user.address || 'Chưa cập nhật'}
-            </Text>
-          }
-        />
-
-        {/* Ngày sinh */}
-        <FormField
-          label="Ngày sinh"
-          editing={isEditing}
-          editValue={
-            <input
-              ref={birthdayRef}
-              type="date"
-              className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              defaultValue={editableUser.birthday ? new Date(editableUser.birthday).toISOString().split('T')[0] : ''}
-            />
-          }
-          displayValue={<Text>{user.birthday ? new Date(user.birthday).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}</Text>}
-        />
-
-        {/* Giới tính */}
-        <FormField
-          label="Giới tính"
-          editing={isEditing}
-          editValue={
-            <select
-              ref={genderRef}
-              className="p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              defaultValue={editableUser.gender || EUserGender.UNKNOWN}
-            >
-              <option value={EUserGender.MALE}>Nam</option>
-              <option value={EUserGender.FEMALE}>Nữ</option>
-              <option value={EUserGender.UNKNOWN}>Không xác định</option>
-            </select>
-          }
-          displayValue={<Text>{getGenderText(user.gender)}</Text>}
-        />
-      </div>
-    </div>
-  ), [isEditing, editableUser, user, getGenderText]);
 
   // Component cho phần actions
   const ActionButtons = useCallback(() => (
@@ -1090,6 +973,7 @@ export default function PersonalInfo(): ReactElement {
         <Text className="font-semibold text-white">Đăng xuất</Text>
       </Button>
     </div>
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   ), [isEditing, handleEditActions, handleOpenChangePasswordModal, handleLogout, handleCancelEdit]);
 
   // ----- MAIN RENDER -----
