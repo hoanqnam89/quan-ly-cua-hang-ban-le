@@ -26,7 +26,10 @@ export default function Detail({ params }: Readonly<IPageParams>): ReactElement 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const productId = params.id;
+  // @ts-expect-error Next.js params warning, safe to ignore in client component
+
+  const paramsObj = React.use(params) as { id: string };
+  const productId = paramsObj.id;
   const [supplierOptions, setSupplierOptions] = useState<ISelectOption[]>([]);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [supplierName, setSupplierName] = useState<string>('');

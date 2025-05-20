@@ -1,5 +1,5 @@
 import React, { Dispatch, ReactElement, SetStateAction } from 'react'
-import { Modal} from '@/components';
+import { Modal } from '@/components';
 import { ECollectionNames } from '@/enums';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 
@@ -15,29 +15,35 @@ interface ICollectionFormProps<T> {
   isLoading?: boolean
 }
 
-export default function CollectionForm<T extends {_id: string, index?: number}>({
-  children, 
-  collection, 
-  collectionName, 
-  isModalOpen = false, 
-  setIsModalOpen = () => {}, 
-  okAction = () => {}, 
-  isReadOnly = false, 
+export default function CollectionForm<T extends { _id: string, index?: number }>({
+  children,
+  collection,
+  collectionName,
+  isModalOpen = false,
+  setIsModalOpen = () => { },
+  okAction = () => { },
+  isReadOnly = false,
   isUpdateCollection = false,
-  isLoading = true, 
+  isLoading = true,
 }: Readonly<ICollectionFormProps<T>>): ReactElement {
-  const getActionName: string = isReadOnly 
-    ? `Xem` 
-    : isUpdateCollection 
-      ? `Cập nhật` 
+  const getActionName: string = isReadOnly
+    ? `Xem Thông tin`
+    : isUpdateCollection
+      ? `Cập nhật`
       : `Lưu`;
 
+  const getOkText = () => {
+    if (isReadOnly) return `Xem Thông tin sản phẩm`;
+    if (isUpdateCollection) return `Cập nhật sản phẩm`;
+    return `Lưu sản phẩm`;
+  };
+
   return (
-    <Modal 
-      okText={`${getActionName} ${translateCollectionName(collectionName)}`}
+    <Modal
+      okText={getOkText()}
       okAction={(): void => okAction(collection)}
       title={`${getActionName} ${translateCollectionName(collectionName)}`}
-      isOpen={isModalOpen} 
+      isOpen={isModalOpen}
       setIsOpen={setIsModalOpen}
       isOkDisable={isLoading}
     >

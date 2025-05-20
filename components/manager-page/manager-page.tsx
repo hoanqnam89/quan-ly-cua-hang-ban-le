@@ -188,15 +188,10 @@ export default function ManagerPage<T extends { _id: string }>({
 
   const toggleAddCollectionModal = useCallback(
     (isReadOnly: boolean = false): void => {
-      // Đặt trạng thái modal và collection trước khi mở modal
-      setIsModalReadonly(isReadOnly);
-
-      // Chỉ reset collection khi mở modal để thêm mới
+      setIsModalReadonly(false);
       if (!isReadOnly) {
         setCollection({ ...defaultCollection });
       }
-
-      // Mở modal
       setIsAddCollectionModalOpenWrapper(true);
     },
     [setIsModalReadonly, setCollection, defaultCollection, setIsAddCollectionModalOpenWrapper],

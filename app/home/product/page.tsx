@@ -597,6 +597,13 @@ export default function Product() {
     }
   };
 
+  // Sử dụng useCallback để wrap hàm onExitModalForm
+  const handleExitModalForm = useCallback(() => {
+    setImageFiles([]);
+    setImagePreviews([]);
+    setIsModalReadOnly(false);
+  }, []); // Không có dependencies vì các hàm setState không thay đổi
+
   return (
     <>
       <ManagerPage
@@ -608,6 +615,7 @@ export default function Product() {
         isModalReadonly={isModalReadOnly}
         setIsModalReadonly={setIsModalReadOnly}
         isClickShowMore={isClickShowMore}
+        setIsClickShowMore={setIsClickShowMore}
         isClickDelete={{ id: '', isClicked: false }}
         isLoaded={isLoading}
         handleOpenModal={handleOpenModal}
@@ -616,6 +624,7 @@ export default function Product() {
         setCurrentPage={setCurrentPage}
         totalItems={products.length}
         customHandleAddCollection={customHandleAddCollection}
+        onExitModalForm={handleExitModalForm}
       >
         <>
           <Tabs>
