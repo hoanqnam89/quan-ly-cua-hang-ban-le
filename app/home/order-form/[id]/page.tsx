@@ -16,11 +16,19 @@ import { formatCurrency } from '@/utils/format-currency';
 import { toPdf } from '@/utils/to-pdf';
 import { translateCollectionName } from '@/utils/translate-collection-name';
 import React, { ReactElement, use, useEffect, useRef, useState } from 'react'
+import { IBusiness } from '@/interfaces/business.interface';
 
 type collectionType = IOrderForm;
 const collectionName: ECollectionNames = ECollectionNames.ORDER_FORM;
-const companyAddress: string = `${COMPANY.address.number} ${COMPANY.address.street} ${COMPANY.address.ward} ${COMPANY.address.district} ${COMPANY.address.city} ${COMPANY.address.country}`;
+const companyAddress: string = typeof COMPANY.address === 'object'
+  ? Object.values(COMPANY.address).filter(Boolean).join(', ')
+  : COMPANY.address;
 const date: string = new Date().toLocaleString();
+
+function numberToWords(num: number): string {
+  // Đơn giản hóa: chỉ trả về số tiền bằng số, bạn có thể thay bằng thư viện chuyển số thành chữ nếu muốn
+  return num.toLocaleString('vi-VN') + ' đồng chẵn.';
+}
 
 export default function PreviewOrderForm({
   params
@@ -28,7 +36,7 @@ export default function PreviewOrderForm({
   const { id } = use(params);
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [orderForm, setOrderForm] = useState<collectionType>(
-    DEFAULT_ORDER_FORM 
+    DEFAULT_ORDER_FORM
   );
   const [products, setProducts] = useState<IProduct[]>([]);
   const [productDetails, setProductDetails] = useState<IProductDetail[]>([]);
@@ -37,10 +45,11 @@ export default function PreviewOrderForm({
   const [isProductsLoading, setIsProductsLoading] = useState<boolean>(true);
   const [isProductDetailsLoading, setIsProductDetailsLoading] = useState<boolean>(true);
   const [isUnitLoading, setIsUnitLoading] = useState<boolean>(true);
+  const [supplier, setSupplier] = useState<IBusiness | null>(null);
 
   useEffect((): void => {
     const getOrderFormById = async () => {
-      const getOrderFormApiResponse: Response = 
+      const getOrderFormApiResponse: Response =
         await getCollectionById(id, collectionName);
       const getOrderFormApiJson = await getOrderFormApiResponse.json();
       setOrderForm(getOrderFormApiJson);
@@ -48,22 +57,22 @@ export default function PreviewOrderForm({
     }
     const getProducts = async () => {
       const newProducts: IProduct[] = await fetchGetCollections<IProduct>(
-        ECollectionNames.PRODUCT, 
+        ECollectionNames.PRODUCT,
       );
       setProducts([...newProducts]);
       setIsProductsLoading(false);
     }
     const getProductDetails = async () => {
-      const newProductDetails: IProductDetail[] = 
+      const newProductDetails: IProductDetail[] =
         await fetchGetCollections<IProductDetail>(
-          ECollectionNames.PRODUCT_DETAIL, 
+          ECollectionNames.PRODUCT_DETAIL,
         );
       setProductDetails([...newProductDetails]);
       setIsProductDetailsLoading(false);
     }
     const getUnits = async () => {
       const newUnits: IUnit[] = await fetchGetCollections<IUnit>(
-        ECollectionNames.UNIT, 
+        ECollectionNames.UNIT,
       );
       setUnits([...newUnits]);
       setIsUnitLoading(false);
@@ -75,20 +84,35 @@ export default function PreviewOrderForm({
     getUnits();
   }, [id]);
 
+  useEffect(() => {
+    const fetchSupplier = async () => {
+      if (orderForm.supplier_id) {
+        try {
+          const res = await fetch(`/api/business/${orderForm.supplier_id}`);
+          if (res.ok) {
+            const data = await res.json();
+            setSupplier(data);
+          }
+        } catch { }
+      }
+    };
+    fetchSupplier();
+  }, [orderForm.supplier_id]);
+
   const printInvoice = async (): Promise<void> => {
     await toPdf(invoiceRef);
   }
 
   const getProduct = (id: string): IProduct | undefined => {
-    return products.find((product: IProduct): boolean => product._id === 
-      productDetails.find((productDetail: IProductDetail): boolean => 
+    return products.find((product: IProduct): boolean => product._id ===
+      productDetails.find((productDetail: IProductDetail): boolean =>
         productDetail._id === id
       )?.product_id
     );
   }
 
   const getProductDetail = (id: string): IProductDetail | undefined => {
-    return productDetails.find((productDetail: IProductDetail): boolean => 
+    return productDetails.find((productDetail: IProductDetail): boolean =>
       productDetail._id === id
     );
   }
@@ -106,182 +130,163 @@ export default function PreviewOrderForm({
         return 0;
 
       return accumulator + foundProduct.input_price * currentValue.quantity * foundUnit.equal;
-    }, 
+    },
     0
   );
 
   const getTotalQuantity = (): number => orderForm.product_details.reduce(
-    (accumulator: number, currentValue: IOrderFormProductDetail): number => 
-      accumulator + currentValue.quantity, 
+    (accumulator: number, currentValue: IOrderFormProductDetail): number =>
+      accumulator + currentValue.quantity,
     0
   );
 
   return (
     (
-      isOrderFormLoading || 
-      isProductsLoading || 
-      isProductDetailsLoading || 
+      isOrderFormLoading ||
+      isProductsLoading ||
+      isProductDetailsLoading ||
       isUnitLoading
-    ) 
+    )
       ? <LoadingScreen></LoadingScreen>
       : <>
-        <div 
-          ref={invoiceRef} 
-          className="bg-white p-4 rounded-xl shadow-xl border border-gray-100 pt-4"
-        >
-          <div className="w-full space-y-4 px-8">
-
-            <div className="flex justify-between items-start border-b-2 border-gray-300 pb-2">
-              <div className="space-y-1">
-                <p className="font-bold text-xl text-gray-900">{COMPANY.name}</p>
-                <p className="text-gray-700">{companyAddress}</p>
-                <p className="text-gray-700">Hotline: {COMPANY.phone}</p>
-              </div>
-              <div className="text-right space-y-1">
-                <p className="font-medium text-gray-700">Số phiếu: {COMPANY.number}</p>
-                <p className="text-gray-700">Ngày: {
-                  new Date(COMPANY.created_at).toLocaleString()
-                }</p>
-              </div>
+        <div className="max-w-3xl mx-auto my-6 bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="font-bold text-lg uppercase">{COMPANY.name}</div>
+              <div className="text-sm">{companyAddress}</div>
+              <div className="text-sm">Điện thoại: {COMPANY.phone}</div>
+              {COMPANY.bank_account && (
+                <div className="text-sm">
+                  Số tài khoản: {COMPANY.bank_account} tại {COMPANY.bank_name}
+                </div>
+              )}
+              {COMPANY.bank_account_name && (
+                <div className="text-sm">
+                  Tên tài khoản: {COMPANY.bank_account_name}
+                </div>
+              )}
             </div>
-
-            <div className="text-center py-2 border-b-2 border-gray-300">
-              <h1 className="text-3xl font-bold text-gray-900">{
-                translateCollectionName(collectionName)
-              }</h1>
+            <div className="text-right text-sm">
+              <div>Ngày: <b>{orderForm.created_at ? new Date(orderForm.created_at).toLocaleDateString('vi-VN') : ''}</b></div>
+              <div>Số: <b>{orderForm._id?.substring(orderForm._id.length - 6)}</b></div>
+              <div>Loại tiền: <b>VND</b></div>
             </div>
+          </div>
 
-            <div className="overflow-x-auto border-2 border-gray-300 rounded-lg">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th 
-                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[5%]"
-                    >
-                      STT
-                    </th>
-                    <th 
-                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[35%]"
-                    >
-                      Tên sản phẩm
-                    </th>
-                    <th 
-                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
-                    >
-                      Đơn vị
-                    </th>
-                    <th 
-                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]"
-                    >
-                      Ngày sản xuất
-                    </th>
-                    <th 
-                      className="py-2 px-3 text-left font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]"
-                    >
-                      Hạn sử dụng
-                    </th>
-                    <th 
-                      className="py-2 px-3 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
-                    >
-                      Giá
-                    </th>
-                    <th 
-                      className="py-2 px-3 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[10%]"
-                    >
-                      Số lượng
-                    </th>
-                    <th 
-                      className="py-2 px-3 text-right font-bold text-gray-900 border-y-2 border-gray-300 w-[15%]"
-                    >
-                      Tổng tiền
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orderForm.product_details.map((item, index) => (
-                    <tr 
-                      key={index} 
-                      className="hover:bg-gray-50 transition-colors duration-150"
-                    >
-                      <td 
-                        className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
-                      >
-                        {index + 1}
-                      </td>
-                      <td 
-                        className="py-2 px-3 border-b-2 border-gray-300 text-gray-900 font-medium"
-                      >
-                        {getProduct(item._id)?.name}
-                      </td>
-                      <td 
-                        className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
-                      >
-                        {getUnit(item.unit_id)?.name}
-                      </td>
-                      <td 
-                        className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
-                      >
-                        {getProductDetail(item._id)?.date_of_manufacture 
-                          ? new Date(String(getProductDetail(item._id)?.date_of_manufacture)).toLocaleDateString()
-                          : new Date().toLocaleDateString()}
-                      </td>
-                      <td 
-                        className="py-2 px-3 border-b-2 border-gray-300 text-gray-700 font-medium"
-                      >
-                        {getProductDetail(item._id)?.expiry_date 
-                          ? new Date(String(getProductDetail(item._id)?.expiry_date)).toLocaleDateString()
-                          : new Date().toLocaleDateString()}
-                      </td>
-                      <td 
-                        className="py-2 px-3 text-right border-b-2 border-gray-300 text-gray-700 font-medium"
-                      >
-                        {formatCurrency( getProduct(item._id)?.input_price || 0 )}
-                      </td>
-                      <td 
-                        className="py-2 px-3 text-right border-b-2 border-gray-300 text-gray-700 font-medium"
-                      >
-                        {item.quantity}
-                      </td>
-                      <td 
-                        className="py-2 px-3 text-right border-b-2 border-gray-300 font-bold text-gray-900"
-                      >
-                        {formatCurrency( (getProduct(item._id)?.input_price || 0) * item.quantity * (getUnit(item.unit_id)?.equal || 0) )}
-                      </td>
+          <div className="text-center my-4">
+            <div className="text-2xl font-bold uppercase tracking-wider">ĐƠN MUA HÀNG</div>
+          </div>
+
+          {supplier && (
+            <div className="mb-2 text-sm">
+              <div><b>Tên nhà cung cấp:</b> {supplier.name}</div>
+              {supplier.address && <div><b>Địa chỉ:</b> {supplier.address}</div>}
+              {supplier.phone && <div><b>Điện thoại:</b> {supplier.phone}</div>}
+              {supplier.bank_account && <div><b>Số tài khoản:</b> {supplier.bank_account}</div>}
+              {supplier.bank_account_name && <div><b>Tên tài khoản:</b> {supplier.bank_account_name}</div>}
+            </div>
+          )}
+          <div className="mb-2 text-sm">
+            <b>Diễn giải:</b> Mua hàng
+          </div>
+
+          <div className="overflow-x-auto border border-gray-300 rounded-lg mt-2">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-100 text-center">
+                  <th className="border border-gray-300 py-1 px-2">Quy cách (cm)</th>
+                  <th className="border border-gray-300 py-1 px-2">Diễn giải</th>
+                  <th className="border border-gray-300 py-1 px-2">Đơn vị</th>
+                  <th className="border border-gray-300 py-1 px-2">Số lượng</th>
+                  <th className="border border-gray-300 py-1 px-2">Đơn giá</th>
+                  <th className="border border-gray-300 py-1 px-2">Thành tiền</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orderForm.product_details.map((item, idx) => {
+                  const product = products.find(p => p._id === item._id);
+                  const unit = units.find(u => u._id === item.unit_id);
+                  const price = typeof item.input_price === 'number' ? item.input_price : (product?.input_price || 0);
+                  return (
+                    <tr key={idx} className="text-center">
+                      <td className="border border-gray-300 py-1 px-2">{product?.specs || ''}</td>
+                      <td className="border border-gray-300 py-1 px-2 text-left">{product?.name || ''}</td>
+                      <td className="border border-gray-300 py-1 px-2">{unit?.name || ''}</td>
+                      <td className="border border-gray-300 py-1 px-2">{item.quantity}</td>
+                      <td className="border border-gray-300 py-1 px-2 text-right">{formatCurrency(price)}</td>
+                      <td className="border border-gray-300 py-1 px-2 text-right">{formatCurrency(price * item.quantity)}</td>
                     </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-gray-100">
-                    <td colSpan={6} className="py-2 px-3 font-bold text-gray-900 border-t-2 border-gray-300">Tổng cộng</td>
-                    <td className="py-2 px-3 text-right font-bold text-gray-900 border-t-2 border-gray-300">{getTotalQuantity()}</td>
-                    <td className="py-2 px-3 text-right font-bold text-gray-900 border-t-2 border-gray-300">{formatCurrency( getTotalPrice() )}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                  )
+                })}
+                <tr>
+                  <td colSpan={5} className="border border-gray-300 py-1 px-2 text-right font-bold">Cộng tiền hàng:</td>
+                  <td className="border border-gray-300 py-1 px-2 text-right font-bold">
+                    {formatCurrency(orderForm.product_details.reduce((sum, item) => sum + (typeof item.input_price === 'number' ? item.input_price : 0) * item.quantity, 0))}
+                  </td>
+                </tr>
+                <tr>
+                  <td colSpan={5} className="border border-gray-300 py-1 px-2 text-right">Thuế suất thuế GTGT:</td>
+                  <td className="border border-gray-300 py-1 px-2 text-right">0%</td>
+                </tr>
+                <tr>
+                  <td colSpan={5} className="border border-gray-300 py-1 px-2 text-right">Tiền thuế GTGT:</td>
+                  <td className="border border-gray-300 py-1 px-2 text-right">0</td>
+                </tr>
+                <tr>
+                  <td colSpan={5} className="border border-gray-300 py-1 px-2 text-right font-bold">Tổng tiền thanh toán:</td>
+                  <td className="border border-gray-300 py-1 px-2 text-right font-bold">
+                    {formatCurrency(orderForm.product_details.reduce((sum, item) => sum + (typeof item.input_price === 'number' ? item.input_price : 0) * item.quantity, 0))}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-            <div className="grid grid-cols-2 gap-8 pt-8 mt-8 border-t-2 border-gray-300">
-              <div className="text-center">
-                <p className="font-bold text-gray-900 mb-2">NGƯỜI NHẬN</p>
-                <p className="text-sm text-gray-500">(Ký, ghi rõ họ tên)</p>
-                <div className="h-24"></div>
-              </div>
-              <div className="text-center">
-                <p className="font-bold text-gray-900 mb-2">NGƯỜI GIAO</p>
-                <p className="text-sm text-gray-500">(Ký, ghi rõ họ tên)</p>
-                <div className="h-24"></div>
-              </div>
-            </div>
+          <div className="mt-2 text-sm">
+            <b>Số tiền viết bằng chữ:</b> <i>{numberToWords(orderForm.product_details.reduce((sum, item) => sum + (typeof item.input_price === 'number' ? item.input_price : 0) * item.quantity, 0))}</i>
+          </div>
 
-            <div className="text-right text-gray-700 pt-4">
-              <p className="font-bold">{companyAddress}, {date}</p>
+          <div className="mt-2 text-sm">
+            <div><b>Ngày giao hàng:</b> ....................................................</div>
+            <div><b>Địa điểm giao hàng:</b> .............................................</div>
+            <div><b>Điều khoản thanh toán:</b> ........................................</div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-8 pt-8 mt-8 border-t border-gray-200 text-center">
+            <div>
+              <p className="font-bold text-gray-900 mb-2">Người lập</p>
+              <p className="text-sm text-gray-500">(Ký, họ tên)</p>
+              <div className="h-16"></div>
+            </div>
+            <div>
+              <p className="font-bold text-gray-900 mb-2">Kế toán trưởng</p>
+              <p className="text-sm text-gray-500">(Ký, họ tên)</p>
+              <div className="h-16"></div>
+            </div>
+            <div>
+              <p className="font-bold text-gray-900 mb-2">Giám đốc KD</p>
+              <p className="text-sm text-gray-500">(Ký, họ tên, đóng dấu)</p>
+              <div className="h-16"></div>
             </div>
           </div>
         </div>
-
-        <Button type={EButtonType.INFO} onClick={printInvoice}>
-          <Text>In hóa đơn</Text>
-        </Button>
-      </> 
+        <div className="max-w-3xl mx-auto mb-10 flex justify-end">
+          <Button
+            type={EButtonType.INFO}
+            onClick={printInvoice}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold rounded-lg shadow-md"
+          >
+            <span className="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                <rect x="6" y="14" width="12" height="8"></rect>
+              </svg>
+              In đơn mua hàng
+            </span>
+          </Button>
+        </div>
+      </>
   )
 }
+

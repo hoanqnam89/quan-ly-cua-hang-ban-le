@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { Button, IconContainer, NumberInput, SelectDropdown, Text } from '@/components'
+import { Button, IconContainer, NumberInput, SelectDropdown, Text, ConfirmModal } from '@/components'
 import ManagerPage, { ICollectionIdNotify } from '@/components/manager-page/manager-page'
 import { IColumnProps } from '@/components/table/interfaces/column-props.interface'
 import { ECollectionNames } from '@/enums'
@@ -92,6 +92,8 @@ export default function Product() {
   const [pendingStatusFilter, setPendingStatusFilter] = useState<string>(OrderFormStatus.PENDING);
   const [pendingDateFilter, setPendingDateFilter] = useState<string>('1');
   const [customDate, setCustomDate] = useState<string>('');
+  const [isDeleteConfirmModalOpen, setIsDeleteConfirmModalOpen] = useState<boolean>(false);
+  const [deleteOrderId, setDeleteOrderId] = useState<string>('');
 
   // Danh sách các bộ lọc trạng thái
   const statusFilters = [
@@ -349,23 +351,23 @@ export default function Product() {
             />
           </Button>
 
-          {/* Nút xóa
-          <Button
-            title={createDeleteTooltip(collectionName)}
-            onClick={(): void => {
-              setIsClickDelete({
-                id: collection._id,
-                isClicked: !isClickDelete.isClicked,
-              });
-            }}
-            className="hover:bg-red-50 p-2 rounded-full text-red-500 hover:text-red-600 transition-all"
-          >
-            <IconContainer
-              tooltip={createDeleteTooltip(collectionName)}
-              iconLink={trashIcon}
-              className="w-5 h-5"
-            />
-          </Button> */}
+          {/* Nút xóa */}
+          {collection.status !== OrderFormStatus.COMPLETED && (
+            <Button
+              title={createDeleteTooltip(collectionName)}
+              onClick={(): void => {
+                setDeleteOrderId(collection._id);
+                setIsDeleteConfirmModalOpen(true);
+              }}
+              className="hover:bg-red-50 p-2 rounded-full text-red-500 hover:text-red-600 transition-all"
+            >
+              <IconContainer
+                tooltip={createDeleteTooltip(collectionName)}
+                iconLink={trashIcon}
+                className="w-5 h-5"
+              />
+            </Button>
+          )}
           {/* Nút in phiếu đặt hàng */}
           <Button
             title="In phiếu đặt hàng"
@@ -1161,11 +1163,61 @@ export default function Product() {
               </div>
             </TabItem>
           </Tabs>
-
-          {notificationElements}
         </>
-
       </ManagerPage>
+
+      {/* Modal xác nhận xóa */}
+      <ConfirmModal
+        isOpen={isDeleteConfirmModalOpen}
+        title="Xác nhận xóa"
+        message="Bạn có thật sự muốn xóa phiếu đặt hàng này không? Hành động này không thể hoàn tác."
+        confirmText="Xác nhận xóa"
+        type="danger"
+        onConfirm={async () => {
+          if (!deleteOrderId) return;
+          try {
+            const response = await fetch(`/api/order-form/${deleteOrderId}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            if (response.ok) {
+              await fetchOrders(statusFilter, dateFilter); // Refresh lại danh sách theo bộ lọc hiện tại
+              createNotification({
+                id: Math.random(),
+                children: <Text>Xóa phiếu đặt hàng thành công</Text>,
+                type: ENotificationType.SUCCESS,
+                isAutoClose: true,
+              });
+            } else {
+              const errorData = await response.json();
+              createNotification({
+                id: Math.random(),
+                children: <Text>{errorData?.error || 'Xóa phiếu đặt hàng thất bại'}</Text>,
+                type: ENotificationType.ERROR,
+                isAutoClose: true,
+              });
+            }
+          } catch (error) {
+            createNotification({
+              id: Math.random(),
+              children: <Text>Có lỗi xảy ra khi xóa phiếu đặt hàng</Text>,
+              type: ENotificationType.ERROR,
+              isAutoClose: true,
+            });
+          } finally {
+            setIsDeleteConfirmModalOpen(false);
+            setDeleteOrderId('');
+          }
+        }}
+        onCancel={() => {
+          setIsDeleteConfirmModalOpen(false);
+          setDeleteOrderId('');
+        }}
+      />
+
+      {notificationElements}
     </>
   );
 }

@@ -16,6 +16,7 @@ import Barcode from "./barcode/index";
 import BarcodeComponent from "./barcode/barcode";
 import PaymentModal from "./PaymentModal";
 import ProductList from "./ProductList";
+import ConfirmModal from "./confirm-modal/confirm-modal";
 
 export {
   Barcode,
@@ -36,4 +37,5 @@ export {
   TagsInput,
   Text,
   TextInput,
+  ConfirmModal,
 }

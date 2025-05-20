@@ -265,10 +265,30 @@ function CreateWarehouseReceiptPage() {
             });
             return;
         }
+        // Kiểm tra ngày sản xuất phải nhỏ hơn ngày hiện tại
+        const now = new Date();
+        const invalidMfgDate = fixedProductDetails.some(detail => {
+            if (!detail.date_of_manufacture) return false;
+            const mfgDate = new Date(detail.date_of_manufacture as string);
+            mfgDate.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return mfgDate >= today;
+        });
+        if (invalidMfgDate) {
+            createNotification({
+                children: 'Ngày sản xuất (NSX) phải nhỏ hơn ngày hiện tại!',
+                type: ENotificationType.WARNING,
+                isAutoClose: true
+            });
+            return;
+        }
         const invalidDates = fixedProductDetails.some(detail => {
             if (!detail.date_of_manufacture || !detail.expiry_date) return false;
-            const mfgDate = new Date(detail.date_of_manufacture);
-            const expDate = new Date(detail.expiry_date);
+            const mfgDate = new Date(detail.date_of_manufacture as string);
+            const expDate = new Date(detail.expiry_date as string);
+            mfgDate.setHours(0, 0, 0, 0);
+            expDate.setHours(0, 0, 0, 0);
             return mfgDate >= expDate;
         });
         if (invalidDates) {
@@ -539,6 +559,20 @@ function CreateWarehouseReceiptPage() {
                                                     <span className="bg-red-500 text-white text-xs font-medium rounded-full w-4 h-4 flex items-center justify-center" title="Bắt buộc">!</span>
                                                 </div>
                                             )}
+                                            {warehouseProductDetail?.date_of_manufacture &&
+                                                (() => {
+                                                    const mfgDate = new Date(warehouseProductDetail.date_of_manufacture as string);
+                                                    const today = new Date();
+                                                    mfgDate.setHours(0, 0, 0, 0);
+                                                    today.setHours(0, 0, 0, 0);
+                                                    return mfgDate >= today;
+                                                })() && (
+                                                    <div className="absolute -bottom-14 left-0 right-0">
+                                                        <span className="bg-red-100 text-red-700 text-xs font-medium py-1 px-2 rounded-lg w-full block text-center">
+                                                            NSX phải nhỏ hơn ngày hiện tại
+                                                        </span>
+                                                    </div>
+                                                )}
                                         </div>
                                         <div className="flex justify-center items-center relative">
                                             <input
@@ -658,7 +692,7 @@ function CreateWarehouseReceiptPage() {
                                             <label className="text-sm font-medium text-gray-700 mb-1">Mã vạch</label>
                                             <div className="border border-gray-200 rounded-lg py-2 px-3 bg-gray-50 h-[50px] flex items-center justify-center">
                                                 {warehouseProductDetail?.batch_number ? (
-                                                    <div className="w-full flex justify-center">
+                                                    <div className="w-full flex justify-left">
                                                         <DynamicReactBarcode
                                                             value={warehouseProductDetail.batch_number}
                                                             height={40}
