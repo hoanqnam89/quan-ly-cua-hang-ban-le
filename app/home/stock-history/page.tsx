@@ -28,7 +28,6 @@ function formatDate(date: Date | string) {
 export default function StockHistoryPage() {
     const [histories, setHistories] = useState<IStockHistory[]>([]);
     const [products, setProducts] = useState<IProduct[]>([]);
-    const [defaultDate, setDefaultDate] = useState('2025-05-17');
     const [shouldFetch, setShouldFetch] = useState(true);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
@@ -37,12 +36,15 @@ export default function StockHistoryPage() {
     // Lấy ngày hiện tại theo định dạng yyyy-mm-dd
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
     const [filters, setFilters] = useState({
         actionFilter: 'all',
         productFilter: '',
         search: '',
         fromDate: todayStr,
-        toDate: todayStr,
+        toDate: tomorrowStr,
     });
 
     const fetchData = async () => {
@@ -205,7 +207,7 @@ export default function StockHistoryPage() {
                         <input
                             value={filters.search}
                             onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
-                            placeholder="Tên sản phẩm hoặc số lô"
+                            placeholder="Tìm sản phẩm theo số lô"
                             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         />
                     </div>

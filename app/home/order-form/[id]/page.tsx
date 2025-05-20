@@ -30,6 +30,11 @@ function numberToWords(num: number): string {
   return num.toLocaleString('vi-VN') + ' đồng chẵn.';
 }
 
+interface IUserInfo {
+  name?: string;
+  phone?: string;
+}
+
 export default function PreviewOrderForm({
   params
 }: Readonly<IPageParams>): ReactElement {
@@ -46,6 +51,7 @@ export default function PreviewOrderForm({
   const [isProductDetailsLoading, setIsProductDetailsLoading] = useState<boolean>(true);
   const [isUnitLoading, setIsUnitLoading] = useState<boolean>(true);
   const [supplier, setSupplier] = useState<IBusiness | null>(null);
+  const [userInfo, setUserInfo] = useState<IUserInfo>({});
 
   useEffect((): void => {
     const getOrderFormById = async () => {
@@ -99,6 +105,29 @@ export default function PreviewOrderForm({
     fetchSupplier();
   }, [orderForm.supplier_id]);
 
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (res.ok) {
+          const data = await res.json();
+          const accountId = data._id;
+          if (accountId) {
+            const userRes = await fetch(`/api/user/account/${accountId}`);
+            if (userRes.ok) {
+              const userData = await userRes.json();
+              setUserInfo({
+                name: userData.name,
+                phone: userData.phone
+              });
+            }
+          }
+        }
+      } catch { }
+    };
+    fetchUserInfo();
+  }, []);
+
   const printInvoice = async (): Promise<void> => {
     await toPdf(invoiceRef);
   }
@@ -149,57 +178,35 @@ export default function PreviewOrderForm({
     )
       ? <LoadingScreen></LoadingScreen>
       : <>
-        <div className="max-w-3xl mx-auto my-6 bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="font-bold text-lg uppercase">{COMPANY.name}</div>
-              <div className="text-sm">{companyAddress}</div>
-              <div className="text-sm">Điện thoại: {COMPANY.phone}</div>
-              {COMPANY.bank_account && (
-                <div className="text-sm">
-                  Số tài khoản: {COMPANY.bank_account} tại {COMPANY.bank_name}
-                </div>
-              )}
-              {COMPANY.bank_account_name && (
-                <div className="text-sm">
-                  Tên tài khoản: {COMPANY.bank_account_name}
-                </div>
-              )}
-            </div>
-            <div className="text-right text-sm">
-              <div>Ngày: <b>{orderForm.created_at ? new Date(orderForm.created_at).toLocaleDateString('vi-VN') : ''}</b></div>
-              <div>Số: <b>{orderForm._id?.substring(orderForm._id.length - 6)}</b></div>
-              <div>Loại tiền: <b>VND</b></div>
-            </div>
+        <div ref={invoiceRef} className="max-w-3xl mx-auto my-6 bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
+          <div className="text-center text-lg">
+            <div className="font-bold">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+            <div className="font-bold underline">Độc lập – Tự do – Hạnh phúc</div>
+            <div className="my-2 font-bold text-xl">PHIẾU ĐẶT HÀNG</div>
+            <div className="italic">Số: {orderForm._id?.substring(orderForm._id.length - 6) || '......'}</div>
           </div>
-
-          <div className="text-center my-4">
-            <div className="text-2xl font-bold uppercase tracking-wider">ĐƠN MUA HÀNG</div>
+          <div className="mt-4 text-lg ">
+            <span className="font-bold">Kính gửi:</span> Công ty {supplier?.name || '....................................................'}
           </div>
-
-          {supplier && (
-            <div className="mb-2 text-sm">
-              <div><b>Tên nhà cung cấp:</b> {supplier.name}</div>
-              {supplier.address && <div><b>Địa chỉ:</b> {supplier.address}</div>}
-              {supplier.phone && <div><b>Điện thoại:</b> {supplier.phone}</div>}
-              {supplier.bank_account && <div><b>Số tài khoản:</b> {supplier.bank_account}</div>}
-              {supplier.bank_account_name && <div><b>Tên tài khoản:</b> {supplier.bank_account_name}</div>}
-            </div>
-          )}
-          <div className="mb-2 text-sm">
-            <b>Diễn giải:</b> Mua hàng
+          <div className="mt-2 text-lg">
+            Công ty của chúng tôi có nhu cầu đặt hàng tại Quý công ty theo mẫu yêu cầu.
           </div>
-
-          <div className="overflow-x-auto border border-gray-300 rounded-lg mt-2">
-            <table className="w-full text-sm">
+          <div className="mt-2 text-lg">
+            <b>Liên hệ:</b> {supplier?.phone || '....................................................'}
+          </div>
+          <div className="mt-2 text-lg ">
+            <b>Nội dung đặt hàng như sau:</b>
+          </div>
+          <div className="mt-4">
+            <table className="w-full border border-gray-400 text-lg">
               <thead>
                 <tr className="bg-gray-100 text-center">
-                  <th className="border border-gray-300 py-1 px-2">Quy cách (cm)</th>
-                  <th className="border border-gray-300 py-1 px-2">Diễn giải</th>
-                  <th className="border border-gray-300 py-1 px-2">Đơn vị</th>
-                  <th className="border border-gray-300 py-1 px-2">Số lượng</th>
-                  <th className="border border-gray-300 py-1 px-2">Đơn giá</th>
-                  <th className="border border-gray-300 py-1 px-2">Thành tiền</th>
+                  <th className="border border-gray-400">STT</th>
+                  <th className="border border-gray-400">Tên mặt hàng</th>
+                  <th className="border border-gray-400">ĐVT</th>
+                  <th className="border border-gray-400">Số lượng</th>
+                  <th className="border border-gray-400">Đơn giá</th>
+                  <th className="border border-gray-400">Thành tiền</th>
                 </tr>
               </thead>
               <tbody>
@@ -209,82 +216,66 @@ export default function PreviewOrderForm({
                   const price = typeof item.input_price === 'number' ? item.input_price : (product?.input_price || 0);
                   return (
                     <tr key={idx} className="text-center">
-                      <td className="border border-gray-300 py-1 px-2">{product?.specs || ''}</td>
-                      <td className="border border-gray-300 py-1 px-2 text-left">{product?.name || ''}</td>
-                      <td className="border border-gray-300 py-1 px-2">{unit?.name || ''}</td>
-                      <td className="border border-gray-300 py-1 px-2">{item.quantity}</td>
-                      <td className="border border-gray-300 py-1 px-2 text-right">{formatCurrency(price)}</td>
-                      <td className="border border-gray-300 py-1 px-2 text-right">{formatCurrency(price * item.quantity)}</td>
+                      <td className="border border-gray-400">{idx + 1}</td>
+                      <td className="border border-gray-400 text-left">{product?.name || ''}</td>
+                      <td className="border border-gray-400">{unit?.name || ''}</td>
+                      <td className="border border-gray-400">{item.quantity}</td>
+                      <td className="border border-gray-400 text-right">{formatCurrency(price)}</td>
+                      <td className="border border-gray-400 text-right">{formatCurrency(price * item.quantity)}</td>
                     </tr>
                   )
                 })}
                 <tr>
-                  <td colSpan={5} className="border border-gray-300 py-1 px-2 text-right font-bold">Cộng tiền hàng:</td>
-                  <td className="border border-gray-300 py-1 px-2 text-right font-bold">
-                    {formatCurrency(orderForm.product_details.reduce((sum, item) => sum + (typeof item.input_price === 'number' ? item.input_price : 0) * item.quantity, 0))}
-                  </td>
-                </tr>
-                <tr>
-                  <td colSpan={5} className="border border-gray-300 py-1 px-2 text-right">Thuế suất thuế GTGT:</td>
-                  <td className="border border-gray-300 py-1 px-2 text-right">0%</td>
-                </tr>
-                <tr>
-                  <td colSpan={5} className="border border-gray-300 py-1 px-2 text-right">Tiền thuế GTGT:</td>
-                  <td className="border border-gray-300 py-1 px-2 text-right">0</td>
-                </tr>
-                <tr>
-                  <td colSpan={5} className="border border-gray-300 py-1 px-2 text-right font-bold">Tổng tiền thanh toán:</td>
-                  <td className="border border-gray-300 py-1 px-2 text-right font-bold">
+                  <td colSpan={5} className="border border-gray-400 py-1 px-2 text-right font-bold">Tổng cộng:</td>
+                  <td className="border border-gray-400 py-1 px-2 text-right font-bold">
                     {formatCurrency(orderForm.product_details.reduce((sum, item) => sum + (typeof item.input_price === 'number' ? item.input_price : 0) * item.quantity, 0))}
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-
-          <div className="mt-2 text-sm">
-            <b>Số tiền viết bằng chữ:</b> <i>{numberToWords(orderForm.product_details.reduce((sum, item) => sum + (typeof item.input_price === 'number' ? item.input_price : 0) * item.quantity, 0))}</i>
-          </div>
-
-          <div className="mt-2 text-sm">
-            <div><b>Ngày giao hàng:</b> ....................................................</div>
-            <div><b>Địa điểm giao hàng:</b> .............................................</div>
-            <div><b>Điều khoản thanh toán:</b> ........................................</div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-8 pt-8 mt-8 border-t border-gray-200 text-center">
+          <div className="mt-2 text-lg"><span className="font-bold ">Thông tin người đặt:</span> {userInfo.name}</div>
+          <div className="mt-2 text-lg"><span className="font-bold ">Liên hệ:</span> {'0369445470'}</div>
+          <div className="text-lg">- Thanh toán bằng tiền mặt hoặc chuyển khoản</div>
+          <div className="text-lg">- Thanh toán trước 50% giá trị hợp đồng, 50% còn lại thanh toán sau khi giao hàng.</div>
+          <div className="mt-4 mb-4 grid grid-cols-2 gap-8 pt-8 border-t border-gray-200 text-center text-lg">
             <div>
-              <p className="font-bold text-gray-900 mb-2">Người lập</p>
-              <p className="text-sm text-gray-500">(Ký, họ tên)</p>
+              <div className="font-bold mt-9">Người đặt</div>
+              <div className="italic">(Ký, họ tên)</div>
               <div className="h-16"></div>
             </div>
             <div>
-              <p className="font-bold text-gray-900 mb-2">Kế toán trưởng</p>
-              <p className="text-sm text-gray-500">(Ký, họ tên)</p>
-              <div className="h-16"></div>
-            </div>
-            <div>
-              <p className="font-bold text-gray-900 mb-2">Giám đốc KD</p>
-              <p className="text-sm text-gray-500">(Ký, họ tên, đóng dấu)</p>
+              <div className="mb-2 italic">TP.HCM, ngày {new Date().getDate()} tháng {new Date().getMonth() + 1} năm {new Date().getFullYear()}</div>
+              <div className="font-bold mt-2">Người nhận</div>
+              <div className="italic">(Ký, họ tên)</div>
               <div className="h-16"></div>
             </div>
           </div>
         </div>
-        <div className="max-w-3xl mx-auto mb-10 flex justify-end">
+        <div className="max-w-3xl mx-auto mb-10 flex flex-col sm:flex-row justify-center items-center gap-4">
+          <Button
+            type={EButtonType.INFO}
+            onClick={() => window.history.back()}
+            className="flex-1 min-w-[180px] text-lg px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center h-[64px]"
+          >
+            Quay lại
+          </Button>
           <Button
             type={EButtonType.INFO}
             onClick={printInvoice}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-base font-semibold rounded-lg shadow-md"
+            className="flex-1 min-w-[180px] text-lg px-8 py-4 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-2xl shadow-lg transition-all duration-200 flex items-center justify-center gap-2 h-[64px]"
           >
-            <span className="flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                <rect x="6" y="14" width="12" height="8"></rect>
-              </svg>
-              In đơn mua hàng
-            </span>
+            In phiếu đặt hàng
           </Button>
+          <a
+            href={`https://zalo.me/${supplier?.phone || ''}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 min-w-[180px] text-lg px-8 py-4 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2 transition-all duration-200 h-[64px]"
+          >
+            Đến Zalo nhà cung cấp
+          </a>
+
         </div>
       </>
   )

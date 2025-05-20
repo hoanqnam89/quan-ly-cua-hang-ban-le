@@ -82,7 +82,7 @@ export default function ExpirationPage() {
         } catch (err) {
           console.error('Error fetching user details:', err);
         }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (err) {
         setEmployee('');
       }
@@ -223,7 +223,7 @@ export default function ExpirationPage() {
         });
         alert('Có lỗi khi hủy sản phẩm!');
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       createNotification({
         children: 'Có lỗi khi hủy sản phẩm!',
@@ -361,7 +361,7 @@ export default function ExpirationPage() {
                       <th className="text-center p-3 text-gray-600 border border-slate-200 bg-slate-100">SL Nhập</th>
                       <th className="text-center p-3 text-gray-600 border border-slate-200 bg-slate-100">SL Xuất</th>
                       <th className="text-center p-3 text-gray-600 border border-slate-200 bg-slate-100">Tồn kho</th>
-                      <th className="text-center p-3 text-gray-600 border border-slate-200 bg-slate-100">Thao tác</th>
+                      {/* <th className="text-center p-3 text-gray-600 border border-slate-200 bg-slate-100">Thao tác</th> */}
                     </tr>
                   </thead>
                   <tbody>
@@ -402,7 +402,7 @@ export default function ExpirationPage() {
                           <td className="p-3 text-center font-medium border border-slate-200">
                             {detail.inventory}
                           </td>
-                          <td className="p-3 text-center border border-slate-200">
+                          {/* <td className="p-3 text-center border border-slate-200">
                             <button
                               className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-sm font-semibold disabled:opacity-60 shadow-sm transition-all"
                               onClick={() => handleCancelSingle(product, detail, false)}
@@ -410,7 +410,7 @@ export default function ExpirationPage() {
                             >
                               {cancellingId === detail._id ? 'Đang hủy hàng...' : 'Hủy hàng'}
                             </button>
-                          </td>
+                          </td> */}
                         </tr>
                       ))
                     )}

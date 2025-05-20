@@ -998,7 +998,7 @@ export default function Product() {
           <Tabs>
             <TabItem label={`Phiếu đặt hàng`}>
               <div className="space-y-4">
-                <InputSection label={`Nhà cung cấp`} className="mb-4">
+                <InputSection label={`Chọn nhà cung cấp`} className="mb-4">
                   <SelectDropdown
                     className="w-full bg-white border-blue-200 hover:border-blue-400"
                     isLoading={isBusinessLoading}
@@ -1128,7 +1128,7 @@ export default function Product() {
                       >
                       </NumberInput>
 
-                      <div className="flex justify-center">
+                      {/* <div className="flex justify-center">
                         <Button
                           isDisable={isModalReadOnly}
                           onClick={(): void => handleDeleteOrderFormProduct(index)}
@@ -1137,7 +1137,7 @@ export default function Product() {
                         >
                           <IconContainer iconLink={trashIcon} className="w-5 h-5"></IconContainer>
                         </Button>
-                      </div>
+                      </div> */}
                     </div>
                   })}
 

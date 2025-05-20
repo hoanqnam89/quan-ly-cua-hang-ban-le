@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
- 
+
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 import React, { useEffect, useState } from 'react';
@@ -212,11 +212,13 @@ function ExchangeProductModal({
             if (filtered.length === 1) {
                 const p = filtered[0];
                 const product = products.find(prod => String(prod._id) === String(p.product_id));
-                const price = product ? product.price : 0;
+                // Ưu tiên lấy tên và giá từ product_detail, nếu không có thì lấy từ products
+                const name = p.product_name || (product ? product.name : "Sản phẩm không tên");
+                const price = p.price || (product ? product.price : 0);
                 const newCurrentProduct = {
                     _id: p._id,
                     product_id: p.product_id,
-                    name: product ? product.name : (p.product_name || "Sản phẩm không tên"),
+                    name,
                     price,
                     inventory: p.inventory,
                     image_url: product?.image_url,
@@ -345,7 +347,7 @@ function ExchangeProductModal({
                         <input
                             type="text"
                             className="w-full border-2 border-blue-200 rounded-lg px-3 py-2 text-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-                            placeholder="Nhập tên sản phẩm để tìm kiếm..."
+                            placeholder="Nhập số lô sản phẩm để tìm kiếm..."
                             value={searchTerm}
                             onChange={handleSearch}
                         />
@@ -435,13 +437,8 @@ function ExchangeProductModal({
                                 )}
                                 <div className="flex-1">
                                     <h3 className="font-bold text-lg text-yellow-700 mb-2">Thông tin sản phẩm</h3>
-                                    {(() => {
-                                        const product = products.find(prod => String(prod._id) === String(currentProduct._id));
-                                        return <>
-                                            <p className="text-lg">Tên: <span className="font-medium">{product ? product.name : (currentProduct.name || "Sản phẩm không tên")}</span></p>
-                                            <p className="text-lg">Giá bán: <span className="font-bold text-red-600">{product ? product.price.toLocaleString('vi-VN') : "0"} VNĐ</span></p>
-                                        </>;
-                                    })()}
+                                    <p className="text-lg">Tên: <span className="font-medium">{currentProduct.name || "Sản phẩm không tên"}</span></p>
+                                    <p className="text-lg">Giá bán: <span className="font-bold text-red-600">{currentProduct.price ? currentProduct.price.toLocaleString('vi-VN') : "0"} VNĐ</span></p>
                                     <p className="text-lg">Tồn kho: <span className={`font-medium ${currentProduct.inventory !== undefined && currentProduct.inventory < 5 ? 'text-red-600' : ''}`}>{currentProduct.inventory !== undefined ? `${currentProduct.inventory} sản phẩm` : "Chưa cập nhật"}</span></p>
                                     <p className="text-lg">Hạn sử dụng:
                                         {currentProduct.exp_date ? (
@@ -919,6 +916,19 @@ export default function ReturnExchangePage(): React.ReactElement {
                 setSearch(partialMatch.order_code || '');
             }
         }
+        // Kiểm tra quá hạn đổi hàng
+        if (search.trim() !== '' && foundOrder) {
+            const createdDate = new Date(foundOrder.created_at);
+            const now = new Date();
+            const diffTime = now.getTime() - createdDate.getTime();
+            const diffDays = diffTime / (1000 * 3600 * 24);
+            if (diffDays > 7) {
+                setNotification({
+                    type: ENotificationType.ERROR,
+                    message: 'Hóa đơn đã quá hạn đổi!'
+                });
+            }
+        }
     }, [search, orders, foundOrder]);
 
     // Kiểm tra cấu trúc dữ liệu và thêm dữ liệu mẫu nếu cần
@@ -970,21 +980,22 @@ export default function ReturnExchangePage(): React.ReactElement {
     const handleOpenExchange = () => {
         if (!foundOrder || selectedItems.length === 0) return;
 
-        console.log("Mở modal đổi hàng với items:", selectedItems);
-        console.log("Danh sách sản phẩm hiện tại:", products);
+        // Kiểm tra hóa đơn có chi tiết sản phẩm không
+        if (!foundOrder.prodetail || foundOrder.prodetail.length === 0) {
+            setNotification({
+                type: ENotificationType.ERROR,
+                message: 'Hóa đơn này không có chi tiết sản phẩm. Vui lòng kiểm tra lại dữ liệu hóa đơn!'
+            });
+            return;
+        }
 
         // Lấy thông tin sản phẩm đầu tiên được chọn
         const itemId = selectedItems[0];
         const [orderId, detailId] = itemId.split('-');
-        console.log("Chi tiết ID được chọn:", { orderId, detailId });
-
         const orderDetail = foundOrder.prodetail.find((d: IOrderDetail) => d._id === detailId);
-        console.log("Chi tiết sản phẩm đổi:", orderDetail);
 
         if (orderDetail) {
             const exchangePrice = orderDetail.price * orderDetail.quantity;
-            console.log("Giá trị sản phẩm đổi:", exchangePrice);
-
             setExchangeInfo({
                 productId: orderDetail.product_id,
                 price: exchangePrice
@@ -992,10 +1003,9 @@ export default function ReturnExchangePage(): React.ReactElement {
             setSelectedOrder(foundOrder);
             setExchangeModalOpen(true);
         } else {
-            console.error("Không tìm thấy chi tiết sản phẩm trong hóa đơn!");
             setNotification({
                 type: ENotificationType.ERROR,
-                message: 'Không tìm thấy thông tin sản phẩm!'
+                message: 'Không tìm thấy thông tin chi tiết sản phẩm trong hóa đơn! Vui lòng kiểm tra lại dữ liệu.'
             });
         }
     };
@@ -1210,6 +1220,16 @@ export default function ReturnExchangePage(): React.ReactElement {
         setSelectedItems([]);
     };
 
+    // Thêm biến kiểm tra quá hạn đổi hàng
+    const isOrderExpired = (() => {
+        if (!foundOrder) return false;
+        const createdDate = new Date(foundOrder.created_at);
+        const now = new Date();
+        const diffTime = now.getTime() - createdDate.getTime();
+        const diffDays = diffTime / (1000 * 3600 * 24);
+        return diffDays > 7;
+    })();
+
     return (
         <div className="h-lvh flex flex-col gap-4 p-4 bg-[#fff]">
             <h1 className="text-3xl font-bold text-[#f14254] mb-4">Quản lý đổi hàng</h1>
@@ -1332,7 +1352,7 @@ export default function ReturnExchangePage(): React.ReactElement {
                             <button
                                 className="bg-[#4caf50] text-white px-6 py-2 rounded-md font-medium hover:bg-[#43a047] disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all"
                                 onClick={handleOpenExchange}
-                                disabled={selectedItems.length === 0}
+                                disabled={selectedItems.length === 0 || isOrderExpired}
                             >
                                 Đổi sản phẩm
                             </button>

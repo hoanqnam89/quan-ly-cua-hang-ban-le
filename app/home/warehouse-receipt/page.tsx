@@ -70,14 +70,15 @@ const formatReceiptCode = (id: string, date: Date): string => {
 };
 
 // Hàm mới định dạng mã phiếu đặt hàng
-const formatOrderFormCode = (id: string, date: Date): string => {
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const year = date.getFullYear().toString();
+const formatOrderFormCode = (id: string): string => {
+  const now = new Date();
+  const day = now.getDate().toString().padStart(2, '0');
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const year = now.getFullYear().toString();
   const dateStr = `${day}${month}${year}`;
 
-  // Tạo số thứ tự từ id
-  const sequence = id.substring(id.length - 4).padStart(4, '0');
+  // Lấy 4 ký tự cuối của id
+  const sequence = id.slice(-4);
 
   return `DH-${dateStr}-${sequence}`;
 };
@@ -327,7 +328,7 @@ function WarehouseReceipt() {
     if (orderForms.length > 0) {
       // Cập nhật danh sách options cho SelectDropdown
       const newOrderFormOptions = orderForms.map(form => ({
-        label: `${formatOrderFormCode(form._id, new Date(form.created_at))} - ${formatShortDate(new Date(form.created_at))}${form.isUsed ? ' (Đã sử dụng)' : ''}`,
+        label: `${formatOrderFormCode(form._id)} - ${formatShortDate(new Date(form.created_at))}${form.isUsed ? ' (Đã sử dụng)' : ''}`,
         value: form._id,
         disabled: form.isUsed // Disable các phiếu đã sử dụng
       }));
