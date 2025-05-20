@@ -146,11 +146,11 @@ export default function RootLayout({
             label: `Thêm phiếu đặt hàng`,
             icon: plusIcon,
           },
-          {
-            link: `${currentPath}/return-exchange`,
-            label: `Đổi đơn hàng`,
-            icon: listRestartIcon,
-          },
+          // {
+          //   link: `${currentPath}/return-exchange`,
+          //   label: `Đổi đơn hàng`,
+          //   icon: listRestartIcon,
+          // },
         ]
       },
       {

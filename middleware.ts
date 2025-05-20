@@ -21,8 +21,7 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     '/home/category',
     '/home/product',
     '/home/order-form',
-    '/home/warehouse-receipt',
-    '/home/return-exchange'
+    '/home/warehouse-receipt'
   ];
 
   // Kiểm tra xem path hiện tại có trong danh sách đường dẫn yêu cầu admin không
