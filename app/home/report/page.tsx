@@ -53,6 +53,9 @@ export default function ReportPage() {
         totalOrders: 0,
         periodLabel: ''
     });
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+    const [shouldFetch, setShouldFetch] = useState(false);
 
     // Lấy danh sách sản phẩm và danh mục
     useEffect(() => {
@@ -98,6 +101,7 @@ export default function ReportPage() {
 
     // Tải dữ liệu báo cáo
     useEffect(() => {
+        if ((type === 'product' || type === 'category') && !shouldFetch) return;
         const fetchReportData = async () => {
             let url = '/api/report/revenue?type=' + type;
             let valid = true;
@@ -125,9 +129,9 @@ export default function ReportPage() {
                 else {
                     const product = products.find(p => p._id === productId);
                     periodLabel = product ? `SP: ${product.name}` : '';
-                    if (product) {
-                        url += `&productName=${encodeURIComponent(product.name)}`;
-                    }
+                    url += `&productId=${productId}`;
+                    if (fromDate) url += `&fromDate=${fromDate}`;
+                    if (toDate) url += `&toDate=${toDate}`;
                     if (month) {
                         url += `&month=${month}`;
                         const [y, m] = month.split('-');
@@ -140,16 +144,15 @@ export default function ReportPage() {
             } else if (type === 'category') {
                 if (!categoryId) valid = false;
                 else {
-                    url += `&categoryId=${categoryId}`;
                     const category = categories.find(c => c._id === categoryId);
                     periodLabel = category ? `Loại: ${category.name}` : '';
+                    url += `&categoryId=${categoryId}`;
+                    if (fromDate) url += `&fromDate=${fromDate}`;
+                    if (toDate) url += `&toDate=${toDate}`;
                     if (month) {
                         url += `&month=${month}`;
                         const [y, m] = month.split('-');
                         periodLabel += ` (Tháng ${m}/${y})`;
-                    } else if (year) {
-                        url += `&year=${year}`;
-                        periodLabel += ` (Năm ${year})`;
                     }
                 }
             }
@@ -204,7 +207,6 @@ export default function ReportPage() {
                         throw new Error('Dữ liệu trả về không hợp lệ');
                     }
                     let processedData = [...responseData];
-                    // Lọc bỏ các dòng có cả doanh thu = 0 và số đơn = 0 (áp dụng cho mọi loại báo cáo)
                     processedData = processedData.filter((item: any) =>
                         (item.totalRevenue || item.revenue || 0) > 0 || (item.totalOrders || item.orderCount || item.quantity || 0) > 0
                     );
@@ -223,7 +225,6 @@ export default function ReportPage() {
                     }
 
                     let processedData = [...responseData];
-                    // Lọc bỏ các dòng có cả doanh thu = 0 và số đơn = 0 (áp dụng cho mọi loại báo cáo)
                     processedData = processedData.filter((item: any) =>
                         (item.totalRevenue || item.revenue || 0) > 0 || (item.totalOrders || item.orderCount || item.quantity || 0) > 0
                     );
@@ -263,7 +264,8 @@ export default function ReportPage() {
         };
 
         fetchReportData();
-    }, [type, date, month, year, productId, categoryId, products, categories]);
+        setShouldFetch(false);
+    }, [type, date, month, year, productId, categoryId, products, categories, fromDate, toDate, shouldFetch]);
 
     // Xử lý dữ liệu cho biểu đồ
     const chartData = useMemo(() => {
@@ -295,6 +297,17 @@ export default function ReportPage() {
                 ])
             );
         } else if (type === 'product') {
+            if (fromDate && toDate) {
+                // Lọc theo khoảng ngày, trục X là ngày
+                return [['Ngày', 'Doanh Thu', 'Số Đơn']].concat(
+                    data.map((item: any) => [
+                        String(item?._id ?? ''),
+                        String(Number(item?.totalRevenue) || 0),
+                        String(Number(item?.totalOrders) || 0)
+                    ])
+                );
+            }
+            // Tổng hợp, trục X là tên sản phẩm
             return [['Product', 'Revenue', 'Orders']].concat(
                 data.map((item: any) => [
                     String(item?.name ?? ''),
@@ -303,6 +316,17 @@ export default function ReportPage() {
                 ])
             );
         } else if (type === 'category') {
+            if (fromDate && toDate) {
+                // Lọc theo khoảng ngày, trục X là ngày
+                return [['Ngày', 'Doanh Thu', 'Số Đơn']].concat(
+                    data.map((item: any) => [
+                        String(item?._id ?? ''),
+                        String(Number(item?.totalRevenue) || 0),
+                        String(Number(item?.totalOrders) || 0)
+                    ])
+                );
+            }
+            // Tổng hợp, trục X là tên loại sản phẩm
             return [['Category', 'Revenue', 'Orders']].concat(
                 data.map((item: any) => [
                     String(item?.name ?? ''),
@@ -312,7 +336,7 @@ export default function ReportPage() {
             );
         }
         return [];
-    }, [data, type]);
+    }, [data, type, fromDate, toDate]);
 
     // Kiểm tra dữ liệu biểu đồ hợp lệ
     const isChartDataValid = useMemo(() => {
@@ -441,7 +465,7 @@ export default function ReportPage() {
                                     </div>
                                 )}
 
-                                {(type === 'month' || type === 'year' || ((type === 'product' || type === 'category') && !month)) && (
+                                {type === 'year' && (
                                     <div className="relative min-w-[140px]">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <FaCalendarAlt className="text-gray-400" />
@@ -503,15 +527,50 @@ export default function ReportPage() {
                                         </select>
                                     </div>
                                 )}
-                            </div>
 
-                            <button
-                                onClick={exportToExcel}
-                                className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 min-w-[160px]"
-                            >
-                                <FaFileExcel className="text-white" />
-                                Xuất Excel
-                            </button>
+                                {(type === 'product' || type === 'category') && (
+                                    <div className="flex gap-2 items-end">
+                                        <div>
+                                            <label className="block text-sm text-gray-600 mb-1">Từ ngày</label>
+                                            <input
+                                                type="date"
+                                                value={fromDate}
+                                                onChange={e => setFromDate(e.target.value)}
+                                                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                                placeholder="Từ ngày"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-600 mb-1">Đến ngày</label>
+                                            <input
+                                                type="date"
+                                                value={toDate}
+                                                onChange={e => setToDate(e.target.value)}
+                                                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                                                placeholder="Đến ngày"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex gap-2 items-center">
+                                <button
+                                    onClick={exportToExcel}
+                                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-green-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl hover:from-emerald-600 hover:to-green-700 transition-all duration-300 min-w-[160px]"
+                                >
+                                    <FaFileExcel className="text-white" />
+                                    Xuất Excel
+                                </button>
+                                {(type === 'product' || type === 'category') && (
+                                    <button
+                                        onClick={() => setShouldFetch(true)}
+                                        className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 min-w-[120px]"
+                                    >
+                                        <FaChartLine className="text-white" />
+                                        Lọc
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
 

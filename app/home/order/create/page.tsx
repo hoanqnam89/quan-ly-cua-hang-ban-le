@@ -61,6 +61,8 @@ export default function CreateOrder() {
     const [showBillModal, setShowBillModal] = useState(false);
     const [billData, setBillData] = useState<any>(null);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [momoPaymentUrl, setMomoPaymentUrl] = useState<string>('');
+    const [isCreatingMomo, setIsCreatingMomo] = useState(false);
 
     const totalAmount = orderItems.reduce((sum, item) => {
         const price = item.product.output_price;
@@ -269,19 +271,13 @@ export default function CreateOrder() {
     const handlePaymentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value;
         setPaymentMethod(value);
-        switch (value) {
-            case 'cash':
-                setDisplayPaymentText('Thanh toán tiền mặt');
-                setShowMomoQR(false);
-                break;
-            case 'transfer':
-                setDisplayPaymentText('Chuyển khoản ngân hàng');
-                setShowMomoQR(true);
-                break;
-            default:
-                setDisplayPaymentText('Thanh toán tiền mặt');
-                setShowMomoQR(false);
-        }
+        setDisplayPaymentText(
+            value === 'cash' ? 'Thanh toán tiền mặt' :
+                value === 'transfer' ? 'Chuyển khoản ngân hàng' :
+                    value === 'momo' ? 'Ví MoMo' : ''
+        );
+        setShowMomoQR(false);
+        setMomoPaymentUrl('');
     };
 
     const handlePaymentAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -375,7 +371,7 @@ export default function CreateOrder() {
                     if (errorData && errorData.error) {
                         errorMsg = errorData.error;
                     }
-                 
+
                 } catch (e) { }
                 createNotification({
                     children: errorMsg,
@@ -706,6 +702,48 @@ export default function CreateOrder() {
             }
         };
     }, [isDropdownVisible]);
+
+    const handleMoMoPayment = async () => {
+        setIsCreatingMomo(true);
+        try {
+            // Lưu thông tin đơn hàng tạm vào localStorage
+            const orderDraft = {
+                employee_id: employee,
+                items: orderItems.map(item => ({
+                    product_id: item.product._id,
+                    quantity: item.quantity,
+                    price: item.product.output_price
+                })),
+                total_amount: totalAmount,
+                payment_method: 'momo',
+                payment_status: true,
+                note: note,
+                customer_payment: totalAmount,
+                status: 'completed'
+            };
+            localStorage.setItem('momo_order_draft', JSON.stringify(orderDraft));
+
+            const response = await fetch('/api/payment/momo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    orderId: 'order_' + Date.now(), // hoặc mã đơn hàng thực tế nếu có
+                    amount: totalAmount,
+                    orderInfo: 'Thanh toan don hang'
+                }),
+            });
+            const data = await response.json();
+            if (data.payUrl) {
+                setMomoPaymentUrl(data.payUrl);
+                window.open(data.payUrl, '_blank');
+            } else {
+                alert('Không thể tạo thanh toán MoMo');
+            }
+        } catch (err) {
+            alert('Có lỗi khi tạo thanh toán MoMo');
+        }
+        setIsCreatingMomo(false);
+    };
 
     return (
         <div className="min-h-screen bg-white pb-24">
@@ -1063,9 +1101,24 @@ export default function CreateOrder() {
                                                 value={paymentMethod}
                                                 onChange={handlePaymentChange}
                                             >
-                                                <option value="cash">{paymentMethod === 'cash' ? displayPaymentText : 'Thanh toán tiền mặt'}</option>
-                                                <option value="transfer">{paymentMethod === 'transfer' ? displayPaymentText : 'Chuyển khoản ngân hàng'}</option>
+                                                <option value="cash">Thanh toán tiền mặt</option>
+                                                <option value="transfer">Chuyển khoản ngân hàng</option>
+                                                <option value="momo">Ví MoMo</option>
                                             </select>
+                                            {paymentMethod === 'momo' && (
+                                                <div className="mt-3">
+                                                    <Button onClick={handleMoMoPayment} isDisable={isCreatingMomo}>
+                                                        {isCreatingMomo ? 'Đang tạo link MoMo...' : 'Thanh toán với MoMo'}
+                                                    </Button>
+                                                    {momoPaymentUrl && (
+                                                        <div className="mt-2">
+                                                            <a href={momoPaymentUrl} target="_blank" rel="noopener noreferrer" className="text-pink-600 underline">
+                                                                Mở lại trang thanh toán MoMo
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="col-span-3">
                                             <label className="block text-lg text-slate-600 mb-1.5">

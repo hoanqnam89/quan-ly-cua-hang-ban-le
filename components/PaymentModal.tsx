@@ -41,13 +41,18 @@ export default function PaymentModal({ isOpen, onClose, onComplete, orderId, tot
     const [customerPayment, setCustomerPayment] = useState<string>(totalAmount.toLocaleString());
     const [changeAmount, setChangeAmount] = useState<string>('0');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [momoPaymentUrl, setMomoPaymentUrl] = useState<string>('');
 
     useEffect(() => {
         setCustomerPayment(totalAmount.toLocaleString());
+        setMomoPaymentUrl('');
     }, [totalAmount, isOpen]);
 
     const handlePaymentMethodChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setPaymentMethod(e.target.value);
+        if (e.target.value === 'momo') {
+            handleMoMoPayment();
+        }
     };
 
     const handlePaymentAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,37 +183,66 @@ export default function PaymentModal({ isOpen, onClose, onComplete, orderId, tot
         }
     };
 
+    const handleMoMoPayment = async () => {
+        try {
+            const response = await fetch('/api/payment/momo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    amount: totalAmount,
+                    orderInfo: `Thanh toan don hang ${orderId}`
+                }),
+            });
+
+            const data = await response.json();
+            if (data.payUrl) {
+                setMomoPaymentUrl(data.payUrl);
+                window.open(data.payUrl, '_blank');
+            } else {
+                throw new Error('Không thể tạo URL thanh toán MoMo');
+            }
+        } catch (error) {
+            console.error('Lỗi khi tạo thanh toán MoMo:', error);
+            alert('Có lỗi xảy ra khi tạo thanh toán MoMo. Vui lòng thử lại sau.');
+        }
+    };
+
     const handleCompletePayment = async () => {
         setIsProcessing(true);
         try {
+            if (paymentMethod === 'momo' && !momoPaymentUrl) {
+                alert('Vui lòng chờ URL thanh toán MoMo được tạo');
+                setIsProcessing(false);
+                return;
+            }
+
             console.log("Bắt đầu cập nhật trạng thái thanh toán cho đơn hàng: " + orderId);
 
-            // Sử dụng API /api/order/draft với phương thức PATCH và cấu trúc dữ liệu đúng
             const updateOrderResponse = await fetch(`/api/order/draft?t=${Date.now()}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    orderId: orderId,  // API yêu cầu trường orderId, không phải _id
-                    payment_method: paymentMethod
+                    orderId: orderId,
+                    payment_method: paymentMethod,
+                    payment_status: true
                 }),
             });
 
             if (!updateOrderResponse.ok) {
-                const errorData = await updateOrderResponse.text();
-                console.error("Lỗi API:", errorData);
                 throw new Error('Không thể cập nhật trạng thái thanh toán');
             }
 
-            // Cập nhật số lượng sản phẩm trong kho
             await updateProductQuantities();
-
-            // Gọi hàm callback để báo hoàn thành
             onComplete();
+            onClose();
         } catch (error) {
             console.error('Lỗi khi hoàn tất thanh toán:', error);
-            alert('Đã xảy ra lỗi khi thanh toán. Vui lòng thử lại.');
+            alert('Có lỗi xảy ra khi hoàn tất thanh toán. Vui lòng thử lại sau.');
         } finally {
             setIsProcessing(false);
         }
@@ -259,81 +293,71 @@ export default function PaymentModal({ isOpen, onClose, onComplete, orderId, tot
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 flex items-center justify-center z-50 overflow-auto bg-black bg-opacity-60 p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-auto overflow-hidden animate-fade-in">
-                {/* Tiêu đề */}
-                <div className="bg-blue-600 p-4 text-white">
-                    <h2 className="text-xl font-semibold">Thanh toán đơn hàng</h2>
+        <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ${isOpen ? '' : 'hidden'}`}>
+            <div className="bg-white p-6 rounded-lg w-96">
+                <h2 className="text-xl font-bold mb-4">Thanh toán đơn hàng</h2>
+
+                <div className="mb-4">
+                    <label className="block text-sm font-medium mb-2">Phương thức thanh toán</label>
+                    <select
+                        value={paymentMethod}
+                        onChange={handlePaymentMethodChange}
+                        className="w-full p-2 border rounded"
+                        disabled={isProcessing}
+                    >
+                        <option value="cash">Tiền mặt</option>
+                        <option value="momo">MoMo</option>
+                    </select>
                 </div>
 
-                <div className="p-6">
-                    {/* Tổng tiền */}
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="text-gray-700">Tổng cộng:</div>
-                        <div className="text-2xl font-bold text-blue-600">{formatCurrency(totalAmount)}</div>
+                {paymentMethod === 'cash' && (
+                    <>
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Số tiền khách trả</label>
+                            <input
+                                type="text"
+                                value={customerPayment}
+                                onChange={handlePaymentAmountChange}
+                                className="w-full p-2 border rounded"
+                                disabled={isProcessing}
+                            />
+                        </div>
+
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Tiền thối</label>
+                            <input
+                                type="text"
+                                value={changeAmount}
+                                className="w-full p-2 border rounded bg-gray-100"
+                                disabled
+                            />
+                        </div>
+                    </>
+                )}
+
+                {paymentMethod === 'momo' && momoPaymentUrl && (
+                    <div className="mb-4">
+                        <p className="text-sm text-gray-600">
+                            Đã mở cửa sổ thanh toán MoMo. Vui lòng hoàn tất thanh toán và nhấn "Hoàn tất" sau khi thanh toán thành công.
+                        </p>
                     </div>
+                )}
 
-                    {/* Phương thức thanh toán */}
-                    <div className="mb-6">
-                        <label className="block mb-2 text-gray-700">Phương thức thanh toán</label>
-                        <select
-                            value={paymentMethod}
-                            onChange={handlePaymentMethodChange}
-                            className="block w-full px-4 py-3 border border-gray-300 rounded-lg"
-                            disabled={isProcessing}
-                        >
-                            <option value="cash">Tiền mặt</option>
-                            <option value="banking">Chuyển khoản ngân hàng</option>
-                            <option value="momo">Ví MoMo</option>
-                        </select>
-                    </div>
-
-                    {/* Hiển thị QR MoMo nếu chọn thanh toán MoMo */}
-                    {paymentMethod === 'momo' && renderMoMoQRCode()}
-
-                    {/* Số tiền khách đưa (chỉ hiển thị khi thanh toán tiền mặt) */}
-                    {paymentMethod === 'cash' && (
-                        <>
-                            <div className="mb-6">
-                                <label className="block mb-2 text-gray-700">Khách thanh toán</label>
-                                <input
-                                    type="text"
-                                    value={customerPayment}
-                                    onChange={handlePaymentAmountChange}
-                                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                                    disabled={isProcessing}
-                                />
-                            </div>
-
-                            {/* Tiền thối lại */}
-                            <div className="mb-6">
-                                <label className="block mb-2 text-gray-700">Tiền thối lại</label>
-                                <div className="px-4 py-3 border border-gray-200 bg-gray-50 rounded-lg text-lg font-medium">
-                                    {changeAmount}
-                                </div>
-                            </div>
-                        </>
-                    )}
-
-                    {/* Nút hoàn tất */}
-                    <div className="flex space-x-4 mt-8">
-                        <Button
-                            onClick={onClose}
-                            type={EButtonType.TRANSPARENT}
-                            isDisable={isProcessing}
-                            className="flex-1"
-                        >
-                            Hủy
-                        </Button>
-                        <Button
-                            onClick={handleCompletePayment}
-                            type={EButtonType.SUCCESS}
-                            isDisable={isProcessing}
-                            className="flex-1"
-                        >
-                            {isProcessing ? "Đang xử lý..." : "Hoàn tất thanh toán"}
-                        </Button>
-                    </div>
+                <div className="flex justify-end gap-2">
+                    <Button
+                        type={EButtonType.TRANSPARENT}
+                        onClick={onClose}
+                        isDisable={isProcessing}
+                    >
+                        Hủy
+                    </Button>
+                    <Button
+                        type={EButtonType.SUCCESS}
+                        onClick={handleCompletePayment}
+                        isDisable={isProcessing}
+                    >
+                        {isProcessing ? 'Đang xử lý...' : 'Hoàn tất'}
+                    </Button>
                 </div>
             </div>
         </div>

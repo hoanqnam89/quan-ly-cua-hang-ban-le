@@ -36,8 +36,9 @@ const ImportOrderList = () => {
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [sortField, setSortField] = useState<'date' | 'price'>('date');
-  const [dateFilter, setDateFilter] = useState<'today' | 'specific'>('today');
-  const [specificDate, setSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [dateFilter, setDateFilter] = useState<'range'>('range');
+  const [fromDate, setFromDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [toDate, setToDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending'>('pending');
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -107,24 +108,11 @@ const ImportOrderList = () => {
   // Hàm lọc theo ngày được cập nhật
   const filterByDate = (order: Order) => {
     const orderDate = new Date(order.created_at);
-
-    if (dateFilter === 'today') {
-      // Lọc theo hôm nay
-      const today = new Date();
-      return orderDate.toDateString() === today.toDateString();
-    } else if (dateFilter === 'specific' && specificDate) {
-      // Lọc theo ngày được chọn
-      const selectedDate = new Date(specificDate);
-      return orderDate.toDateString() === selectedDate.toDateString();
-    }
-
-    return true;
-  };
-
-  // Xử lý khi người dùng thay đổi ngày
-  const handleDateChange = (date: string) => {
-    setSpecificDate(date);
-    setDateFilter('specific'); // Chuyển sang chế độ lọc theo ngày cụ thể
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+    from.setHours(0, 0, 0, 0);
+    to.setHours(23, 59, 59, 999);
+    return orderDate >= from && orderDate <= to;
   };
 
   // Hàm lọc theo trạng thái
@@ -155,8 +143,9 @@ const ImportOrderList = () => {
 
   // Cập nhật hàm handleReset
   const handleReset = () => {
-    setDateFilter('today');
-    setSpecificDate(new Date().toISOString().split('T')[0]);
+    setDateFilter('range');
+    setFromDate(new Date().toISOString().split('T')[0]);
+    setToDate(new Date().toISOString().split('T')[0]);
     setStatusFilter('pending');
     setSortOrder('asc');
     setSortField('date');
@@ -303,52 +292,52 @@ const ImportOrderList = () => {
           </div>
 
           <div className="flex gap-4">
-            {/* Bộ lọc chọn ngày cụ thể */}
-            <div className="relative group flex-1">
-              <div className={`flex items-center gap-2 px-5 py-3 bg-white border ${dateFilter !== 'today' ? 'border-blue-500 text-blue-600' : 'border-blue-500 text-blue-600'} rounded-xl transition-all duration-200 font-medium`}>
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="text-blue-500"
-                >
-                  <path
-                    d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+            {/* Bộ lọc khoảng ngày */}
+            <div className="flex flex-1">
+              <div className="flex gap-2 w-full">
+                <div className="relative flex items-center gap-2 px-5 py-3 bg-white border border-blue-500 text-blue-600 rounded-xl transition-all duration-200 font-medium flex-1">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="text-blue-500"
+                  >
+                    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M16 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M8 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                    className="flex-1 border-0 bg-transparent focus:outline-none focus:ring-0 text-blue-600 font-medium"
                   />
-                  <path
-                    d="M16 2V6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                </div>
+                <span className="self-center font-semibold text-slate-500">-</span>
+                <div className="relative flex items-center gap-2 px-5 py-3 bg-white border border-blue-500 text-blue-600 rounded-xl transition-all duration-200 font-medium flex-1">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="text-blue-500"
+                  >
+                    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M16 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M8 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <input
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                    className="flex-1 border-0 bg-transparent focus:outline-none focus:ring-0 text-blue-600 font-medium"
                   />
-                  <path
-                    d="M8 2V6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M3 10H21"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <input
-                  type="date"
-                  value={specificDate}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  className="flex-1 border-0 bg-transparent focus:outline-none focus:ring-0 text-blue-600 font-medium"
-                />
+                </div>
               </div>
             </div>
 

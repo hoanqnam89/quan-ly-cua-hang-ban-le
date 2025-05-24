@@ -577,6 +577,12 @@ function WarehouseReceipt() {
       const response = await addCollection(warehouseReceipt, collectionName);
       if (response.status === EStatusCode.OK || response.status === EStatusCode.CREATED) {
         // Update order form status
+        createNotification({
+          children: 'Tạo phiếu nhập kho thành công!',
+          type: ENotificationType.SUCCESS,
+          isAutoClose: true,
+          id: Math.random(),
+        });
         await updateOrderStatus(warehouseReceipt.supplier_receipt_id, OrderFormStatus.COMPLETED);
         // Refetch lại danh sách phiếu đặt hàng (SelectDropdown)
         await queryClient.invalidateQueries({ queryKey: ['warehouse-receipt'] });
@@ -606,12 +612,7 @@ function WarehouseReceipt() {
           setWarehouseReceipt(DEFAULT_WAREHOUSE_RECEIPT);
         }
         // Hiển thị thông báo thành công
-        createNotification({
-          children: 'Tạo phiếu nhập kho thành công!',
-          type: ENotificationType.SUCCESS,
-          isAutoClose: true,
-          id: Math.random(),
-        });
+
       } else {
         let errorMessage = 'Không thể lưu phiếu nhập kho';
         try {

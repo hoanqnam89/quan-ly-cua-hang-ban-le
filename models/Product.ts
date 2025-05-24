@@ -21,6 +21,7 @@ const ProductSchema = new Schema({
   category_id: {
     type: ObjectId,
     required: [true, `Category is required!`],
+    ref: 'Category2',
   },
   code: {
     type: String,

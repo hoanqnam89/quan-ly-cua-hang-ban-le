@@ -1,4 +1,3 @@
-
 export interface ICategory {
   _id: string
   created_at: Date
@@ -7,5 +6,4 @@ export interface ICategory {
   name: string
   code: string
   discount: number
-  subcategories: []
 }

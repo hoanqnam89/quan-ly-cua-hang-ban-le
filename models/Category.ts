@@ -1,29 +1,33 @@
-import { ObjectId } from 'mongodb';
-import { models, model, Schema } from 'mongoose';
+import { Schema, model, models, Types } from 'mongoose';
 
 const CategorySchema = new Schema({
-  id: { type: ObjectId, },
-  created_at: {
-    type: Date,
-    default: () => Date.now(),
-    immutable: true,
+  _id: {
+    type: Types.ObjectId,
+    auto: true,
   },
-  updated_at: {
-    default: () => Date.now(),
-    type: Date,
-  },
-
   name: {
     type: String,
-    required: [true, `Name is required!`],
+    required: [true, 'Tên loại sản phẩm là bắt buộc!'],
+    trim: true,
   },
   code: {
     type: String,
-    required: [false],
+    default: '',
+    trim: true,
   },
-  discount: { type: Number, },
-  subcategories: { type: [] },
+  discount: {
+    type: Number,
+    default: 0,
+  },
+  created_at: {
+    type: Date,
+    default: Date.now,
+    immutable: true,
+  },
+  updated_at: {
+    type: Date,
+    default: Date.now,
+  },
 });
 
-export const CategoryModel =
-  models.Category2 || model(`Category2`, CategorySchema);
+export const CategoryModel = models.Category2 || model('Category2', CategorySchema);
