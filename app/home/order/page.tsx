@@ -39,11 +39,15 @@ const ImportOrderList = () => {
   const [sortField, setSortField] = useState<'date' | 'price'>('date');
   const [dateFilter, setDateFilter] = useState<'range'>('range');
   const [fromDate, setFromDate] = useState<string>(new Date().toISOString().split('T')[0]);
+<<<<<<< HEAD
   const [toDate, setToDate] = useState<string>(() => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     return tomorrow.toISOString().split('T')[0];
   });
+=======
+  const [toDate, setToDate] = useState<string>(new Date().toISOString().split('T')[0]);
+>>>>>>> 05952f64d01e510efda5ded40c4b0dda4f3c6476
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending'>('pending');
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -356,6 +360,7 @@ const ImportOrderList = () => {
                   <input
                     type="date"
                     value={fromDate}
+<<<<<<< HEAD
                     onChange={(e) => {
                       const newFromDate = e.target.value;
                       setFromDate(newFromDate);
@@ -366,6 +371,9 @@ const ImportOrderList = () => {
                         setToDate(nextDay.toISOString().split('T')[0]);
                       }
                     }}
+=======
+                    onChange={(e) => setFromDate(e.target.value)}
+>>>>>>> 05952f64d01e510efda5ded40c4b0dda4f3c6476
                     className="flex-1 border-0 bg-transparent focus:outline-none focus:ring-0 text-blue-600 font-medium"
                   />
                 </div>
@@ -387,6 +395,7 @@ const ImportOrderList = () => {
                   <input
                     type="date"
                     value={toDate}
+<<<<<<< HEAD
                     min={(() => {
                       const minDate = new Date(fromDate);
                       minDate.setDate(minDate.getDate() + 1);
@@ -401,6 +410,9 @@ const ImportOrderList = () => {
                         alert('Ngày kết thúc phải lớn hơn ngày bắt đầu ít nhất 1 ngày!');
                       }
                     }}
+=======
+                    onChange={(e) => setToDate(e.target.value)}
+>>>>>>> 05952f64d01e510efda5ded40c4b0dda4f3c6476
                     className="flex-1 border-0 bg-transparent focus:outline-none focus:ring-0 text-blue-600 font-medium"
                   />
                 </div>

@@ -64,8 +64,13 @@ export default function ReportPage() {
         totalOrders: 0,
         periodLabel: ''
     });
+<<<<<<< HEAD
     const [fromDate, setFromDate] = useState(getToday());
     const [toDate, setToDate] = useState(getNextDay(getToday()));
+=======
+    const [fromDate, setFromDate] = useState('');
+    const [toDate, setToDate] = useState('');
+>>>>>>> 05952f64d01e510efda5ded40c4b0dda4f3c6476
     const [shouldFetch, setShouldFetch] = useState(false);
 
     // Lấy danh sách sản phẩm và danh mục
