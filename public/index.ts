@@ -40,6 +40,7 @@ import userIcon from '@/public/user.svg?url';
 import warehouseIcon from '@/public/warehouse.svg?url';
 import xIcon from '@/public/x.svg?url';
 
+
 export {
   arrowDownNarrowWideIcon,
   arrowDownWideNarrowIcon,
@@ -79,7 +80,6 @@ export {
   toyBrickIcon,
   trashIcon,
   truckIcon,
-  userIcon,
   warehouseIcon,
   xIcon,
 }

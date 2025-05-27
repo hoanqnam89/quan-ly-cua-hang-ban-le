@@ -24,7 +24,7 @@ const generateCategoryId = (index: number): string => {
 };
 
 export default function CategoryPage() {
-  const [category, setCategory] = useState<ICategory>({ ...DEFAULT_CATEGORY, _id: generateCategoryId(0) });
+  const [category, setCategory] = useState<ICategory>({ ...DEFAULT_CATEGORY });
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [showDetailModal, setShowDetailModal] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<ICategory | null>(null);
@@ -160,7 +160,7 @@ export default function CategoryPage() {
   }
 
   const filteredCategories = categories.filter(c =>
-    c._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c._id?.toString() || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 

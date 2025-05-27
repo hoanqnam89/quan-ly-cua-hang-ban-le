@@ -6,10 +6,11 @@
 import { Button } from '@/components'
 import React, { useEffect, useState } from 'react'
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { formatCurrency } from '@/utils/format';
 import PaymentModal from '@/components/PaymentModal';
 import { IProductDetail } from '@/interfaces/product-detail.interface';
+import { generatePDF } from '@/utils/generatePDF';
 
 interface OrderItem {
   product_id: string;
@@ -36,14 +37,22 @@ const ImportOrderList = () => {
   const [loading, setLoading] = useState(true);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [sortField, setSortField] = useState<'date' | 'price'>('date');
-  const [dateFilter, setDateFilter] = useState<'today' | 'specific'>('today');
-  const [specificDate, setSpecificDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [dateFilter, setDateFilter] = useState<'range'>('range');
+  const [fromDate, setFromDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [toDate, setToDate] = useState<string>(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  });
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'pending'>('pending');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string>('');
   const [selectedOrderAmount, setSelectedOrderAmount] = useState<number>(0);
   const [selectedOrderItems, setSelectedOrderItems] = useState<any[]>([]);
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [billData, setBillData] = useState<any>(null);
 
   const fetchOrders = async (status: 'all' | 'completed' | 'pending' = statusFilter) => {
     setLoading(true);
@@ -63,9 +72,34 @@ const ImportOrderList = () => {
     setLoading(false);
   };
 
+  // Kiểm tra nếu có dữ liệu hóa đơn từ thanh toán MoMo
   useEffect(() => {
+    // Kiểm tra query param showBill từ callback MoMo
+    const showBill = searchParams.get('showBill');
+
+    // Kiểm tra localStorage có dữ liệu hóa đơn không
+    const storedBillData = localStorage.getItem('show_bill_after_payment');
+
+    if (showBill === 'true' && storedBillData) {
+      try {
+        const parsedBillData = JSON.parse(storedBillData);
+        setBillData(parsedBillData);
+        setShowBillModal(true);
+
+        // Xóa dữ liệu sau khi đã hiển thị
+        localStorage.removeItem('show_bill_after_payment');
+
+        // Xóa query param
+        const url = new URL(window.location.href);
+        url.searchParams.delete('showBill');
+        window.history.replaceState({}, '', url);
+      } catch (error) {
+        console.error('Lỗi khi xử lý dữ liệu hóa đơn:', error);
+      }
+    }
+
     fetchOrders(statusFilter);
-  }, [statusFilter]);
+  }, [statusFilter, searchParams]);
 
   const handleCreateOrder = () => {
     router.push('/home/order/create');
@@ -107,24 +141,11 @@ const ImportOrderList = () => {
   // Hàm lọc theo ngày được cập nhật
   const filterByDate = (order: Order) => {
     const orderDate = new Date(order.created_at);
-
-    if (dateFilter === 'today') {
-      // Lọc theo hôm nay
-      const today = new Date();
-      return orderDate.toDateString() === today.toDateString();
-    } else if (dateFilter === 'specific' && specificDate) {
-      // Lọc theo ngày được chọn
-      const selectedDate = new Date(specificDate);
-      return orderDate.toDateString() === selectedDate.toDateString();
-    }
-
-    return true;
-  };
-
-  // Xử lý khi người dùng thay đổi ngày
-  const handleDateChange = (date: string) => {
-    setSpecificDate(date);
-    setDateFilter('specific'); // Chuyển sang chế độ lọc theo ngày cụ thể
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+    from.setHours(0, 0, 0, 0);
+    to.setHours(23, 59, 59, 999);
+    return orderDate >= from && orderDate <= to;
   };
 
   // Hàm lọc theo trạng thái
@@ -155,8 +176,9 @@ const ImportOrderList = () => {
 
   // Cập nhật hàm handleReset
   const handleReset = () => {
-    setDateFilter('today');
-    setSpecificDate(new Date().toISOString().split('T')[0]);
+    setDateFilter('range');
+    setFromDate(new Date().toISOString().split('T')[0]);
+    setToDate(new Date().toISOString().split('T')[0]);
     setStatusFilter('pending');
     setSortOrder('asc');
     setSortField('date');
@@ -251,6 +273,17 @@ const ImportOrderList = () => {
     alert('Thanh toán thành công!');
   };
 
+  const closeBillModal = () => {
+    setShowBillModal(false);
+    setBillData(null);
+  };
+
+  const printBill = () => {
+    if (billData) {
+      generatePDF(billData);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-[1400px] mx-auto p-8">
@@ -303,52 +336,74 @@ const ImportOrderList = () => {
           </div>
 
           <div className="flex gap-4">
-            {/* Bộ lọc chọn ngày cụ thể */}
-            <div className="relative group flex-1">
-              <div className={`flex items-center gap-2 px-5 py-3 bg-white border ${dateFilter !== 'today' ? 'border-blue-500 text-blue-600' : 'border-blue-500 text-blue-600'} rounded-xl transition-all duration-200 font-medium`}>
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="text-blue-500"
-                >
-                  <path
-                    d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+            {/* Bộ lọc khoảng ngày */}
+            <div className="flex flex-1">
+              <div className="flex gap-2 w-full">
+                <div className="relative flex items-center gap-2 px-5 py-3 bg-white border border-blue-500 text-blue-600 rounded-xl transition-all duration-200 font-medium flex-1">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="text-blue-500"
+                  >
+                    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M16 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M8 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => {
+                      const newFromDate = e.target.value;
+                      setFromDate(newFromDate);
+                      // Nếu toDate <= fromDate thì cập nhật toDate = fromDate + 1 ngày
+                      if (newFromDate >= toDate) {
+                        const nextDay = new Date(newFromDate);
+                        nextDay.setDate(nextDay.getDate() + 1);
+                        setToDate(nextDay.toISOString().split('T')[0]);
+                      }
+                    }}
+                    className="flex-1 border-0 bg-transparent focus:outline-none focus:ring-0 text-blue-600 font-medium"
                   />
-                  <path
-                    d="M16 2V6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                </div>
+                <span className="self-center font-semibold text-slate-500">-</span>
+                <div className="relative flex items-center gap-2 px-5 py-3 bg-white border border-blue-500 text-blue-600 rounded-xl transition-all duration-200 font-medium flex-1">
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="text-blue-500"
+                  >
+                    <path d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M16 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M8 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <input
+                    type="date"
+                    value={toDate}
+                    min={(() => {
+                      const minDate = new Date(fromDate);
+                      minDate.setDate(minDate.getDate() + 1);
+                      return minDate.toISOString().split('T')[0];
+                    })()}
+                    onChange={(e) => {
+                      const newToDate = e.target.value;
+                      // Chỉ cho phép chọn ngày lớn hơn fromDate
+                      if (newToDate > fromDate) {
+                        setToDate(newToDate);
+                      } else {
+                        alert('Ngày kết thúc phải lớn hơn ngày bắt đầu ít nhất 1 ngày!');
+                      }
+                    }}
+                    className="flex-1 border-0 bg-transparent focus:outline-none focus:ring-0 text-blue-600 font-medium"
                   />
-                  <path
-                    d="M8 2V6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M3 10H21"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <input
-                  type="date"
-                  value={specificDate}
-                  onChange={(e) => handleDateChange(e.target.value)}
-                  className="flex-1 border-0 bg-transparent focus:outline-none focus:ring-0 text-blue-600 font-medium"
-                />
+                </div>
               </div>
             </div>
 
@@ -686,6 +741,98 @@ const ImportOrderList = () => {
           totalAmount={selectedOrderAmount}
           orderItems={selectedOrderItems}
         />
+
+        {/* Bill Modal */}
+        {showBillModal && billData && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-10 w-[480px] max-h-[95vh] overflow-y-auto relative print:w-full print:max-w-full print:rounded-none print:p-2 border font-sans text-lg">
+              <button
+                className="absolute top-4 right-4 text-2xl print:hidden"
+                onClick={closeBillModal}
+              >×</button>
+              <div className="text-center mb-3">
+                <div className="font-bold text-lg">CỬA HÀNG BÁN LẺ</div>
+                <div className="text-lg">www.cuahangbanle.com</div>
+                <div className="text-lg">32/37 Đường Lê Thị Hồng,</div>
+                <div className="text-lg mb-1">Phường 17, Quận Gò Vấp, TP HCM</div>
+              </div>
+              <div className="text-center font-bold text-2xl my-3">PHIẾU THANH TOÁN</div>
+              <div className="mb-1 text-lg">SỐ CT: <span className="font-mono">{billData.orderCode}</span></div>
+              <div className="mb-1 text-lg">Ngày CT: {new Date(billData.paymentTime || new Date()).toLocaleDateString('vi-VN')} {new Date(billData.paymentTime || new Date()).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</div>
+              <div className="mb-1 text-lg">Nhân viên: {billData.employeeName}</div>
+              <div className="border-t border-dashed border-black my-3"></div>
+              <table className="w-full text-lg mb-3">
+                <thead>
+                  <tr className="border-b border-dashed border-black">
+                    <th className="text-left font-bold">Sản phẩm</th>
+                    <th className="font-bold">SL</th>
+                    <th className="font-bold">Giá</th>
+                    <th className="font-bold">Giảm giá</th>
+                    <th className="text-right font-bold">T.Tiền</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {billData.items.map((item: any, idx: number) => {
+                    let isDiscount = false;
+                    let discountText = '0';
+                    let price = item.product.output_price;
+                    let total = price * item.quantity;
+                    if (item.batchDetails && item.batchDetails.expiryDate) {
+                      const now = new Date();
+                      const expiry = new Date(item.batchDetails.expiryDate);
+                      const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                      if (diffDays <= 30) {
+                        isDiscount = true;
+                        discountText = '50%';
+                        price = price * 0.5;
+                        total = price * item.quantity;
+                      }
+                    }
+                    return (
+                      <tr key={idx}>
+                        <td className="align-top">{item.product.name}</td>
+                        <td className="align-top text-center">{item.quantity}</td>
+                        <td className="align-top text-right">
+                          {isDiscount ? (
+                            <>
+                              <span className="line-through text-gray-400 mr-1">{formatCurrency(item.product.output_price)}</span>
+                              <span className="text-red-600 font-bold">{formatCurrency(price)}</span>
+                            </>
+                          ) : (
+                            <span>{formatCurrency(item.product.output_price)}</span>
+                          )}
+                        </td>
+                        <td className="align-top text-center">{discountText}</td>
+                        <td className="align-top text-right">{formatCurrency(total)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              <div className="border-t border-dashed border-black my-3"></div>
+              <div className="flex flex-col gap-1 text-lg">
+                <div className="flex justify-between"><span className="font-bold">Thành tiền:</span><span className="font-bold">{formatCurrency(billData.totalAmount)} </span></div>
+                <div className="flex justify-between"><span className="font-bold">Thanh toán:</span><span className="font-bold">{billData.paymentMethod === 'momo' ? 'Ví MoMo' : 'Tiền mặt'} </span></div>
+                <div className="flex justify-between"><span className="font-bold">Tiền khách đưa:</span><span className="font-bold">{formatCurrency(billData.customerPayment)} </span></div>
+                <div className="flex justify-between"><span className="font-bold">Tiền thối lại:</span><span className="font-bold">{formatCurrency(billData.changeAmount || 0)} </span></div>
+              </div>
+              <div className="border-t border-dashed border-black my-3"></div>
+              <div className="text-lg text-center mt-2">
+                (Giá trên đã bao gồm thuế GTGT)<br />
+                Lưu ý: Cửa hàng chỉ xuất hóa đơn trong ngày.<br />
+                Quý khách vui lòng liên hệ thu ngân để được hỗ trợ.
+              </div>
+              <div className="flex justify-center mt-6 print:hidden">
+                <Button
+                  onClick={printBill}
+                  className="bg-blue-700 border border-blue-700 text-yellow-300 px-8 py-3 rounded-lg text-lg font-bold uppercase tracking-wider hover:bg-blue-800 hover:border-blue-800"
+                >
+                  In hóa đơn
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

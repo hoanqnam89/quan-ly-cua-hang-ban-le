@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/utils/database';
 import { OrderModel } from '@/models/Order';
 import { ProductModel } from '@/models/Product';
+import mongoose from 'mongoose';
 
 // /api/report/revenue?type=day|month|year|product|category|hour|top_products&date=yyyy-mm-dd&month=yyyy-mm&year=yyyy
 export async function GET(req: NextRequest) {
@@ -18,6 +19,8 @@ export async function GET(req: NextRequest) {
     const categoryId = searchParams.get('categoryId');
     const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit') || '10') : 10;
     const productName = searchParams.get('productName');
+    const fromDate = searchParams.get('fromDate');
+    const toDate = searchParams.get('toDate');
 
     // Chỉ lấy đơn hoàn thành: status === 'completed'/'COMPLETED'
     let match: any = {
@@ -187,52 +190,67 @@ export async function GET(req: NextRequest) {
         }
     }
 
-    // Thống kê doanh thu từng ngày trong tháng cho 1 sản phẩm
-    if (type === 'product' && resolvedProductId && month) {
+    // Thống kê theo sản phẩm (product)
+    if (type === 'product' && productId && fromDate && toDate) {
+        match.created_at = { $gte: new Date(fromDate), $lte: new Date(toDate) };
+        const reportOrder = await OrderModel.aggregate([
+            { $match: match },
+            { $unwind: '$items' },
+            { $match: { 'items.product_id': new mongoose.Types.ObjectId(productId) } },
+            {
+                $group: {
+                    _id: { $dateToString: { format: '%d/%m/%Y', date: '$created_at' } },
+                    totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                    totalOrders: { $sum: 1 },
+                    totalQuantity: { $sum: '$items.quantity' }
+                }
+            },
+            { $sort: { _id: 1 } }
+        ]);
+        return NextResponse.json(reportOrder);
+    }
+    // Thống kê theo sản phẩm theo tháng
+    if (type === 'product' && productId && month) {
         const [y, m] = month.split('-');
         const start = new Date(Number(y), Number(m) - 1, 1);
         const end = new Date(Number(y), Number(m), 0, 23, 59, 59, 999);
         match.created_at = { $gte: start, $lte: end };
-
-        const revenueByDay = await OrderModel.aggregate([
+        const reportOrder = await OrderModel.aggregate([
             { $match: match },
             { $unwind: '$items' },
-            {
-                $lookup: {
-                    from: 'productdetails',
-                    localField: 'items.product_detail_id',
-                    foreignField: '_id',
-                    as: 'productDetail'
-                }
-            },
-            { $unwind: '$productDetail' },
-            { $match: { 'productDetail.product_id': resolvedProductId } },
+            { $match: { 'items.product_id': new mongoose.Types.ObjectId(productId) } },
             {
                 $group: {
                     _id: { $dateToString: { format: '%d', date: '$created_at' } },
                     totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
                     totalOrders: { $sum: 1 },
-                },
+                    totalQuantity: { $sum: '$items.quantity' }
+                }
             },
-            { $sort: { _id: 1 } },
+            { $sort: { _id: 1 } }
         ]);
-
-        // Mapping đủ số ngày trong tháng
-        const daysInMonth = new Date(Number(y), Number(m), 0).getDate();
-        const result = Array.from({ length: daysInMonth }, (_, d) => {
-            const day = (d + 1).toString().padStart(2, '0');
-            const found = revenueByDay.find((r: any) => r._id === day);
-            return {
-                _id: day,
-                totalRevenue: found ? found.totalRevenue : 0,
-                totalOrders: found ? found.totalOrders : 0,
-            };
-        });
-        return NextResponse.json(result);
+        return NextResponse.json(reportOrder);
+    }
+    // Thống kê tổng hợp theo sản phẩm
+    if (type === 'product' && !fromDate && !toDate && !month) {
+        const reportOrder = await OrderModel.aggregate([
+            { $match: match },
+            { $unwind: '$items' },
+            {
+                $group: {
+                    _id: '$items.product_id',
+                    totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                    totalOrders: { $sum: 1 },
+                    totalQuantity: { $sum: '$items.quantity' }
+                }
+            },
+            { $sort: { totalRevenue: -1 } }
+        ]);
+        return NextResponse.json(reportOrder);
     }
 
     // Thống kê doanh thu từng tháng trong năm cho 1 sản phẩm
-    if (type === 'product' && resolvedProductId && year) {
+    if (type === 'product' && productId && year) {
         const start = new Date(Number(year), 0, 1);
         const end = new Date(Number(year), 11, 31, 23, 59, 59, 999);
         match.created_at = { $gte: start, $lte: end };
@@ -242,14 +260,14 @@ export async function GET(req: NextRequest) {
             { $unwind: '$items' },
             {
                 $lookup: {
-                    from: 'productdetails',
-                    localField: 'items.product_detail_id',
+                    from: 'products',
+                    localField: 'items.product_id',
                     foreignField: '_id',
-                    as: 'productDetail'
+                    as: 'productInfo'
                 }
             },
-            { $unwind: '$productDetail' },
-            { $match: { 'productDetail.product_id': resolvedProductId } },
+            { $unwind: '$productInfo' },
+            { $match: { 'productInfo._id': new mongoose.Types.ObjectId(productId) } },
             {
                 $group: {
                     _id: { $month: '$created_at' },
@@ -272,192 +290,90 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(result);
     }
 
-    if (type === 'product') {
-        // Thống kê doanh thu theo sản phẩm (dựa vào product_detail)
-        const revenueByProduct = await OrderModel.aggregate([
+    // Thống kê theo loại sản phẩm (category) theo khoảng ngày
+    if (type === 'category' && categoryId && fromDate && toDate) {
+        match.created_at = { $gte: new Date(fromDate), $lte: new Date(toDate) };
+        const reportOrder = await OrderModel.aggregate([
             { $match: match },
             { $unwind: '$items' },
             {
                 $lookup: {
-                    from: 'productdetails',
-                    localField: 'items.product_detail_id',
-                    foreignField: '_id',
-                    as: 'productDetail'
-                }
-            },
-            { $unwind: '$productDetail' },
-            {
-                $lookup: {
                     from: 'products',
-                    localField: 'productDetail.product_id',
+                    localField: 'items.product_id',
                     foreignField: '_id',
                     as: 'productInfo'
                 }
             },
             { $unwind: '$productInfo' },
+            { $match: { 'productInfo.category_id': new mongoose.Types.ObjectId(categoryId) } },
             {
                 $group: {
-                    _id: '$productInfo._id',
-                    name: { $first: '$productInfo.name' },
-                    revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
-                    quantity: { $sum: '$items.quantity' },
-                    orderCount: { $sum: 1 }
+                    _id: { $dateToString: { format: '%d/%m/%Y', date: '$created_at' } },
+                    totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
+                    totalOrders: { $sum: 1 },
+                    totalQuantity: { $sum: '$items.quantity' }
                 }
             },
-            { $match: { revenue: { $gt: 0 } } },
-            { $sort: { revenue: -1 } }
+            { $sort: { _id: 1 } }
         ]);
-        return NextResponse.json(revenueByProduct);
+        return NextResponse.json(reportOrder);
     }
-
-    // Thống kê doanh thu từng ngày trong tháng cho 1 loại sản phẩm
+    // Thống kê theo loại sản phẩm theo tháng
     if (type === 'category' && categoryId && month) {
         const [y, m] = month.split('-');
         const start = new Date(Number(y), Number(m) - 1, 1);
         const end = new Date(Number(y), Number(m), 0, 23, 59, 59, 999);
         match.created_at = { $gte: start, $lte: end };
-
-        const revenueByDay = await OrderModel.aggregate([
+        const reportOrder = await OrderModel.aggregate([
             { $match: match },
             { $unwind: '$items' },
             {
                 $lookup: {
-                    from: 'productdetails',
-                    localField: 'items.product_detail_id',
-                    foreignField: '_id',
-                    as: 'productDetail'
-                }
-            },
-            { $unwind: '$productDetail' },
-            {
-                $lookup: {
                     from: 'products',
-                    localField: 'productDetail.product_id',
+                    localField: 'items.product_id',
                     foreignField: '_id',
                     as: 'productInfo'
                 }
             },
             { $unwind: '$productInfo' },
-            { $match: { 'productInfo.category_id': categoryId } },
+            { $match: { 'productInfo.category_id': new mongoose.Types.ObjectId(categoryId) } },
             {
                 $group: {
                     _id: { $dateToString: { format: '%d', date: '$created_at' } },
                     totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
                     totalOrders: { $sum: 1 },
-                },
+                    totalQuantity: { $sum: '$items.quantity' }
+                }
             },
-            { $sort: { _id: 1 } },
+            { $sort: { _id: 1 } }
         ]);
-
-        // Mapping đủ số ngày trong tháng
-        const daysInMonth = new Date(Number(y), Number(m), 0).getDate();
-        const result = Array.from({ length: daysInMonth }, (_, d) => {
-            const day = (d + 1).toString().padStart(2, '0');
-            const found = revenueByDay.find((r: any) => r._id === day);
-            return {
-                _id: day,
-                totalRevenue: found ? found.totalRevenue : 0,
-                totalOrders: found ? found.totalOrders : 0,
-            };
-        });
-        return NextResponse.json(result);
+        return NextResponse.json(reportOrder);
     }
-
-    // Thống kê doanh thu từng tháng trong năm cho 1 loại sản phẩm
-    if (type === 'category' && categoryId && year) {
-        const start = new Date(Number(year), 0, 1);
-        const end = new Date(Number(year), 11, 31, 23, 59, 59, 999);
-        match.created_at = { $gte: start, $lte: end };
-
-        const revenueByMonth = await OrderModel.aggregate([
+    // Thống kê tổng hợp theo loại sản phẩm
+    if (type === 'category' && !fromDate && !toDate && !month) {
+        const reportOrder = await OrderModel.aggregate([
             { $match: match },
             { $unwind: '$items' },
             {
                 $lookup: {
-                    from: 'productdetails',
-                    localField: 'items.product_detail_id',
-                    foreignField: '_id',
-                    as: 'productDetail'
-                }
-            },
-            { $unwind: '$productDetail' },
-            {
-                $lookup: {
                     from: 'products',
-                    localField: 'productDetail.product_id',
+                    localField: 'items.product_id',
                     foreignField: '_id',
                     as: 'productInfo'
                 }
             },
             { $unwind: '$productInfo' },
-            { $match: { 'productInfo.category_id': categoryId } },
             {
                 $group: {
-                    _id: { $month: '$created_at' },
+                    _id: '$productInfo.category_id',
                     totalRevenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
                     totalOrders: { $sum: 1 },
-                },
+                    totalQuantity: { $sum: '$items.quantity' }
+                }
             },
-            { $sort: { _id: 1 } },
+            { $sort: { totalRevenue: -1 } }
         ]);
-
-        // Mapping đủ 12 tháng
-        const result = Array.from({ length: 12 }, (_, m) => {
-            const found = revenueByMonth.find((r: any) => r._id === m + 1);
-            return {
-                _id: (m + 1).toString().padStart(2, '0'),
-                totalRevenue: found ? found.totalRevenue : 0,
-                totalOrders: found ? found.totalOrders : 0,
-            };
-        });
-        return NextResponse.json(result);
-    }
-
-    if (type === 'category') {
-        // Thống kê doanh thu theo loại sản phẩm (dựa vào category của product)
-        const revenueByCategory = await OrderModel.aggregate([
-            { $match: match },
-            { $unwind: '$items' },
-            {
-                $lookup: {
-                    from: 'productdetails',
-                    localField: 'items.product_detail_id',
-                    foreignField: '_id',
-                    as: 'productDetail'
-                }
-            },
-            { $unwind: '$productDetail' },
-            {
-                $lookup: {
-                    from: 'products',
-                    localField: 'productDetail.product_id',
-                    foreignField: '_id',
-                    as: 'productInfo'
-                }
-            },
-            { $unwind: '$productInfo' },
-            {
-                $lookup: {
-                    from: 'categories',
-                    localField: 'productInfo.category_id',
-                    foreignField: '_id',
-                    as: 'categoryInfo'
-                }
-            },
-            { $unwind: '$categoryInfo' },
-            {
-                $group: {
-                    _id: '$categoryInfo._id',
-                    name: { $first: '$categoryInfo.name' },
-                    revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } },
-                    quantity: { $sum: '$items.quantity' },
-                    orderCount: { $sum: 1 }
-                }
-            },
-            { $match: { revenue: { $gt: 0 } } },
-            { $sort: { revenue: -1 } }
-        ]);
-        return NextResponse.json(revenueByCategory);
+        return NextResponse.json(reportOrder);
     }
 
     // Thống kê doanh thu tổng hợp theo ngày/tháng/năm

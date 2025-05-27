@@ -10,7 +10,7 @@ const orderSchema = new mongoose.Schema({
     employee_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false
     },
     items: [{
         product_id: {
@@ -36,7 +36,7 @@ const orderSchema = new mongoose.Schema({
     },
     payment_method: {
         type: String,
-        enum: ['cash', 'transfer', 'card'],
+        enum: ['cash', 'transfer', 'card', 'momo'],
         default: 'cash'
     },
     payment_status: {
@@ -56,6 +56,9 @@ const orderSchema = new mongoose.Schema({
     updated_at: {
         type: Date,
         default: Date.now
+    },
+    momo_trans_id: {
+        type: String
     }
 });
 
