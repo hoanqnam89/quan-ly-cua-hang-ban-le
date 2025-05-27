@@ -64,7 +64,6 @@ export default function CreateOrder() {
     const [showSuccess, setShowSuccess] = useState(false);
     const [momoPaymentUrl, setMomoPaymentUrl] = useState<string>('');
     const [isCreatingMomo, setIsCreatingMomo] = useState(false);
-<<<<<<< HEAD
 
     // Hàm cập nhật số lượng sản phẩm đang bán và tổng kho
     const handleUpdateProductQuantities = async () => {
@@ -215,8 +214,6 @@ export default function CreateOrder() {
             console.warn("Thanh toán vẫn thành công mặc dù có lỗi khi cập nhật số lượng sản phẩm");
         }
     };
-=======
->>>>>>> 05952f64d01e510efda5ded40c4b0dda4f3c6476
 
     const totalAmount = orderItems.reduce((sum, item) => {
         const price = item.product.output_price;
@@ -793,7 +790,6 @@ export default function CreateOrder() {
     }, [isDropdownVisible]);
 
     const handleMoMoPayment = async () => {
-<<<<<<< HEAD
         if (orderItems.length === 0) {
             createNotification({
                 children: 'Vui lòng thêm sản phẩm vào đơn hàng',
@@ -814,17 +810,10 @@ export default function CreateOrder() {
 
             // Chuẩn bị dữ liệu đơn hàng
             const orderData = {
-=======
-        setIsCreatingMomo(true);
-        try {
-            // Lưu thông tin đơn hàng tạm vào localStorage
-            const orderDraft = {
->>>>>>> 05952f64d01e510efda5ded40c4b0dda4f3c6476
                 employee_id: employee,
                 items: orderItems.map(item => ({
                     product_id: item.product._id,
                     quantity: item.quantity,
-<<<<<<< HEAD
                     price: item.product.output_price,
                     name: item.product.name,
                     // Thêm thông tin lô nếu có
@@ -833,16 +822,12 @@ export default function CreateOrder() {
                         expiry_date: item.batchDetails.expiryDate,
                         date_of_manufacture: item.batchDetails.dateOfManufacture
                     } : null
-=======
-                    price: item.product.output_price
->>>>>>> 05952f64d01e510efda5ded40c4b0dda4f3c6476
                 })),
                 total_amount: totalAmount,
                 payment_method: 'momo',
                 payment_status: true,
                 note: note,
                 customer_payment: totalAmount,
-<<<<<<< HEAD
                 status: 'completed',
                 order_code: orderCode,
                 created_at: new Date(),
@@ -864,17 +849,11 @@ export default function CreateOrder() {
                     } : null
                 }))
             })).toString('base64');
-=======
-                status: 'completed'
-            };
-            localStorage.setItem('momo_order_draft', JSON.stringify(orderDraft));
->>>>>>> 05952f64d01e510efda5ded40c4b0dda4f3c6476
 
             const response = await fetch('/api/payment/momo', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-<<<<<<< HEAD
                     orderId: orderCode,
                     amount: totalAmount,
                     orderInfo: `Thanh toan don hang ${orderCode}`,
@@ -947,24 +926,6 @@ export default function CreateOrder() {
         if (billData) {
             generatePDF(billData);
         }
-=======
-                    orderId: 'order_' + Date.now(), // hoặc mã đơn hàng thực tế nếu có
-                    amount: totalAmount,
-                    orderInfo: 'Thanh toan don hang'
-                }),
-            });
-            const data = await response.json();
-            if (data.payUrl) {
-                setMomoPaymentUrl(data.payUrl);
-                window.open(data.payUrl, '_blank');
-            } else {
-                alert('Không thể tạo thanh toán MoMo');
-            }
-        } catch (err) {
-            alert('Có lỗi khi tạo thanh toán MoMo');
-        }
-        setIsCreatingMomo(false);
->>>>>>> 05952f64d01e510efda5ded40c4b0dda4f3c6476
     };
 
     return (
@@ -1327,25 +1288,8 @@ export default function CreateOrder() {
                                                 <option value="transfer">Chuyển khoản ngân hàng</option>
                                                 <option value="momo">Ví MoMo</option>
                                             </select>
-<<<<<<< HEAD
 
 
-=======
-                                            {paymentMethod === 'momo' && (
-                                                <div className="mt-3">
-                                                    <Button onClick={handleMoMoPayment} isDisable={isCreatingMomo}>
-                                                        {isCreatingMomo ? 'Đang tạo link MoMo...' : 'Thanh toán với MoMo'}
-                                                    </Button>
-                                                    {momoPaymentUrl && (
-                                                        <div className="mt-2">
-                                                            <a href={momoPaymentUrl} target="_blank" rel="noopener noreferrer" className="text-pink-600 underline">
-                                                                Mở lại trang thanh toán MoMo
-                                                            </a>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
->>>>>>> 05952f64d01e510efda5ded40c4b0dda4f3c6476
                                         </div>
                                         <div className="col-span-3">
                                             <label className="block text-lg text-slate-600 mb-1.5">
